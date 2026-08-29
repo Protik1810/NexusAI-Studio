@@ -79,15 +79,18 @@
 - Windows 10/11 x64, Linux, or macOS
 - Node.js (v18+) & npm
 
-### Running the Standalone Executable
-Double-click `NexusAI Studio.lnk` or run:
-```bash
+### 🪟 Windows Setup (winget / Executable)
+```powershell
+# Install via winget (Windows Package Manager)
+winget install --id Protik.NexusAIStudio -e
+
+# Or launch standalone executable directly:
 release-pkg\NexusAI Studio-win32-x64\NexusAI Studio.exe
 ```
 
-### 🐧 Linux & 🍎 macOS Quick Terminal Install
+### 🐧 Linux & 🍎 macOS (1-Line Terminal Install)
 ```bash
-git clone https://github.com/Protik1810/NexusAI-Studio.git && cd NexusAI-Studio && npm install && npm run dev
+curl -fsSL https://raw.githubusercontent.com/Protik1810/NexusAI-Studio/main/install.sh | bash
 ```
 
 ### Running in Development Mode

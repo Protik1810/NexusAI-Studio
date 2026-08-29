@@ -33,11 +33,24 @@ Autonomous, sovereign & 100% offline local Generative AI workstation by **Protik
 
 ---
 
-### 💻 Linux & macOS Quick Start (Terminal)
+### 💻 Quick Installation Commands
 
+#### 🐧 Linux & 🍎 macOS (1-Line Terminal Install)
 ```bash
-# 🐧 Linux & 🍎 macOS: Clone, Install & Launch
+curl -fsSL https://raw.githubusercontent.com/Protik1810/NexusAI-Studio/main/install.sh | bash
+```
+*Or via Git:*
+```bash
 git clone https://github.com/Protik1810/NexusAI-Studio.git && cd NexusAI-Studio && npm install && npm run dev
+```
+
+#### 🪟 Windows (winget Install)
+```powershell
+winget install --id Protik.NexusAIStudio -e
+```
+*Or directly via release executable URL:*
+```powershell
+winget install https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0.0/NexusAI-Studio-Setup-1.0.0.exe
 ```
 
 ---
