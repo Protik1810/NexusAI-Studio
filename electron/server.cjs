@@ -177,6 +177,65 @@ function createServer(options = {}) {
     };
   }
 
+  function getSdCliExecutable() {
+    const hw = detectHardware();
+    const isNvidia = hw.preferredBackend === 'cuda';
+    const exeDir = path.dirname(process.execPath || '');
+    
+    const cudaCandidates = [
+      path.join(rootDir, 'backend/win/cuda/sd-cli.exe'),
+      path.join(rootDir, 'backend/win/cuda/sd-cuda.exe'),
+      path.join(resourcesPath, 'app/backend/win/cuda/sd-cli.exe'),
+      path.join(resourcesPath, 'backend/win/cuda/sd-cli.exe'),
+      path.join(exeDir, 'resources/app/backend/win/cuda/sd-cli.exe'),
+      path.join(exeDir, 'backend/win/cuda/sd-cli.exe'),
+      path.join(__dirname, '../backend/win/cuda/sd-cli.exe')
+    ];
+
+    const vulkanCandidates = [
+      path.join(rootDir, 'backend/win/vulkan/sd-cli.exe'),
+      path.join(rootDir, 'backend/win/vulkan/sd-vulkan.exe'),
+      path.join(resourcesPath, 'app/backend/win/vulkan/sd-cli.exe'),
+      path.join(resourcesPath, 'backend/win/vulkan/sd-cli.exe'),
+      path.join(exeDir, 'resources/app/backend/win/vulkan/sd-cli.exe'),
+      path.join(exeDir, 'backend/win/vulkan/sd-cli.exe'),
+      path.join(__dirname, '../backend/win/vulkan/sd-cli.exe')
+    ];
+
+    const cpuCandidates = [
+      path.join(rootDir, 'backend/win/cpu/sd-cli.exe'),
+      path.join(resourcesPath, 'app/backend/win/cpu/sd-cli.exe'),
+      path.join(resourcesPath, 'backend/win/cpu/sd-cli.exe'),
+      path.join(exeDir, 'resources/app/backend/win/cpu/sd-cli.exe'),
+      path.join(__dirname, '../backend/win/cpu/sd-cli.exe')
+    ];
+
+    const list = isNvidia
+      ? [...cudaCandidates, ...vulkanCandidates, ...cpuCandidates]
+      : [...vulkanCandidates, ...cudaCandidates, ...cpuCandidates];
+
+    for (const c of list) {
+      if (fs.existsSync(c)) return c;
+    }
+    return cudaCandidates[0];
+  }
+
+  function getLlamaExecutable() {
+    const exeDir = path.dirname(process.execPath || '');
+    const candidates = [
+      path.join(rootDir, 'backend/win/llama/llama-server.exe'),
+      path.join(resourcesPath, 'app/backend/win/llama/llama-server.exe'),
+      path.join(resourcesPath, 'backend/win/llama/llama-server.exe'),
+      path.join(exeDir, 'resources/app/backend/win/llama/llama-server.exe'),
+      path.join(exeDir, 'backend/win/llama/llama-server.exe'),
+      path.join(__dirname, '../backend/win/llama/llama-server.exe')
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    return candidates[0];
+  }
+
   function getAllSystemScanPaths() {
     const userHome = process.env.USERPROFILE || process.env.HOME || '';
     const exeDir = path.dirname(process.execPath || '');
@@ -1005,7 +1064,7 @@ function createServer(options = {}) {
 
           const procEnv = {
             ...process.env,
-            PATH: `${path.join(rootDir, 'backend/win/cuda')};${path.join(rootDir, 'backend/win/vulkan')};${path.join(rootDir, 'backend/win/llama')};${process.env.PATH || ''}`
+            PATH: `${workingDir};${path.join(rootDir, 'backend/win/cuda')};${path.join(rootDir, 'backend/win/vulkan')};${path.join(rootDir, 'backend/win/llama')};${process.env.PATH || ''}`
           };
 
           const child = spawn(execPath, args, { cwd: workingDir, env: procEnv, windowsHide: true });
