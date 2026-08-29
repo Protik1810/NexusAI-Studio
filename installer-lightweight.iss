@@ -23,6 +23,7 @@ OutputBaseFilename=Solframe-Studio-Setup-1.0.0-Lightweight
 SetupIconFile={#SourcePath}electron\icon.ico
 WizardImageFile={#SourcePath}public\wizard-large.bmp
 WizardSmallImageFile={#SourcePath}public\wizard-small.bmp
+LicenseFile={#SourcePath}TERMS.txt
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/ultra64
 SolidCompression=yes

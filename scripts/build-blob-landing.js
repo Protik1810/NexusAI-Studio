@@ -842,6 +842,10 @@ const html = `<!DOCTYPE html>
         </div>
         <img id="active-screenshot" src="${screenshots.lion}" alt="Solframe Studio Screenshot" class="showcase-img">
       </div>
+
+      <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 16px; max-width: 720px; margin-left: auto; margin-right: auto;">
+        ⚠️ Uncensored models can produce inaccurate, offensive, or unsafe content. Use uncensored models at your own risk — you are solely responsible for what you generate and how you use it.
+      </p>
     </section>
 
     <!-- Downloads Section -->
@@ -1034,7 +1038,7 @@ const html = `<!DOCTYPE html>
           <strong>Solframe Studio</strong> &bull; Created by <strong><a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="color: inherit;">${CREATOR_NAME}</a></strong>
         </div>
         <div>
-          Powered by <code>stable-diffusion.cpp</code> &amp; <code>llama.cpp</code> &bull; <a href="LICENSE" style="color: var(--accent); text-decoration: none;">GNU GPL v3.0</a>
+          Powered by <code>stable-diffusion.cpp</code> &amp; <code>llama.cpp</code> &bull; <a href="LICENSE" style="color: var(--accent); text-decoration: none;">GNU GPL v3.0</a> &bull; <a href="TERMS.md" style="color: var(--accent); text-decoration: none;">Terms &amp; Conditions</a>
         </div>
       </div>
     </div>

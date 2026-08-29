@@ -138,3 +138,11 @@ npm run electron:build:mac
 
 - **Creator & Lead Architect**: **Protik** ([GitHub](https://github.com/Protik1810))
 - **Core Open Source Engines**: [`stable-diffusion.cpp`](https://github.com/leejet/stable-diffusion.cpp), [`llama.cpp`](https://github.com/ggerganov/llama.cpp)
+
+---
+
+## ⚠️ Disclaimer & Terms
+
+Solframe Studio supports running **uncensored LLMs** for local chat. Uncensored models can produce inaccurate, offensive, or unsafe content — **use them at your own risk**. You are solely responsible for any content you generate and how you use it.
+
+See [TERMS.md](TERMS.md) for the full Terms and Conditions, and [LICENSE](LICENSE) for the GPL-3.0 license text.

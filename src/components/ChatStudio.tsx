@@ -16,7 +16,8 @@ import {
   Play,
   Square,
   HardDrive,
-  FolderOpen
+  FolderOpen,
+  AlertTriangle
 } from 'lucide-react';
 import { llmService, ChatMessage, PERSONA_PRESETS, PersonaPreset, LLMStatus, LocalGgufModel } from '../services/llmApi';
 
@@ -245,6 +246,26 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Uncensored Model Disclaimer */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            fontSize: '12px',
+            lineHeight: 1.5,
+            color: '#fca5a5',
+            background: 'rgba(239, 68, 68, 0.08)',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.2)'
+          }}
+        >
+          <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+          <span>
+            Uncensored models can produce inaccurate, offensive, or unsafe content. Use at your own risk — you are solely responsible for what you generate and how you use it.
+          </span>
         </div>
 
         {/* Message Feed */}
