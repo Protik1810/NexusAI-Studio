@@ -52,8 +52,33 @@ export function App() {
     onClose: () => setModal(prev => ({ ...prev, show: false }))
   });
 
+  // Library Health Status
+  const [libraryData, setLibraryData] = useState<{
+    allReady: boolean;
+    missingCount: number;
+  }>({
+    allReady: true,
+    missingCount: 0
+  });
+
+  const [isEngineRunning, setIsEngineRunning] = useState<boolean>(false);
+
+  const checkLibrariesHealth = () => {
+    fetch('/api/libraries-status')
+      .then(res => res.json())
+      .then(data => {
+        setLibraryData({
+          allReady: data.allReady !== undefined ? data.allReady : true,
+          missingCount: data.missingCount || 0
+        });
+      })
+      .catch(() => {});
+  };
+
   // Initial Boot & Health Checks
   const refreshBackendStatus = async () => {
+    checkLibrariesHealth();
+
     // 1. Fetch Local Models from disk
     try {
       const res = await fetch('/api/local-models');
@@ -118,7 +143,17 @@ export function App() {
   }, [gallery]);
 
   const handleImageGenerated = (image: GalleryItem) => {
+    setIsEngineRunning(false);
     setGallery(prev => [image, ...prev]);
+    triggerSuccess('Artwork Generated', `Saved to gallery: ${image.prompt.slice(0, 30)}...`);
+  };
+
+  const handleGenerateStart = () => {
+    setIsEngineRunning(true);
+  };
+
+  const handleGenerateEnd = () => {
+    setIsEngineRunning(false);
   };
 
   const handleDeleteImage = (id: string) => {
@@ -199,6 +234,9 @@ export function App() {
         setActiveTab={setActiveTab}
         comfyStatus={comfyStatus}
         llmStatus={llmStatus}
+        isEngineRunning={isEngineRunning}
+        librariesReady={libraryData.allReady}
+        missingLibrariesCount={libraryData.missingCount}
       />
 
       {/* Main Studio Viewport */}
@@ -210,6 +248,8 @@ export function App() {
             onImageGenerated={handleImageGenerated}
             onError={triggerError}
             initialPrompt={studioPrompt}
+            onGenerateStart={handleGenerateStart}
+            onGenerateEnd={handleGenerateEnd}
           />
         )}
 

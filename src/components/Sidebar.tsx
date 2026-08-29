@@ -11,6 +11,9 @@ interface SidebarProps {
   setActiveTab: (tab: TabType) => void;
   comfyStatus: ComfyStatus;
   llmStatus: LLMStatus;
+  isEngineRunning?: boolean;
+  librariesReady?: boolean;
+  missingLibrariesCount?: number;
 }
 
 function applyTheme(theme: AppThemeId) {
@@ -22,7 +25,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   comfyStatus,
-  llmStatus
+  llmStatus,
+  isEngineRunning = false,
+  librariesReady = true,
+  missingLibrariesCount = 0
 }) => {
   const [currentTheme, setCurrentTheme] = useState<AppThemeId>(() => {
     return (localStorage.getItem("nexus-theme") as AppThemeId) || "dark";
@@ -39,6 +45,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const activeThemeMeta = APP_THEMES.find((t) => t.id === currentTheme) || APP_THEMES[0];
+
+  const hasMissingLibraries = !librariesReady || missingLibrariesCount > 0;
+  const indicatorClass = hasMissingLibraries
+    ? "engine-indicator-missing"
+    : isEngineRunning
+    ? "engine-indicator-running"
+    : "engine-indicator-ready";
+
+  const indicatorTooltip = hasMissingLibraries
+    ? `⚠️ ${missingLibrariesCount} Acceleration Library Missing (Click to Open Library Manager)`
+    : isEngineRunning
+    ? "⚡ Inference Engine Active (Generating on GPU/CPU)"
+    : "🟡 Hardware Libraries Loaded & Ready (Idle)";
 
   return (
     <>
@@ -123,11 +142,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Database size={22} />
           </button>
 
-          {/* About Tab — placed after Model Hub */}
+          {/* About Tab */}
           <button
             className={`sidebar-icon ${activeTab === "about" ? "active" : ""}`}
             onClick={() => setActiveTab("about")}
-            title="About NexusAI Studio & Creator Protik"
+            title="About NexusAI Studio, Libraries & Creator Protik"
           >
             <Info size={22} />
           </button>
@@ -136,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div style={{ flex: 1 }} />
 
         {/* Visual Theme Gallery Trigger */}
-        <div style={{ marginBottom: "12px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <div style={{ marginBottom: "10px", display: "flex", flexDirection: "column", alignItems: "center" }}>
           <button
             className="sidebar-icon"
             onClick={() => setIsThemeModalOpen(true)}
@@ -164,31 +183,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Backend Status Indicators */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center", marginBottom: "8px" }}>
+        {/* Engine & Acceleration Library Status Indicator */}
+        <div style={{ marginBottom: "12px", display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div
-            title={`ComfyUI: ${comfyStatus.connected ? "Online" : "Offline"}`}
+            className={indicatorClass}
+            title={indicatorTooltip}
             style={{
-              width: "10px",
-              height: "10px",
+              width: "11px",
+              height: "11px",
               borderRadius: "50%",
-              backgroundColor: comfyStatus.connected ? "#10b981" : "#ef4444",
-              boxShadow: comfyStatus.connected ? "0 0 8px #10b981" : "none",
-              cursor: "pointer"
+              cursor: "pointer",
+              transition: "transform 0.2s"
             }}
-            onClick={() => setActiveTab("settings")}
-          />
-          <div
-            title={`LLM Engine: ${llmStatus.connected ? "Online" : "Offline"}`}
-            style={{
-              width: "10px",
-              height: "10px",
-              borderRadius: "50%",
-              backgroundColor: llmStatus.connected ? "#06b6d4" : "#64748b",
-              boxShadow: llmStatus.connected ? "0 0 8px #06b6d4" : "none",
-              cursor: "pointer"
+            onClick={() => setActiveTab("about")}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.3)";
             }}
-            onClick={() => setActiveTab("settings")}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+            }}
           />
         </div>
 
@@ -201,6 +214,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Settings size={22} />
         </button>
       </aside>
+
 
       {/* Visual Theme Gallery Modal */}
       <ThemeModal

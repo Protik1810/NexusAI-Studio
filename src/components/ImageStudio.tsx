@@ -37,6 +37,8 @@ interface ImageStudioProps {
   }) => void;
   onError: (title: string, message: string) => void;
   initialPrompt?: string;
+  onGenerateStart?: () => void;
+  onGenerateEnd?: () => void;
 }
 
 const ASPECT_RATIOS = [
@@ -62,7 +64,9 @@ const PROMPT_TAGS = [
 export const ImageStudio: React.FC<ImageStudioProps> = ({
   onImageGenerated,
   onError,
-  initialPrompt
+  initialPrompt,
+  onGenerateStart,
+  onGenerateEnd
 }) => {
   const [localModels, setLocalModels] = useState<{
     checkpoints: { name: string; fullPath: string; size?: string }[];
@@ -255,6 +259,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
     }
 
     setGenerating(true);
+    onGenerateStart?.();
     setProgress({ step: 0, total: steps, node: 'stable-diffusion.cpp: Preparing GPU VRAM...' });
 
     const activeRatio = ASPECT_RATIOS[selectedRatio];
@@ -301,6 +306,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
       onError('GPU Generation Error', err.message || 'An error occurred during inference.');
     } finally {
       setGenerating(false);
+      onGenerateEnd?.();
     }
   };
 
