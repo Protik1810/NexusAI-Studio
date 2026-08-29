@@ -211,8 +211,6 @@ function sdCppBackendPlugin() {
     if (path.isAbsolute(p) && fs.existsSync(p)) return p;
     const rootCandidate = path.resolve(rootDir, p);
     if (fs.existsSync(rootCandidate)) return rootCandidate;
-    const workspaceCandidate = path.resolve('D:/genimg_comic', p);
-    if (fs.existsSync(workspaceCandidate)) return workspaceCandidate;
     const baseName = path.basename(p);
     const allPaths = getAllSystemScanPaths();
     for (const sp of allPaths) {
@@ -247,9 +245,7 @@ function sdCppBackendPlugin() {
       'text-generation-webui/models',
       'Fooocus/models',
       'InvokeAI/models',
-      'Uncensored-Local-Studio-main/app/llm-models',
-      'genimg_comic/models',
-      'genimg_comic/llm-models'
+      'Uncensored-Local-Studio-main/app/llm-models'
     ];
 
     for (const letter of driveLetters) {

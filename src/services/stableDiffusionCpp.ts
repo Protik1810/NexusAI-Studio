@@ -1,5 +1,3 @@
-import { safeInvoke, isTauriEnvironment } from './tauriBridge';
-
 export interface SDCppGenerationParams {
   pipeline: 'flux' | 'standard';
   modelPath: string;
@@ -43,45 +41,6 @@ export class StableDiffusionCppService {
     const finalParams = { ...req, seed: seedUsed };
 
     onProgress(1, req.steps, 'stable-diffusion.cpp: Initializing GPU Tensor Pipeline...');
-
-    // 1. Native Desktop Tauri Shell Execution
-    if (isTauriEnvironment()) {
-      const outputFilename = `output_${Date.now()}.png`;
-
-      try {
-        const resultPath = await safeInvoke<string>('generate_image_cmd', {
-          params: {
-            pipeline: finalParams.pipeline,
-            model: finalParams.modelPath,
-            clip_model: finalParams.clipPath || null,
-            t5_model: finalParams.t5Path || null,
-            vae_model: finalParams.vaePath || null,
-            lora_model: finalParams.loraPath || null,
-            lora_strength: finalParams.loraStrength || null,
-            prompt: finalParams.prompt,
-            negative_prompt: finalParams.negativePrompt || null,
-            width: finalParams.width,
-            height: finalParams.height,
-            steps: finalParams.steps,
-            cfg: finalParams.cfgScale,
-            seed: seedUsed,
-            output_path: outputFilename
-          }
-        });
-
-        const { convertFileSrc } = await import('@tauri-apps/api/core');
-        return {
-          imageUrl: convertFileSrc(resultPath),
-          seedUsed,
-          outputPath: resultPath
-        };
-      } catch (err: any) {
-        const msg = typeof err === 'string' ? err : err.message || JSON.stringify(err);
-        throw new Error(`stable-diffusion.cpp Execution Error:\n\n${msg}\n\n💡 Ensure 'sd-cli.exe' is present in 'backend/win/vulkan/' or 'backend/win/cuda/'.`);
-      }
-    }
-
-    // 2. Direct GPU Inference via Local Backend API Bridge (Web Browser Mode)
     let simulatedStep = 1;
     const progressInterval = setInterval(() => {
       if (simulatedStep < req.steps) {

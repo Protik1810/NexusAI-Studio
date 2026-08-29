@@ -9,7 +9,6 @@ import { AboutStudio } from './components/AboutStudio';
 import { ErrorModal, ModalProps } from './components/ErrorModal';
 import { comfyService, ComfyStatus, AvailableModels } from './services/comfyApi';
 import { llmService, LLMStatus } from './services/llmApi';
-import { safeInvoke, safeListen, isTauriEnvironment } from './services/tauriBridge';
 import './index.css';
 
 export function App() {
@@ -115,27 +114,7 @@ export function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Listen to Tauri native download events if in desktop environment
-  useEffect(() => {
-    let unlistenFn: (() => void) | undefined;
-    async function setupTauriListeners() {
-      if (!isTauriEnvironment()) return;
-      unlistenFn = await safeListen<{ filename: string; downloaded: number; total: number | null }>(
-        'download_progress', 
-        (event) => {
-          if (event.payload.total) {
-            const pct = Math.round((event.payload.downloaded / event.payload.total) * 100);
-            setDownloadProgress(prev => ({
-              ...prev,
-              [event.payload.filename]: pct
-            }));
-          }
-        }
-      );
-    }
-    setupTauriListeners();
-    return () => { if (unlistenFn) unlistenFn(); };
-  }, []);
+  // Download progress is tracked via polling /api/download-progress in ModelManager
 
   // Save gallery changes
   useEffect(() => {

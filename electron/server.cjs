@@ -3,6 +3,16 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 
+// ─── Shared Engine Modules ────────────────────────────────────────────────────
+const { detectHardware } = require('./engine/hardware.cjs');
+const {
+  getAllSystemScanPaths, resolveModelFullPath,
+  getSdCliExecutable: _getSdCliExec,
+  getLlamaExecutable: _getLlamaExec
+} = require('./engine/pathUtils.cjs');
+const { getFullSystemModels, loadScanCache, saveScanCache } = require('./engine/modelScanner.cjs');
+const { runSdCli, getOutputDir, buildSdCliArgs } = require('./engine/sdEngine.cjs');
+
 function createServer(options = {}) {
   const rootDir = options.rootDir || process.cwd();
   const resourcesPath = options.resourcesPath || rootDir;
@@ -10,64 +20,37 @@ function createServer(options = {}) {
   const distDir = options.distDir || path.join(rootDir, 'dist');
   const publicDir = options.publicDir || path.join(rootDir, 'public');
 
-  // User-writable output directory (works even when app is installed in Program Files)
-  const userDataDir = path.join(process.env.APPDATA || process.env.HOME || rootDir, 'NexusAI Studio');
-  const userOutputsDir = path.join(userDataDir, 'outputs');
-  try { if (!fs.existsSync(userOutputsDir)) fs.mkdirSync(userOutputsDir, { recursive: true }); } catch (e) {}
+  // Bind engine helpers to this instance
+  const getSdCliExecutable = () => _getSdCliExec({ rootDir, resourcesPath });
+  const getLlamaExecutable = () => _getLlamaExec({ rootDir, resourcesPath });
+  const resolveModel = (p) => resolveModelFullPath(p, rootDir, loadCustomScanPaths());
 
   let llamaProc = null;
   let currentLlamaModel = null;
   let llamaPort = 8080;
 
   let activeDownload = {
-    isDownloading: false,
-    filename: '',
-    repo: '',
-    targetFolder: '',
-    targetPath: '',
-    downloadedBytes: 0,
-    totalBytes: 0,
-    percent: 0,
-    speedMBs: 0,
-    status: 'idle'
+    isDownloading: false, filename: '', repo: '', targetFolder: '',
+    targetPath: '', downloadedBytes: 0, totalBytes: 0,
+    percent: 0, speedMBs: 0, status: 'idle'
   };
 
   const userHome = process.env.USERPROFILE || process.env.HOME || '';
   const GLOBAL_CACHE_DIR = path.join(userHome, '.nexusai');
   const GLOBAL_CACHE_FILE = path.join(GLOBAL_CACHE_DIR, 'scan_cache.json');
   const LOCAL_CACHE_FILE = path.join(rootDir, 'models/.scan_cache.json');
+  const cacheFilePaths = {
+    globalCacheFile: GLOBAL_CACHE_FILE, globalCacheDir: GLOBAL_CACHE_DIR,
+    localCacheFile: LOCAL_CACHE_FILE
+  };
+
+  // User-writable output directory (works even when installed in Program Files)
+  const userOutputsDir = getOutputDir(publicDir);
+
   let scanState = 'idle';
   let scanProgress = 0;
   let scanTotal = 0;
   let cachedModels = null;
-
-  function loadScanCache() {
-    try {
-      if (fs.existsSync(GLOBAL_CACHE_FILE)) {
-        const raw = fs.readFileSync(GLOBAL_CACHE_FILE, 'utf8');
-        return JSON.parse(raw);
-      }
-    } catch (e) {}
-    try {
-      if (fs.existsSync(LOCAL_CACHE_FILE)) {
-        const raw = fs.readFileSync(LOCAL_CACHE_FILE, 'utf8');
-        return JSON.parse(raw);
-      }
-    } catch (e) {}
-    return null;
-  }
-
-  function saveScanCache(data) {
-    try {
-      if (!fs.existsSync(GLOBAL_CACHE_DIR)) fs.mkdirSync(GLOBAL_CACHE_DIR, { recursive: true });
-      fs.writeFileSync(GLOBAL_CACHE_FILE, JSON.stringify({ ...data, cachedAt: Date.now() }, null, 2));
-    } catch (e) {}
-    try {
-      const localDir = path.dirname(LOCAL_CACHE_FILE);
-      if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
-      fs.writeFileSync(LOCAL_CACHE_FILE, JSON.stringify({ ...data, cachedAt: Date.now() }, null, 2));
-    } catch (e) {}
-  }
 
   function loadCustomScanPaths() {
     const cfgFile = path.join(rootDir, 'models/custom_paths.json');
@@ -89,413 +72,19 @@ function createServer(options = {}) {
     } catch (e) {}
   }
 
-  
-  const { execSync } = require('child_process');
-
-  function detectHardware() {
-    let gpus = [];
-    let preferredBackend = 'vulkan';
-    let primaryGpu = 'Auto-Detect GPU';
-
-    try {
-      const smiOut = execSync('nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader,nounits', { encoding: 'utf8', windowsHide: true, timeout: 2000 });
-      const lines = smiOut.trim().split('\n');
-      for (const l of lines) {
-        const parts = l.split(',').map(s => s.trim());
-        if (parts[0]) {
-          const vramMB = parseInt(parts[1] || '0', 10);
-          const vramGB = (vramMB / 1024).toFixed(1);
-          gpus.push({
-            name: parts[0],
-            vendor: 'NVIDIA',
-            vram: `${vramGB} GB`,
-            vramMB,
-            driver: parts[2] || '',
-            isNvidia: true,
-            backend: 'cuda'
-          });
-        }
-      }
-      if (gpus.length > 0) {
-        preferredBackend = 'cuda';
-        primaryGpu = `${gpus[0].name} (${gpus[0].vram} - CUDA)`;
-      }
-    } catch (e) {}
-
-    if (process.platform === 'win32') {
-      try {
-        const psCmd = `powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Select-Object Name, AdapterRAM, DriverVersion | ConvertTo-Json"`;
-        const psOut = execSync(psCmd, { encoding: 'utf8', windowsHide: true, timeout: 3000 });
-        const data = JSON.parse(psOut);
-        const items = Array.isArray(data) ? data : [data];
-        for (const item of items) {
-          if (!item || !item.Name) continue;
-          const name = item.Name;
-          const isNvidia = name.toLowerCase().includes('nvidia') || name.toLowerCase().includes('geforce') || name.toLowerCase().includes('rtx') || name.toLowerCase().includes('gtx');
-          const isAmd = name.toLowerCase().includes('amd') || name.toLowerCase().includes('radeon');
-          const isIntel = name.toLowerCase().includes('intel') || name.toLowerCase().includes('arc') || name.toLowerCase().includes('iris');
-          
-          if (!gpus.some(g => g.name.toLowerCase() === name.toLowerCase())) {
-            let ramMB = item.AdapterRAM ? Math.round(item.AdapterRAM / (1024 * 1024)) : 0;
-            let vramStr = ramMB > 1024 ? `${(ramMB / 1024).toFixed(1)} GB` : `${ramMB} MB`;
-            let vendor = isNvidia ? 'NVIDIA' : isAmd ? 'AMD' : isIntel ? 'Intel' : 'Generic';
-            let backend = isNvidia ? 'cuda' : (isAmd || isIntel) ? 'vulkan' : 'cpu';
-
-            gpus.push({
-              name,
-              vendor,
-              vram: vramStr,
-              vramMB: ramMB,
-              driver: item.DriverVersion || '',
-              isNvidia,
-              backend
-            });
-          }
-        }
-      } catch (e) {}
-    }
-
-    const hasNvidia = gpus.some(g => g.isNvidia);
-    const hasAmdOrIntel = gpus.some(g => g.vendor === 'AMD' || g.vendor === 'Intel');
-
-    if (hasNvidia) {
-      preferredBackend = 'cuda';
-      if (!primaryGpu || primaryGpu === 'Auto-Detect GPU') {
-        const nGpu = gpus.find(g => g.isNvidia);
-        primaryGpu = `${nGpu.name} (${nGpu.vram} - CUDA)`;
-      }
-    } else if (hasAmdOrIntel) {
-      preferredBackend = 'vulkan';
-      const aGpu = gpus.find(g => g.vendor === 'AMD' || g.vendor === 'Intel');
-      primaryGpu = `${aGpu.name} (${aGpu.vram} - Vulkan)`;
-    } else {
-      preferredBackend = 'cpu';
-      primaryGpu = 'CPU Fallback (AVX2)';
-    }
-
-    return {
-      gpus,
-      preferredBackend,
-      primaryGpu,
-      os: `${process.platform} ${process.arch}`,
-      nodeVersion: process.version
-    };
-  }
-
-  function getSdCliExecutable() {
-    const hw = detectHardware();
-    const isNvidia = hw.preferredBackend === 'cuda';
-    const exeDir = path.dirname(process.execPath || '');
-    
-    const cudaCandidates = [
-      path.join(rootDir, 'backend/win/cuda/sd-cli.exe'),
-      path.join(rootDir, 'backend/win/cuda/sd-cuda.exe'),
-      path.join(resourcesPath, 'app/backend/win/cuda/sd-cli.exe'),
-      path.join(resourcesPath, 'backend/win/cuda/sd-cli.exe'),
-      path.join(exeDir, 'resources/app/backend/win/cuda/sd-cli.exe'),
-      path.join(exeDir, 'backend/win/cuda/sd-cli.exe'),
-      path.join(__dirname, '../backend/win/cuda/sd-cli.exe')
-    ];
-
-    const vulkanCandidates = [
-      path.join(rootDir, 'backend/win/vulkan/sd-cli.exe'),
-      path.join(rootDir, 'backend/win/vulkan/sd-vulkan.exe'),
-      path.join(resourcesPath, 'app/backend/win/vulkan/sd-cli.exe'),
-      path.join(resourcesPath, 'backend/win/vulkan/sd-cli.exe'),
-      path.join(exeDir, 'resources/app/backend/win/vulkan/sd-cli.exe'),
-      path.join(exeDir, 'backend/win/vulkan/sd-cli.exe'),
-      path.join(__dirname, '../backend/win/vulkan/sd-cli.exe')
-    ];
-
-    const cpuCandidates = [
-      path.join(rootDir, 'backend/win/cpu/sd-cli.exe'),
-      path.join(resourcesPath, 'app/backend/win/cpu/sd-cli.exe'),
-      path.join(resourcesPath, 'backend/win/cpu/sd-cli.exe'),
-      path.join(exeDir, 'resources/app/backend/win/cpu/sd-cli.exe'),
-      path.join(__dirname, '../backend/win/cpu/sd-cli.exe')
-    ];
-
-    const list = isNvidia
-      ? [...cudaCandidates, ...vulkanCandidates, ...cpuCandidates]
-      : [...vulkanCandidates, ...cudaCandidates, ...cpuCandidates];
-
-    for (const c of list) {
-      if (fs.existsSync(c)) return c;
-    }
-    return cudaCandidates[0];
-  }
-
-  function getLlamaExecutable() {
-    const exeDir = path.dirname(process.execPath || '');
-    const candidates = [
-      path.join(rootDir, 'backend/win/llama/llama-server.exe'),
-      path.join(resourcesPath, 'app/backend/win/llama/llama-server.exe'),
-      path.join(resourcesPath, 'backend/win/llama/llama-server.exe'),
-      path.join(exeDir, 'resources/app/backend/win/llama/llama-server.exe'),
-      path.join(exeDir, 'backend/win/llama/llama-server.exe'),
-      path.join(__dirname, '../backend/win/llama/llama-server.exe')
-    ];
-    for (const c of candidates) {
-      if (fs.existsSync(c)) return c;
-    }
-    return candidates[0];
-  }
-
-  function resolveModelFullPath(p) {
-    if (!p) return '';
-    if (path.isAbsolute(p) && fs.existsSync(p)) return p;
-    const rootCandidate = path.resolve(rootDir, p);
-    if (fs.existsSync(rootCandidate)) return rootCandidate;
-    const workspaceCandidate = path.resolve('D:/genimg_comic', p);
-    if (fs.existsSync(workspaceCandidate)) return workspaceCandidate;
-    const baseName = path.basename(p);
-    const allPaths = getAllSystemScanPaths();
-    for (const sp of allPaths) {
-      const direct = path.join(sp.path, baseName);
-      if (fs.existsSync(direct)) return direct;
-      const subfolders = ['checkpoints', 'unet', 'clip', 'vae', 'loras', 'llm'];
-      for (const sub of subfolders) {
-        const subCandidate = path.join(sp.path, sub, baseName);
-        if (fs.existsSync(subCandidate)) return subCandidate;
-      }
-    }
-    return rootCandidate;
-  }
-
-  function getAllSystemScanPaths() {
-    const userHome = process.env.USERPROFILE || process.env.HOME || '';
-    const exeDir = path.dirname(process.execPath || '');
-    const candidates = [];
-
-    // 1. Dynamic Drive Scanning (C:, D:, E:, F:, G:, H:, Z:, etc.)
-    const driveLetters = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    const standardModelDirs = [
-      'models',
-      'AI/models',
-      'AI_Models',
-      'LLM',
-      'Development/LLM',
-      'Development/Meta Llama',
-      'Development',
-      'ComfyUI/models',
-      'Comfy-Desktop/ComfyUI-Installs/ComfyUI/ComfyUI/models',
-      'stable-diffusion-webui/models',
-      'text-generation-webui/models',
-      'Fooocus/models',
-      'InvokeAI/models',
-      'Uncensored-Local-Studio-main/app/llm-models',
-      'genimg_comic/models',
-      'genimg_comic/llm-models'
-    ];
-
-    for (const letter of driveLetters) {
-      const driveRoot = `${letter}:/`;
-      try {
-        if (fs.existsSync(driveRoot)) {
-          for (const sub of standardModelDirs) {
-            const full = path.join(driveRoot, sub);
-            if (fs.existsSync(full)) {
-              candidates.push({ path: full.replace(/\\/g, '/'), label: `${letter}: ${sub}`, isBuiltIn: true });
-            }
-          }
-        }
-      } catch (e) {}
-    }
-
-    // 2. User home directories on any operating system
-    const userDirs = [
-      { path: path.join(userHome, '.cache/huggingface/hub'), label: 'Hugging Face Cache' },
-      { path: path.join(userHome, '.lmstudio/models'), label: 'LM Studio Models' },
-      { path: path.join(userHome, '.lmstudio/.internal/bundled-models'), label: 'LM Studio Built-in' },
-      { path: path.join(userHome, '.cache/lm-studio/models'), label: 'LM Studio Cache' },
-      { path: path.join(userHome, 'AppData/Local/Programs/LM Studio/resources/app/.webpack/bin/bundled-models'), label: 'LM Studio App Bundled' },
-      { path: path.join(userHome, '.ollama/models'), label: 'Ollama Models' },
-      { path: path.join(userHome, 'AppData/Local/ai.unsloth.studio'), label: 'Unsloth Studio' },
-      { path: path.join(userHome, '.unsloth/llama.cpp/models'), label: 'Unsloth llama.cpp' }
-    ];
-    for (const ud of userDirs) {
-      if (fs.existsSync(ud.path)) {
-        candidates.push({ path: ud.path.replace(/\\/g, '/'), label: ud.label, isBuiltIn: true });
-      }
-    }
-
-    // 3. Application local and portable paths
-    const appDirs = [
-      { path: path.join(rootDir, 'models'), label: 'Local models/' },
-      { path: path.join(rootDir, 'llm-models'), label: 'Local llm-models/' },
-      { path: path.join(exeDir, 'models'), label: 'Portable models/' },
-      { path: path.join(exeDir, '..', 'models'), label: 'Parent models/' }
-    ];
-    for (const ad of appDirs) {
-      if (fs.existsSync(ad.path)) {
-        candidates.push({ path: ad.path.replace(/\\/g, '/'), label: ad.label, isBuiltIn: true });
-      }
-    }
-
-    // 4. Custom user paths from UI
-    const custom = loadCustomScanPaths();
-    for (const c of custom) {
-      if (fs.existsSync(c)) {
-        candidates.push({ path: c.replace(/\\/g, '/'), label: `Custom (${path.basename(c)})`, isBuiltIn: false });
-      }
-    }
-
-    // Deduplicate paths
-    const seen = new Set();
-    return candidates.filter(c => {
-      const norm = path.normalize(c.path).toLowerCase();
-      if (seen.has(norm)) return false;
-      seen.add(norm);
-      return true;
-    });
-  }
-
-  function scanDirectoryRecursive(dir, maxDepth = 5, currentDepth = 0) {
-    if (currentDepth > maxDepth || !fs.existsSync(dir)) return [];
-    let results = [];
-    try {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        if (entry.name.startsWith('.') && entry.name !== '.cache') continue;
-        if (['node_modules', '$RECYCLE.BIN', 'System Volume Information', 'Windows', 'Program Files'].includes(entry.name)) continue;
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          results = results.concat(scanDirectoryRecursive(full, maxDepth, currentDepth + 1));
-        } else if (entry.isFile()) {
-          const ext = path.extname(entry.name).toLowerCase();
-          if (['.safetensors', '.gguf', '.ckpt', '.bin', '.pt'].includes(ext)) {
-            try {
-              const stat = fs.statSync(full);
-              if (stat.size > 5 * 1024 * 1024) {
-                results.push(full);
-              }
-            } catch (e) {}
-          }
-        }
-      }
-    } catch (e) {}
-    return results;
-  }
-
-  function classifyModelFile(fullPath, sourceLabel) {
-    const filename = path.basename(fullPath);
-    const lower = fullPath.toLowerCase().replace(/\\/g, '/');
-    const stat = fs.statSync(fullPath);
-    const sizeMB = stat.size / (1024 * 1024);
-    const sizeGB = sizeMB / 1024;
-    const formattedSize = sizeGB >= 1 ? `${sizeGB.toFixed(2)} GB` : `${sizeMB.toFixed(0)} MB`;
-    const isGguf = filename.toLowerCase().endsWith('.gguf');
-
-    if (isGguf && filename.startsWith('ggml-vocab-')) return null;
-
-    let category = 'checkpoints';
-
-    if (lower.includes('controlnet') || lower.includes('union-sdxl') || lower.includes('promax')) {
-      category = 'controlnets';
-    } else if (lower.includes('vae') || filename.toLowerCase().startsWith('ae.') || lower.includes('flux2-vae') || lower.includes('flux-vae')) {
-      category = 'vaes';
-    } else if (lower.includes('/loras/') || lower.includes('\\loras\\') || (lower.includes('lora') && !lower.includes('flux') && !lower.includes('llm'))) {
-      category = 'loras';
-    } else if (
-      lower.includes('/clip/') || lower.includes('\\clip\\') ||
-      lower.includes('text_encoder') || lower.includes('t5xxl') ||
-      lower.includes('clip_l') || lower.includes('clip_g') ||
-      lower.includes('qwen_3_8b_fp8mixed') ||
-      (isGguf && (lower.includes('text-encoder') || lower.includes('mmproj')))
-    ) {
-      category = 'clips';
-    } else if (
-      lower.includes('/unet/') || lower.includes('\\unet\\') ||
-      lower.includes('diffusion_model') ||
-      (lower.includes('flux') && !lower.includes('lora') && !lower.includes('vae') && stat.size > 3 * 1024 * 1024 * 1024 && !lower.includes('checkpoint'))
-    ) {
-      category = 'unets';
-    } else if (isGguf) {
-      category = 'llms';
-    } else {
-      category = 'checkpoints';
-    }
-
-    return {
-      name: filename,
-      filename,
-      fullPath: fullPath.replace(/\\/g, '/'),
-      relativePath: path.relative(rootDir, fullPath).replace(/\\/g, '/'),
-      sizeBytes: stat.size,
-      formattedSize,
-      source: sourceLabel,
-      category,
-      isGguf
-    };
-  }
-
-  function resolveModelFullPath(nameOrPath) {
-    if (!nameOrPath) return '';
-    if (path.isAbsolute(nameOrPath) && fs.existsSync(nameOrPath)) return nameOrPath;
-    
-    const relPath = path.join(rootDir, nameOrPath);
-    if (fs.existsSync(relPath)) return relPath;
-
-    const scanPaths = getAllSystemScanPaths();
-    const targetFilename = path.basename(nameOrPath).toLowerCase();
-
-    for (const sp of scanPaths) {
-      const files = scanDirectoryRecursive(sp.path);
-      for (const f of files) {
-        if (path.basename(f).toLowerCase() === targetFilename) {
-          return f;
-        }
-      }
-    }
-
-    return relPath;
-  }
-
-  function getFullSystemModels() {
-    const scanPaths = getAllSystemScanPaths();
-    const seenPaths = new Set();
-    const modelsByCategory = {
-      checkpoints: [],
-      unets: [],
-      clips: [],
-      loras: [],
-      vaes: [],
-      controlnets: [],
-      llms: []
-    };
-
-    scanTotal = scanPaths.length;
-    scanProgress = 0;
-    for (const sp of scanPaths) {
-      scanProgress++;
-      const files = scanDirectoryRecursive(sp.path);
-      for (const f of files) {
-        const norm = path.normalize(f);
-        if (seenPaths.has(norm)) continue;
-        seenPaths.add(norm);
-
-        try {
-          const item = classifyModelFile(f, sp.label);
-          if (!item) continue;
-          modelsByCategory[item.category].push(item);
-        } catch (e) {}
-      }
-    }
-
-    return { modelsByCategory, scanPaths };
-  }
-
   function runBackgroundScan() {
     if (scanState === 'scanning') return;
     scanState = 'scanning';
-    scanProgress = 0;
+    const state = {};
     console.log('[NexusAI Standalone Engine] Starting background model scan...');
     setImmediate(() => {
       try {
-        const result = getFullSystemModels();
+        const result = getFullSystemModels(rootDir, loadCustomScanPaths(), state);
         cachedModels = result;
-        saveScanCache(result);
+        saveScanCache(result, cacheFilePaths);
         scanState = 'ready';
+        scanProgress = state.scanProgress || 0;
+        scanTotal = state.scanTotal || 0;
         const total = Object.values(result.modelsByCategory).reduce((acc, arr) => acc + arr.length, 0);
         console.log(`[NexusAI Standalone Engine] Scan complete: ${total} models found.`);
       } catch (e) {
@@ -505,55 +94,12 @@ function createServer(options = {}) {
     });
   }
 
-  cachedModels = loadScanCache();
+  cachedModels = loadScanCache(cacheFilePaths);
   if (cachedModels) {
     scanState = 'ready';
-  } else {
-    try {
-      cachedModels = getFullSystemModels();
-      saveScanCache(cachedModels);
-      scanState = 'ready';
-    } catch (e) {}
+    console.log('[NexusAI Standalone Engine] Loaded model cache. Running background rescan...');
   }
   runBackgroundScan();
-
-  function getSdCliExecutable() {
-    const hw = detectHardware();
-    const isCuda = hw.preferredBackend === 'cuda';
-
-    const searchDirs = isCuda ? [
-      path.join(resourcesPath, 'backend/win/cuda/sd-cli.exe'),
-      path.join(resourcesPath, 'backend/win/cuda/sd-cuda.exe'),
-      path.join(rootDir, 'backend/win/cuda/sd-cli.exe'),
-      'D:/genimg_comic/backend/win/cuda/sd-cli.exe',
-      path.join(resourcesPath, 'backend/win/vulkan/sd-cli.exe'),
-      path.join(rootDir, 'backend/win/vulkan/sd-cli.exe')
-    ] : [
-      path.join(resourcesPath, 'backend/win/vulkan/sd-cli.exe'),
-      path.join(resourcesPath, 'backend/win/vulkan/sd-vulkan.exe'),
-      path.join(rootDir, 'backend/win/vulkan/sd-cli.exe'),
-      'D:/genimg_comic/backend/win/vulkan/sd-cli.exe',
-      path.join(resourcesPath, 'backend/win/cuda/sd-cli.exe'),
-      path.join(rootDir, 'backend/win/cuda/sd-cli.exe')
-    ];
-
-    for (const p of searchDirs) {
-      if (fs.existsSync(p)) return p;
-    }
-    return searchDirs[0];
-  }
-
-  function getLlamaExecutable() {
-    const searchDirs = [
-      path.join(resourcesPath, 'backend/win/llama/llama-server.exe'),
-      path.join(rootDir, 'backend/win/llama/llama-server.exe')
-    ];
-    for (const p of searchDirs) {
-      if (fs.existsSync(p)) return p;
-    }
-    return searchDirs[0];
-  }
-
   const MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'application/javascript; charset=utf-8',
@@ -1051,52 +597,25 @@ function createServer(options = {}) {
           const execPath = getSdCliExecutable();
           const workingDir = path.dirname(execPath);
 
-          // Use user-writable dir (Program Files is read-only after install)
-          let outDir = userOutputsDir;
-          try {
-            if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-            // Quick write-test
-            const testFile = path.join(outDir, '.write-test');
-            fs.writeFileSync(testFile, '1');
-            fs.unlinkSync(testFile);
-          } catch (e) {
-            // Fallback to publicDir/outputs
-            outDir = path.join(publicDir, 'outputs');
-            try { if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true }); } catch (e2) {}
-          }
-
           const outFilename = `gen_${Date.now()}.png`;
-          const outFullPath = path.join(outDir, outFilename);
-          const modelFullPath = resolveModelFullPath(params.modelPath);
-          const clipFullPath = resolveModelFullPath(params.clipPath);
-          const t5FullPath = resolveModelFullPath(params.t5Path);
-          const vaeFullPath = resolveModelFullPath(params.vaePath);
+          const outFullPath = path.join(userOutputsDir, outFilename);
 
-          if (!modelFullPath || !fs.existsSync(modelFullPath)) {
+          // Resolve all model paths using shared utility
+          const resolvedParams = {
+            ...params,
+            modelPath: resolveModel(params.modelPath),
+            clipPath: resolveModel(params.clipPath),
+            t5Path: resolveModel(params.t5Path),
+            vaePath: resolveModel(params.vaePath)
+          };
+
+          if (!resolvedParams.modelPath || !fs.existsSync(resolvedParams.modelPath)) {
             res.statusCode = 404;
             res.setHeader('Content-Type', 'application/json');
             return res.end(JSON.stringify({ success: false, error: `Model file not found: ${params.modelPath}` }));
           }
 
-          const args = [];
-          if (params.pipeline === 'flux') {
-            args.push('--diffusion-model', modelFullPath);
-            const isKlein = modelFullPath.toLowerCase().includes('klein') || (params.modelPath || '').toLowerCase().includes('klein');
-            if (isKlein) {
-              args.push('--prediction', 'flux2_flow');
-            }
-            if (clipFullPath && fs.existsSync(clipFullPath)) args.push('--llm', clipFullPath);
-            if (t5FullPath && fs.existsSync(t5FullPath)) args.push('--t5xxl', t5FullPath);
-            if (vaeFullPath && fs.existsSync(vaeFullPath)) args.push('--vae', vaeFullPath);
-          } else {
-            args.push('-m', modelFullPath);
-            if (params.negativePrompt) args.push('-n', params.negativePrompt);
-          }
-
-          args.push('-p', params.prompt, '-o', outFullPath, '-W', String(params.width || 512), '-H', String(params.height || 512), '--steps', String(params.steps || 4), '--cfg-scale', String(params.cfgScale || 1.8));
-          args.push('--seed', String(params.seed !== undefined ? params.seed : Math.floor(Math.random() * 1000000)));
-          if (params.samplingMethod) args.push('--sampling-method', params.samplingMethod);
-
+          const args = buildSdCliArgs(resolvedParams, outFullPath);
           console.log(`[NexusAI sd-generate] Spawning: ${execPath}\n  Args: ${args.join(' ')}`);
 
           const procEnv = {
@@ -1104,35 +623,17 @@ function createServer(options = {}) {
             PATH: `${workingDir};${path.join(rootDir, 'backend/win/cuda')};${path.join(rootDir, 'backend/win/vulkan')};${path.join(rootDir, 'backend/win/llama')};${process.env.PATH || ''}`
           };
 
-          const child = spawn(execPath, args, { cwd: workingDir, env: procEnv, windowsHide: true });
-          let stderrLog = '';
-          child.stderr?.on('data', d => { stderrLog += d.toString(); });
-          child.stdout?.on('data', d => { console.log('[sd-cli]', d.toString().trim()); });
-          child.on('close', code => {
-            // sd-cli on Windows/CUDA always exits with code 1 even on success.
-            // Check if the image file was actually written instead of trusting the exit code.
-            const checkAndRespond = (attempt) => {
-              const imageGenerated = fs.existsSync(outFullPath) && fs.statSync(outFullPath).size > 1000;
-              if (imageGenerated) {
-                console.log(`[NexusAI sd-generate] Image generation SUCCESS: ${outFullPath}`);
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ success: true, imageUrl: `/outputs/${outFilename}?t=${Date.now()}`, outputPath: outFullPath }));
-              } else if (attempt < 3) {
-                // Retry up to 3x with 300ms gap — CUDA file write may lag slightly behind process exit
-                setTimeout(() => checkAndRespond(attempt + 1), 300);
-              } else {
-                console.error('[sd-cli STDERR]:', stderrLog);
-                console.error('[sd-cli] Expected output at:', outFullPath, '— exists:', fs.existsSync(outFullPath));
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                const errMsg = stderrLog
-                  ? `sd-cli exit code ${code}:\n${stderrLog.slice(-2000)}`
-                  : `sd-cli exited with code ${code}. Check model path or GPU memory.`;
-                res.end(JSON.stringify({ success: false, error: errMsg }));
-              }
-            };
-            checkAndRespond(0);
-          });
+          try {
+            const result = await runSdCli({ execPath, args, outFullPath, outFilename, workingDir, env: procEnv,
+              onStdout: (line) => console.log('[sd-cli]', line)
+            });
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(result));
+          } catch (genErr) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: genErr.message }));
+          }
         } catch (e) {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
