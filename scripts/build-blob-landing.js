@@ -1,7 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
-const { execSync } = require('child_process');
 
 console.log('🔄 Encoding all assets into Base64 for 100% Self-Contained Webpage...');
 
@@ -247,6 +245,34 @@ const html = `<!DOCTYPE html>
       color: var(--accent);
       margin-bottom: 24px;
       box-shadow: 0 0 25px var(--accent-glow);
+    }
+
+    .platform-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      margin-bottom: 20px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #34d399;
+    }
+
+    .platform-banner a {
+      color: inherit;
+      text-decoration: underline;
+    }
+
+    [data-platform] {
+      transition: opacity 0.3s ease, filter 0.3s ease;
+    }
+
+    [data-platform].platform-dim {
+      opacity: 0.45;
+      filter: grayscale(40%);
     }
 
     .hero-title {
@@ -628,6 +654,7 @@ const html = `<!DOCTYPE html>
       <div class="hero-badge">
         <span>⚡</span> v1.0.0 Production Release &bull; 100% Sovereign & Offline
       </div>
+      <div id="platform-banner" class="platform-banner" style="display:none;"></div>
       <h1 class="hero-title">
         The Sovereign Desktop<br>
         <span class="hero-gradient">Generative AI Workstation</span>
@@ -636,7 +663,7 @@ const html = `<!DOCTYPE html>
         Synthesize photorealistic <strong>FLUX.2 Klein & SDXL Lightning</strong> artwork and dialogue with uncensored <strong>GGUF LLMs</strong> — powered by native C++ hardware kernels directly on your GPU. Zero cloud telemetry. Zero subscription fees.
       </p>
 
-      <div class="hero-cta">
+      <div class="hero-cta" data-platform="windows">
         <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe" class="btn-primary">
           <span>📦</span> Download Full Setup (~806 MB)
         </a>
@@ -723,10 +750,13 @@ const html = `<!DOCTYPE html>
       <div style="text-align: center; margin-bottom: 32px;">
         <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">📦 Windows Installer Packages</h2>
         <p style="font-size: 15px; color: var(--text-secondary);">Direct executable setup files hosted on GitHub Releases v1.0.</p>
+        <p id="not-windows-note" style="font-size: 13px; margin-top: 8px; display: none;">
+          Not on Windows? <a href="#terminal-install" style="color: var(--accent);">Jump to Linux/macOS installers ↓</a>
+        </p>
       </div>
 
-      <div class="downloads-grid">
-        
+      <div class="downloads-grid" data-platform="windows">
+
         <!-- Full Setup -->
         <div class="download-card">
           <div class="download-badge-popular">Recommended</div>
@@ -770,9 +800,9 @@ const html = `<!DOCTYPE html>
         </p>
 
         <!-- Linux & macOS One Liner -->
-        <div style="margin-bottom: 20px;">
+        <div style="margin-bottom: 20px;" data-platform="linux mac">
           <div style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
-            <span>🐧</span> Linux &amp; <span>🍎</span> macOS (1-Line Terminal Install):
+            <span>🐧</span> Linux &amp; <span>🍎</span> macOS (UI Preview — 1-Line Terminal Install):
           </div>
           <div class="terminal-box">
             <span class="terminal-text" id="cmd-linux">curl -fsSL https://raw.githubusercontent.com/Protik1810/NexusAI-Studio/main/install.sh | bash</span>
@@ -780,15 +810,18 @@ const html = `<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Windows Winget -->
-        <div style="margin-bottom: 20px;">
+        <!-- Linux/macOS Native Installer Build -->
+        <div style="margin-bottom: 20px;" data-platform="linux mac">
           <div style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
-            <span>🪟</span> Windows (winget Package Manager):
+            <span>📦</span> Build a Native Linux/macOS Installer:
           </div>
           <div class="terminal-box">
-            <span class="terminal-text" id="cmd-winget">winget install https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe</span>
-            <button class="btn-copy" onclick="copyCommand('cmd-winget', this)">Copy</button>
+            <span class="terminal-text" id="cmd-native">git clone https://github.com/Protik1810/NexusAI-Studio.git && cd NexusAI-Studio && npm install && npm run electron:build:linux</span>
+            <button class="btn-copy" onclick="copyCommand('cmd-native', this)">Copy</button>
           </div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+            Produces an AppImage + .deb on Linux (swap in <code>electron:build:mac</code> on macOS for a .zip app bundle). No winget package exists yet — Windows users should use the installers above.
+          </p>
         </div>
 
         <!-- Cross-Platform Git -->
@@ -883,6 +916,47 @@ const html = `<!DOCTYPE html>
         }, 2000);
       });
     }
+
+    // Detect the visitor's OS from the (best-effort, spoofable) UA/platform
+    // strings and use it to point them at the right install method — dims
+    // the sections that don't apply rather than hiding them, since detection
+    // isn't perfectly reliable and every option should stay reachable.
+    function detectPlatform() {
+      const ua = navigator.userAgent || '';
+      const plat = navigator.platform || '';
+      if (/Win/i.test(plat) || /Windows/i.test(ua)) return 'windows';
+      if (/Mac/i.test(plat) || /Macintosh|Mac OS X/i.test(ua)) return 'mac';
+      if (/Linux/i.test(plat) || /Linux/i.test(ua)) return 'linux';
+      return null;
+    }
+
+    function applyPlatformDetection() {
+      const platform = detectPlatform();
+      if (!platform) return;
+
+      const labels = { windows: 'Windows', mac: 'macOS', linux: 'Linux' };
+      const banner = document.getElementById('platform-banner');
+      if (banner) {
+        const jumpTarget = platform === 'windows' ? '#downloads' : '#terminal-install';
+        banner.innerHTML = '<span>✅</span> Detected: ' + labels[platform] +
+          ' — <a href="' + jumpTarget + '">jump to your install method ↓</a>';
+        banner.style.display = 'inline-flex';
+      }
+
+      const notWindowsNote = document.getElementById('not-windows-note');
+      if (notWindowsNote && platform !== 'windows') {
+        notWindowsNote.style.display = 'block';
+      }
+
+      document.querySelectorAll('[data-platform]').forEach(el => {
+        const supported = el.getAttribute('data-platform').split(/\\s+/);
+        if (!supported.includes(platform)) {
+          el.classList.add('platform-dim');
+        }
+      });
+    }
+
+    applyPlatformDetection();
   </script>
 </body>
 </html>`;
@@ -895,24 +969,4 @@ const html = `<!DOCTYPE html>
 if (!fs.existsSync(path.join(rootDir, 'docs'))) fs.mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
 fs.writeFileSync(path.join(rootDir, 'docs/index.html'), html, 'utf8');
 console.log('✅ Generated 100% self-contained docs/index.html with embedded base64 blobs!');
-
-// Deploy to gh-pages branch
-const outDir = path.join(os.tmpdir(), 'nexusai-product-landing');
-if (fs.existsSync(outDir)) fs.rmSync(outDir, { recursive: true, force: true });
-fs.mkdirSync(outDir, { recursive: true });
-fs.writeFileSync(path.join(outDir, 'index.html'), html, 'utf8');
-fs.writeFileSync(path.join(outDir, '404.html'), html, 'utf8');
-fs.writeFileSync(path.join(outDir, '.nojekyll'), '');
-
-console.log('📦 Pushing self-contained build to gh-pages branch...');
-execSync('git init', { cwd: outDir, stdio: 'inherit' });
-execSync('git config user.name "Protik"', { cwd: outDir, stdio: 'inherit' });
-execSync('git config user.email "protik@nexusai.local"', { cwd: outDir, stdio: 'inherit' });
-execSync('git checkout -b gh-pages', { cwd: outDir, stdio: 'inherit' });
-execSync('git add .', { cwd: outDir, stdio: 'inherit' });
-execSync('git commit -m "feat: deploy 100% self-contained base64 embedded showcase webpage"', { cwd: outDir, stdio: 'inherit' });
-execSync('git remote add origin https://github.com/Protik1810/NexusAI-Studio.git', { cwd: outDir, stdio: 'inherit' });
-execSync('git push -f origin gh-pages', { cwd: outDir, stdio: 'inherit' });
-fs.rmSync(outDir, { recursive: true, force: true });
-
-console.log('🎉 GitHub Pages branch updated with self-contained HTML!');
+console.log('   Commit and push it — .github/workflows/pages.yml deploys docs/ to GitHub Pages automatically.');
