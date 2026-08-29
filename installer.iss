@@ -1,11 +1,11 @@
-; Inno Setup Script for NexusAI Studio with Complete Branding
+; Inno Setup Script for Solframe Studio with Complete Branding
 ; Designed & Crafted by Protik
 
-#define MyAppName "NexusAI Studio"
+#define MyAppName "Solframe Studio"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Protik"
 #define MyAppURL "https://github.com/Protik1810/NexusAI-Studio"
-#define MyAppExeName "NexusAI Studio.exe"
+#define MyAppExeName "Solframe Studio.exe"
 
 [Setup]
 AppId={{C8E28B93-9F7C-4C75-8D4F-1B2F7E4193A1}
@@ -19,7 +19,7 @@ DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
 DefaultGroupName={#MyAppName}
 OutputDir={#SourcePath}installer-output
-OutputBaseFilename=NexusAI-Studio-Setup-1.0.0
+OutputBaseFilename=Solframe-Studio-Setup-1.0.0
 SetupIconFile={#SourcePath}electron\icon.ico
 WizardImageFile={#SourcePath}public\wizard-large.bmp
 WizardSmallImageFile={#SourcePath}public\wizard-small.bmp

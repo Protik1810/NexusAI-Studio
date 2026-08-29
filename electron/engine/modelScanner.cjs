@@ -146,7 +146,7 @@ function getFullSystemModels(rootDir = '', customPaths = [], state = {}) {
 }
 
 /**
- * Load scan cache from disk (global ~/.nexusai or local models/.scan_cache.json).
+ * Load scan cache from disk (global ~/.solframe or local models/.scan_cache.json).
  */
 function loadScanCache(paths = {}) {
   const { globalCacheFile, localCacheFile } = paths;

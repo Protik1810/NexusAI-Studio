@@ -147,13 +147,13 @@ export const AboutStudio: React.FC = () => {
           border: '2px solid rgba(255, 255, 255, 0.25)',
           flexShrink: 0
         }}>
-          <img src="/logo.png" alt="NexusAI Studio Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src="/logo.png" alt="Solframe Studio Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
 
         <div style={{ flex: 1, minWidth: '280px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '6px' }}>
             <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-              NexusAI Studio
+              Solframe Studio
             </h1>
             <span className="badge-pill" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent)', border: '1px solid rgba(6, 182, 212, 0.3)', fontSize: '11px', padding: '4px 10px' }}>
               v1.0.0 Production Release
@@ -209,7 +209,7 @@ export const AboutStudio: React.FC = () => {
               Designed and engineered by <strong>Protik</strong> to provide an uncompromised, zero-subscription desktop experience for local AI generation. Built with a vision for true digital autonomy, giving creators complete control over high-end diffusion models, multimodal workflows, and private uncensored language models directly on personal hardware.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
-              <span>Crafted with passion for AI sovereignty</span> &bull; <span>NexusAI Studio Engine 2026</span>
+              <span>Crafted with passion for AI sovereignty</span> &bull; <span>Solframe Studio Engine 2026</span>
             </div>
           </div>
         </div>
@@ -471,7 +471,7 @@ export const AboutStudio: React.FC = () => {
       {/* ─── Footer & Credits ─────────────────────────────────────────── */}
       <div style={{ textAlign: 'center', padding: '16px 0', borderTop: '1px solid rgba(255,255,255,0.06)', color: 'var(--text-muted)', fontSize: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
         <div>
-          NexusAI Studio &bull; Created by <strong>Protik</strong>
+          Solframe Studio &bull; Created by <strong>Protik</strong>
         </div>
         <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
           Powered by <code>stable-diffusion.cpp</code>, <code>llama.cpp</code>, Electron, React 19, and Vite.

@@ -38,7 +38,7 @@ models/custom_paths.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.nexusai/
+.solframe/
 
 # Outputs
 public/outputs/
@@ -48,7 +48,7 @@ outputs/
 *.jpeg
 *.webp
 !public/logo.png
-!public/nexusai-icon.png
+!public/solframe-icon.png
 !public/themes/*.jpg
 !public/avatars/*.jpg
 !electron/icon.png

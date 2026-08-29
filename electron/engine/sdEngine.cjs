@@ -69,14 +69,14 @@ function runSdCli({ execPath, args, outFullPath, outFilename, workingDir, env, o
 
 /**
  * Ensure the output directory exists and is writable.
- * Prefers APPDATA/NexusAI Studio/outputs over app publicDir/outputs.
+ * Prefers APPDATA/Solframe Studio/outputs over app publicDir/outputs.
  * @param {string} publicDir - Application public directory
  * @returns {string} Writable output directory path
  */
 function getOutputDir(publicDir) {
   const userDataDir = path.join(
     process.env.APPDATA || process.env.HOME || publicDir,
-    'NexusAI Studio'
+    'Solframe Studio'
   );
   const userOutputsDir = path.join(userDataDir, 'outputs');
   try {

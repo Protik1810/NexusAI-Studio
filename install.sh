@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "✨ Installing NexusAI Studio..."
+echo "✨ Installing Solframe Studio..."
 
 # Check Node.js
 if ! command -v node &> /dev/null; then
@@ -15,14 +15,14 @@ if ! command -v git &> /dev/null; then
     exit 1
 fi
 
-INSTALL_DIR="${HOME}/.nexusai-studio"
+INSTALL_DIR="${HOME}/.solframe-studio"
 
 if [ -d "$INSTALL_DIR" ]; then
     echo "🔄 Updating existing installation in $INSTALL_DIR..."
     cd "$INSTALL_DIR"
     git pull origin main
 else
-    echo "📥 Cloning NexusAI Studio into $INSTALL_DIR..."
+    echo "📥 Cloning Solframe Studio into $INSTALL_DIR..."
     git clone https://github.com/Protik1810/NexusAI-Studio.git "$INSTALL_DIR"
     cd "$INSTALL_DIR"
 fi
@@ -40,5 +40,5 @@ case "$OS_NAME" in
         ;;
 esac
 
-echo "🚀 Starting NexusAI Studio..."
+echo "🚀 Starting Solframe Studio..."
 npm run dev

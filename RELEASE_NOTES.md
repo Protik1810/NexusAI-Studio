@@ -1,4 +1,6 @@
-# ✨ NexusAI Studio v1.1.0
+# ✨ Solframe Studio v1.1.0
+
+> **Renamed from NexusAI Studio.** This release also rebrands the project — same app, same code, new name. Anywhere you see "NexusAI Studio" below (asset filenames, the GitHub repo URL, the `~/.nexusai` cache path) is describing what shipped as of this exact release; new builds and future releases use the Solframe name throughout.
 
 Autonomous, sovereign & 100% offline local Generative AI workstation by **Protik**.
 

@@ -38,8 +38,8 @@ function sdCppBackendPlugin() {
 
   const userHome = process.env.USERPROFILE || process.env.HOME || '';
   const cacheFilePaths = {
-    globalCacheDir: path.join(userHome, '.nexusai'),
-    globalCacheFile: path.join(userHome, '.nexusai', 'scan_cache.json'),
+    globalCacheDir: path.join(userHome, '.solframe'),
+    globalCacheFile: path.join(userHome, '.solframe', 'scan_cache.json'),
     localCacheFile: path.join(rootDir, 'models/.scan_cache.json')
   };
 

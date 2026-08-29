@@ -42,7 +42,7 @@ const html = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NexusAI Studio — Sovereign Desktop Generative AI Workstation</title>
+  <title>Solframe Studio — Sovereign Desktop Generative AI Workstation</title>
   <meta name="description" content="100% private, sovereign desktop AI workstation combining FLUX.2 Klein & SDXL Lightning image synthesis with native llama.cpp GGUF dialogue engines. Designed & engineered by Protik.">
   <link rel="icon" type="image/png" href="${logoBase64}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -647,8 +647,8 @@ const html = `<!DOCTYPE html>
   <nav class="navbar">
     <div class="nav-container">
       <a href="#" class="brand">
-        <img src="${logoBase64}" alt="NexusAI Studio Logo" class="brand-logo">
-        <span class="brand-title">NexusAI Studio</span>
+        <img src="${logoBase64}" alt="Solframe Studio Logo" class="brand-logo">
+        <span class="brand-title">Solframe Studio</span>
       </a>
       <div class="nav-links">
         <a href="#showcase" class="nav-link">Showcase</a>
@@ -671,7 +671,7 @@ const html = `<!DOCTYPE html>
         <span>⚡</span> v1.1.0 Production Release &bull; 100% Sovereign & Offline
       </div>
       <div id="platform-banner" class="platform-banner" style="display:none;"></div>
-      <img src="${logoBase64}" alt="NexusAI Studio Logo" class="hero-logo">
+      <img src="${logoBase64}" alt="Solframe Studio Logo" class="hero-logo">
       <h1 class="hero-title">
         The Sovereign Desktop<br>
         <span class="hero-gradient">Generative AI Workstation</span>
@@ -718,7 +718,7 @@ const html = `<!DOCTYPE html>
     <section id="showcase" class="showcase-section">
       <div class="showcase-header">
         <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">🖼️ Product Showcase & Viewport</h2>
-        <p style="font-size: 15px; color: var(--text-secondary);">Interactive preview of NexusAI Studio running real local inference on GPU.</p>
+        <p style="font-size: 15px; color: var(--text-secondary);">Interactive preview of Solframe Studio running real local inference on GPU.</p>
       </div>
 
       <div class="showcase-nav">
@@ -746,17 +746,17 @@ const html = `<!DOCTYPE html>
             <div class="window-dot" style="background: #eab308;"></div>
             <div class="window-dot" style="background: #22c55e;"></div>
           </div>
-          <div class="window-title">NexusAI Studio — Hardware GPU Canvas</div>
+          <div class="window-title">Solframe Studio — Hardware GPU Canvas</div>
           <div style="font-size: 11px; color: #06b6d4; font-weight: 700;">GPU Accelerated &bull; Local Inference</div>
         </div>
-        <img id="active-screenshot" src="${screenshots.lion}" alt="NexusAI Studio Screenshot" class="showcase-img">
+        <img id="active-screenshot" src="${screenshots.lion}" alt="Solframe Studio Screenshot" class="showcase-img">
       </div>
     </section>
 
     <!-- Downloads Section -->
     <section id="downloads">
       <div style="text-align: center; margin-bottom: 32px;">
-        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">📦 Download NexusAI Studio</h2>
+        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">📦 Download Solframe Studio</h2>
         <p style="font-size: 15px; color: var(--text-secondary);">Native installers for Windows, Linux, and macOS &mdash; hosted on GitHub Releases.</p>
       </div>
 
@@ -868,7 +868,7 @@ const html = `<!DOCTYPE html>
       <div class="glass-card">
         <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 6px;">💻 Direct Installation by Terminal</h2>
         <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">
-          Install and launch NexusAI Studio instantly via terminal on Windows, Linux, and macOS.
+          Install and launch Solframe Studio instantly via terminal on Windows, Linux, and macOS.
         </p>
 
         <!-- Linux & macOS One Liner -->
@@ -927,7 +927,7 @@ const html = `<!DOCTYPE html>
           Engineered and crafted by <strong><a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="color: inherit;">${CREATOR_NAME}</a></strong> with a mission for sovereign, privacy-first generative AI. Built to give creators complete autonomy over cutting-edge diffusion synthesis and large language models directly on personal desktop hardware — free from cloud subscriptions, data mining, and platform lock-in.
         </p>
         <div style="font-size: 13px; color: var(--text-muted);">
-          NexusAI Studio Engine &bull; Released under GNU General Public License v3.0 (GPL-3.0)
+          Solframe Studio Engine &bull; Released under GNU General Public License v3.0 (GPL-3.0)
         </div>
       </div>
     </section>
@@ -940,7 +940,7 @@ const html = `<!DOCTYPE html>
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <img src="${logoBase64}" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px;">
-          <strong>NexusAI Studio</strong> &bull; Created by <strong><a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="color: inherit;">${CREATOR_NAME}</a></strong>
+          <strong>Solframe Studio</strong> &bull; Created by <strong><a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="color: inherit;">${CREATOR_NAME}</a></strong>
         </div>
         <div>
           Powered by <code>stable-diffusion.cpp</code> &amp; <code>llama.cpp</code> &bull; <a href="LICENSE" style="color: var(--accent); text-decoration: none;">GNU GPL v3.0</a>

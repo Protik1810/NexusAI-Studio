@@ -1,6 +1,6 @@
 name: Build Linux/macOS Installers
 
-# Builds the NexusAI Studio UI shell as a native Linux (AppImage/.deb) and
+# Builds the Solframe Studio UI shell as a native Linux (AppImage/.deb) and
 # macOS (.dmg/.zip) app package. These platforms have no bundled
 # stable-diffusion.cpp/llama.cpp engines yet (see README "Platform status"),
 # so the packaged app is the interface only — same scope as install.sh today,
@@ -32,7 +32,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: nexusai-studio-linux
+          name: solframe-studio-linux
           path: |
             release/*.AppImage
             release/*.deb
@@ -52,7 +52,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: nexusai-studio-macos
+          name: solframe-studio-macos
           path: |
             release/*.dmg
             release/*.zip

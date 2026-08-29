@@ -59,11 +59,11 @@ function getAllSystemScanPaths(rootDir = '', customPaths = []) {
     } catch (e) {}
   }
 
-  // 2. User home & AppData directories (HuggingFace, LM Studio, Ollama, NexusAI, etc.)
+  // 2. User home & AppData directories (HuggingFace, LM Studio, Ollama, Solframe, etc.)
   const appDataDir = process.env.APPDATA || (process.platform === 'win32' ? path.join(userHome, 'AppData/Roaming') : userHome);
   const userDirs = [
-    { path: path.join(appDataDir, 'NexusAI Studio/models'), label: 'AppData NexusAI Models' },
-    { path: path.join(userHome, '.nexusai/models'), label: 'User Home NexusAI Models' },
+    { path: path.join(appDataDir, 'Solframe Studio/models'), label: 'AppData Solframe Models' },
+    { path: path.join(userHome, '.solframe/models'), label: 'User Home Solframe Models' },
     { path: path.join(userHome, '.cache/huggingface/hub'), label: 'Hugging Face Cache' },
     { path: path.join(userHome, '.lmstudio/models'), label: 'LM Studio Models' },
     { path: path.join(userHome, '.lmstudio/.internal/bundled-models'), label: 'LM Studio Built-in' },

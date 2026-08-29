@@ -7,7 +7,7 @@ console.log('[Deploy] Preparing clean GitHub Pages deployment bundle...');
 
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
-const deployDir = path.join(os.tmpdir(), 'nexusai-ghpages-clean');
+const deployDir = path.join(os.tmpdir(), 'solframe-ghpages-clean');
 
 if (fs.existsSync(deployDir)) {
   fs.rmSync(deployDir, { recursive: true, force: true });
@@ -39,14 +39,14 @@ copyFolder(path.join(distDir, 'themes'), path.join(deployDir, 'themes'));
 if (fs.existsSync(path.join(distDir, 'logo.png'))) {
   fs.copyFileSync(path.join(distDir, 'logo.png'), path.join(deployDir, 'logo.png'));
 }
-if (fs.existsSync(path.join(distDir, 'nexusai-icon.png'))) {
-  fs.copyFileSync(path.join(distDir, 'nexusai-icon.png'), path.join(deployDir, 'nexusai-icon.png'));
+if (fs.existsSync(path.join(distDir, 'solframe-icon.png'))) {
+  fs.copyFileSync(path.join(distDir, 'solframe-icon.png'), path.join(deployDir, 'solframe-icon.png'));
 }
 
 console.log('[Deploy] Pushing to origin gh-pages...');
 execSync('git init', { cwd: deployDir, stdio: 'inherit' });
 execSync('git config user.name "Protik"', { cwd: deployDir, stdio: 'inherit' });
-execSync('git config user.email "protik@nexusai.local"', { cwd: deployDir, stdio: 'inherit' });
+execSync('git config user.email "protik@solframe.local"', { cwd: deployDir, stdio: 'inherit' });
 execSync('git checkout -b gh-pages', { cwd: deployDir, stdio: 'inherit' });
 execSync('git add .', { cwd: deployDir, stdio: 'inherit' });
 execSync('git commit -m "deploy: GitHub Pages release with .nojekyll"', { cwd: deployDir, stdio: 'inherit' });

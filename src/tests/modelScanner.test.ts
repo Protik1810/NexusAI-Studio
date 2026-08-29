@@ -4,7 +4,7 @@ import os from 'os';
 import fs from 'fs';
 const { classifyModelFile } = require('../../electron/engine/modelScanner.cjs');
 
-const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexusai-scanner-test-'));
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'solframe-scanner-test-'));
 // classifyModelFile only enforces a size threshold for the flux/unet heuristic
 // (>3GB); the 5MB scan-time floor lives in scanDirectoryRecursive, not here.
 const DEFAULT_SIZE = 1024;

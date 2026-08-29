@@ -3,10 +3,10 @@ const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
 
-console.log('🚀 [ProductPage] Deploying NexusAI Studio Showcase to GitHub Pages...');
+console.log('🚀 [ProductPage] Deploying Solframe Studio Showcase to GitHub Pages...');
 
 const rootDir = path.resolve(__dirname, '..');
-const outDir = path.join(os.tmpdir(), 'nexusai-product-landing');
+const outDir = path.join(os.tmpdir(), 'solframe-product-landing');
 
 if (fs.existsSync(outDir)) {
   fs.rmSync(outDir, { recursive: true, force: true });
@@ -50,10 +50,10 @@ if (fs.existsSync(path.join(rootDir, 'public/screenshots'))) {
 console.log('📦 [ProductPage] Pushing to origin gh-pages branch...');
 execSync('git init', { cwd: outDir, stdio: 'inherit' });
 execSync('git config user.name "Protik"', { cwd: outDir, stdio: 'inherit' });
-execSync('git config user.email "protik@nexusai.local"', { cwd: outDir, stdio: 'inherit' });
+execSync('git config user.email "protik@solframe.local"', { cwd: outDir, stdio: 'inherit' });
 execSync('git checkout -b gh-pages', { cwd: outDir, stdio: 'inherit' });
 execSync('git add .', { cwd: outDir, stdio: 'inherit' });
-execSync('git commit -m "feat: deploy NexusAI Studio showcase webpage to GitHub Pages"', { cwd: outDir, stdio: 'inherit' });
+execSync('git commit -m "feat: deploy Solframe Studio showcase webpage to GitHub Pages"', { cwd: outDir, stdio: 'inherit' });
 execSync('git remote add origin https://github.com/Protik1810/NexusAI-Studio.git', { cwd: outDir, stdio: 'inherit' });
 execSync('git push -f origin gh-pages', { cwd: outDir, stdio: 'inherit' });
 

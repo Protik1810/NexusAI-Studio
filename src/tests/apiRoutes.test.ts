@@ -34,7 +34,7 @@ function mockRes() {
 }
 
 function makeCtx(overrides: Partial<Record<string, any>> = {}) {
-  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexusai-test-'));
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'solframe-test-'));
   return {
     rootDir,
     resourcesPath: rootDir,

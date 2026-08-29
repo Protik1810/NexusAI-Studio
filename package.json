@@ -1,6 +1,6 @@
 {
-  "name": "nexusai-studio",
-  "productName": "NexusAI Studio",
+  "name": "solframe-studio",
+  "productName": "Solframe Studio",
   "private": true,
   "version": "1.0.0",
   "description": "Standalone AI Image Generation and Chat Studio with FLUX, SDXL, llama.cpp",
@@ -48,8 +48,8 @@
     "vitest": "^2.1.9"
   },
   "build": {
-    "appId": "com.nexusai.studio",
-    "productName": "NexusAI Studio",
+    "appId": "com.solframe.studio",
+    "productName": "Solframe Studio",
     "asar": true,
     "icon": "electron/icon.png",
     "files": [
@@ -95,11 +95,11 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "NexusAI Studio",
+      "shortcutName": "Solframe Studio",
       "differentialPackage": false
     },
     "portable": {
-      "artifactName": "NexusAI-Studio-Portable-${version}.exe"
+      "artifactName": "Solframe-Studio-Portable-${version}.exe"
     },
     "linux": {
       "target": [
@@ -108,7 +108,7 @@
       ],
       "category": "Graphics",
       "icon": "electron/icon.png",
-      "maintainer": "Protik <protik@nexusai.local>"
+      "maintainer": "Protik <protik@solframe.local>"
     },
     "mac": {
       "target": [

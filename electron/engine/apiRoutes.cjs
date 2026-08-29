@@ -1,5 +1,5 @@
 /**
- * apiRoutes.cjs — The single HTTP API implementation for NexusAI Studio.
+ * apiRoutes.cjs — The single HTTP API implementation for Solframe Studio.
  *
  * Both electron/server.cjs (production, packaged app) and vite.config.ts
  * (dev mode, `npm run dev`) construct one instance of this router and hand
@@ -108,7 +108,7 @@ function createApiRouter(ctx) {
     if (scanState === 'scanning') return;
     scanState = 'scanning';
     const state = {};
-    console.log('[NexusAI] Starting background model scan...');
+    console.log('[Solframe] Starting background model scan...');
     setImmediate(() => {
       try {
         const result = getFullSystemModels(rootDir, loadCustomScanPaths(), state);
@@ -118,10 +118,10 @@ function createApiRouter(ctx) {
         scanProgress = state.scanProgress || 0;
         scanTotal = state.scanTotal || 0;
         const total = Object.values(result.modelsByCategory).reduce((acc, arr) => acc + arr.length, 0);
-        console.log(`[NexusAI] Scan complete: ${total} models found across ${result.scanPaths.length} directories.`);
+        console.log(`[Solframe] Scan complete: ${total} models found across ${result.scanPaths.length} directories.`);
       } catch (e) {
         scanState = 'error';
-        console.error('[NexusAI] Scan error:', e.message);
+        console.error('[Solframe] Scan error:', e.message);
       }
     });
   }
@@ -130,7 +130,7 @@ function createApiRouter(ctx) {
     cachedModels = loadScanCache(cacheFilePaths);
     if (cachedModels) {
       scanState = 'ready';
-      console.log('[NexusAI] Loaded model cache. Running background rescan...');
+      console.log('[Solframe] Loaded model cache. Running background rescan...');
     }
     runBackgroundScan();
   }
@@ -536,7 +536,7 @@ function createApiRouter(ctx) {
         }
 
         const args = buildSdCliArgs(resolvedParams, outFullPath);
-        console.log(`[NexusAI sd-generate] Spawning: ${execPath}\n  Args: ${args.join(' ')}`);
+        console.log(`[Solframe sd-generate] Spawning: ${execPath}\n  Args: ${args.join(' ')}`);
 
         const procEnv = {
           ...process.env,

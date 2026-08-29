@@ -10,7 +10,7 @@ describe('pathUtils - System Scan and Path Resolution', () => {
     // looks for (no HuggingFace cache, no Ollama, no models/ folder) — a
     // guaranteed-existing custom path keeps this deterministic regardless
     // of what happens to be installed on the machine running the test.
-    const guaranteedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexusai-scanpath-test-'));
+    const guaranteedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'solframe-scanpath-test-'));
     try {
       const paths = getAllSystemScanPaths(process.cwd(), [guaranteedDir]);
       expect(Array.isArray(paths)).toBe(true);

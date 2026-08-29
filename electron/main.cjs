@@ -58,7 +58,7 @@ function createSplashWindow() {
     <head><meta charset="utf-8"/></head>
     <body style="margin:0;background:radial-gradient(circle at center, #0f172a 0%, #050810 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:'Segoe UI',system-ui,sans-serif;color:#f8fafc;user-select:none;-webkit-app-region:drag;overflow:hidden;border:1px solid rgba(255,255,255,0.1);border-radius:14px;">
       ${iconUrl ? '<img src="' + iconUrl + '" style="width:78px;height:78px;border-radius:18px;margin-bottom:14px;box-shadow:0 0 25px rgba(6,182,212,0.4);border:1px solid rgba(255,255,255,0.2);">' : '<div style="font-size:52px;margin-bottom:12px;">✨</div>'}
-      <h1 style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin:0 0 4px;background:linear-gradient(135deg,#22d3ee 0%,#a855f7 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">NexusAI Studio</h1>
+      <h1 style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin:0 0 4px;background:linear-gradient(135deg,#22d3ee 0%,#a855f7 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Solframe Studio</h1>
       <p style="color:#64748b;font-size:12px;font-weight:500;margin:0 0 20px;letter-spacing:0.06em;text-transform:uppercase;">Generative AI &bull; FLUX &bull; LLM</p>
       <div style="width:180px;height:3px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;">
         <div id="bar" style="width:35%;height:100%;background:linear-gradient(90deg,#06b6d4,#8b5cf6);border-radius:99px;transition:width 0.25s;"></div>
@@ -74,7 +74,7 @@ function createSplashWindow() {
 
 function createMainWindow() {
   const { publicDir } = getPaths();
-  const iconPath = path.join(publicDir, "nexusai-icon.png");
+  const iconPath = path.join(publicDir, "solframe-icon.png");
 
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -82,7 +82,7 @@ function createMainWindow() {
     minWidth: 1024,
     minHeight: 700,
     center: true,
-    title: "NexusAI Studio",
+    title: "Solframe Studio",
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
     backgroundColor: "#050810",
     show: false,
@@ -122,11 +122,11 @@ app.whenReady().then(() => {
   createSplashWindow();
 
   const paths = getPaths();
-  console.log("[NexusAI Desktop] Initializing standalone engine with paths:", paths);
+  console.log("[Solframe Desktop] Initializing standalone engine with paths:", paths);
 
   appServer = createServer({ ...paths, port: PORT });
   appServer.listen(PORT, () => {
-    console.log(`[NexusAI Desktop] Engine listening on http://127.0.0.1:${PORT}`);
+    console.log(`[Solframe Desktop] Engine listening on http://127.0.0.1:${PORT}`);
     createMainWindow();
   });
 });

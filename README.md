@@ -1,6 +1,6 @@
 <div align="center">
 
-# ✨ NexusAI Studio
+# ✨ Solframe Studio
 
 **Autonomous, Sovereign & Zero-Cloud Local Generative AI Workstation**
 
@@ -21,7 +21,7 @@
 
 ## 🌟 Overview
 
-**NexusAI Studio** is a standalone, self-contained desktop generative AI suite engineered for 100% private, offline inference. Combining **`stable-diffusion.cpp`** (supporting FLUX.2 Klein, SDXL Lightning, and standard SD checkpoints) with **`llama.cpp`** (running GGUF text models with full GPU offloading), NexusAI Studio brings high-performance generative AI directly to consumer hardware with zero subscription fees, zero cloud telemetry, and complete offline autonomy.
+**Solframe Studio** is a standalone, self-contained desktop generative AI suite engineered for 100% private, offline inference. Combining **`stable-diffusion.cpp`** (supporting FLUX.2 Klein, SDXL Lightning, and standard SD checkpoints) with **`llama.cpp`** (running GGUF text models with full GPU offloading), Solframe Studio brings high-performance generative AI directly to consumer hardware with zero subscription fees, zero cloud telemetry, and complete offline autonomy.
 
 > **Platform status:** the bundled inference engines (`backend/win/**`) are Windows x64 binaries (CUDA/Vulkan/CPU). On Windows, image generation and local LLM chat both run out of the box. On Linux/macOS, only the UI shell currently runs (see [Getting Started](#-getting-started)) — native engine builds for those platforms are planned, not shipped yet.
 
@@ -47,7 +47,7 @@
 
 ### 🗄️ 4. Universal Dynamic Model Scanner
 - **Multi-Drive Auto-Discovery**: Dynamically detects mounted drive letters (`C:`, `D:`, `E:`, `Z:`) and indexes standard AI directories (`/models`, `/ComfyUI/models`, `/stable-diffusion-webui/models`, `/LLM`).
-- **Instant Load with Disk Cache**: Persists scan indices to `~/.nexusai/scan_cache.json` for sub-millisecond cold starts.
+- **Instant Load with Disk Cache**: Persists scan indices to `~/.solframe/scan_cache.json` for sub-millisecond cold starts.
 - **Hugging Face Hub Downloader**: Built-in repository tree explorer with real-time download speed and progress tracking.
 
 ### 🌌 5. 6 Generative AI Ambient Themes
@@ -71,11 +71,11 @@
 | **Styling** | Vanilla CSS Glassmorphism + Dynamic CSS Variables |
 | **Image Synthesis Engine** | `stable-diffusion.cpp` (CUDA / Vulkan / CPU C++ kernels) |
 | **Language Dialogue Engine** | `llama.cpp` (`llama-server.exe` CUDA / Vulkan) |
-| **Model Persistence** | Global JSON Cache (`~/.nexusai/scan_cache.json`) |
+| **Model Persistence** | Global JSON Cache (`~/.solframe/scan_cache.json`) |
 | **Testing** | Vitest — path resolution, model classification, and local-server security (origin checks, path-traversal guards) |
 
 ### Optional Integrations
-- **ComfyUI Bridge** *(optional)*: if you already run [ComfyUI](https://github.com/comfyanonymous/ComfyUI) locally, `src/services/comfyApi.ts` can proxy generation requests to your own `127.0.0.1:8188` instance instead of the bundled `stable-diffusion.cpp` engine. This is an opt-in convenience for existing ComfyUI users — it talks to a process on your own machine, never a remote service, and NexusAI Studio's core Image/Chat Studios do not require it.
+- **ComfyUI Bridge** *(optional)*: if you already run [ComfyUI](https://github.com/comfyanonymous/ComfyUI) locally, `src/services/comfyApi.ts` can proxy generation requests to your own `127.0.0.1:8188` instance instead of the bundled `stable-diffusion.cpp` engine. This is an opt-in convenience for existing ComfyUI users — it talks to a process on your own machine, never a remote service, and Solframe Studio's core Image/Chat Studios do not require it.
 
 ---
 
@@ -96,7 +96,7 @@ There is currently no winget package; the links above are the only official buil
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Protik1810/NexusAI-Studio/main/install.sh | bash
 ```
-This clones the repo and runs `npm run dev`, which brings up the NexusAI Studio interface. The bundled diffusion/LLM engines under `backend/win/` are Windows-only binaries, so **image generation and local LLM chat will not run** until native Linux/macOS engine builds ship — this path is useful today for UI development and preview, not for production inference.
+This clones the repo and runs `npm run dev`, which brings up the Solframe Studio interface. The bundled diffusion/LLM engines under `backend/win/` are Windows-only binaries, so **image generation and local LLM chat will not run** until native Linux/macOS engine builds ship — this path is useful today for UI development and preview, not for production inference.
 
 Prefer an installable app over the terminal preview? `npm run electron:build:linux` (AppImage + .deb) and `npm run electron:build:mac` (.dmg + .zip) package the same UI-only build as a native app — run them on the target OS, or grab the artifacts from the [Build Linux/macOS Installers](https://github.com/Protik1810/NexusAI-Studio/actions/workflows/release-build.yml) GitHub Actions workflow.
 

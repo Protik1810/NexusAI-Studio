@@ -72,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             paddingBottom: "8px"
           }}
           onClick={() => setActiveTab("image")}
-          title="NexusAI Studio — Generative AI Workspace"
+          title="Solframe Studio — Generative AI Workspace"
         >
           <div
             style={{
@@ -99,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <img
               src="/logo.png"
-              alt="NexusAI Logo"
+              alt="Solframe Logo"
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
               onError={(e) => {
                 (e.currentTarget as HTMLElement).style.display = "none";
@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             className={`sidebar-icon ${activeTab === "about" ? "active" : ""}`}
             onClick={() => setActiveTab("about")}
-            title="About NexusAI Studio, Libraries & Creator Protik"
+            title="About Solframe Studio, Libraries & Creator Protik"
           >
             <Info size={22} />
           </button>

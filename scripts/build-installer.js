@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const rootDir = path.resolve(__dirname, '..');
-const unpackedExe = path.join(rootDir, 'release', 'win-unpacked', 'NexusAI Studio.exe');
+const unpackedExe = path.join(rootDir, 'release', 'win-unpacked', 'Solframe Studio.exe');
 
 if (!fs.existsSync(unpackedExe)) {
   console.log('📦 release/win-unpacked not found — building it with electron-builder first...');
@@ -21,13 +21,13 @@ if (!fs.existsSync(isccPath)) {
 }
 
 // 1. Build Complete Installer
-console.log('\n🔨 [1/2] Compiling Complete NexusAI Studio Setup Installer (.exe)...');
+console.log('\n🔨 [1/2] Compiling Complete Solframe Studio Setup Installer (.exe)...');
 execSync(`"${isccPath}" "${issComplete}"`, { stdio: 'inherit' });
-console.log('🎉 Complete Installer generated at: installer-output/NexusAI-Studio-Setup-1.0.0.exe');
+console.log('🎉 Complete Installer generated at: installer-output/Solframe-Studio-Setup-1.0.0.exe');
 
 // 2. Build Lightweight Installer
-console.log('\n🔨 [2/2] Compiling Lightweight NexusAI Studio Setup Installer (.exe)...');
+console.log('\n🔨 [2/2] Compiling Lightweight Solframe Studio Setup Installer (.exe)...');
 execSync(`"${isccPath}" "${issLightweight}"`, { stdio: 'inherit' });
-console.log('🎉 Lightweight Installer generated at: installer-output/NexusAI-Studio-Setup-1.0.0-Lightweight.exe');
+console.log('🎉 Lightweight Installer generated at: installer-output/Solframe-Studio-Setup-1.0.0-Lightweight.exe');
 
 console.log('\n✅ All installers successfully compiled and ready in installer-output/!');
