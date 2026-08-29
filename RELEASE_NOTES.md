@@ -16,12 +16,12 @@ Autonomous, sovereign & 100% offline local Generative AI workstation by **Protik
 
 ---
 
-### 📦 Downloads
+### 📦 Windows Downloads
 
-| File | Size | Description |
-|---|---|---|
-| 📦 **NexusAI-Studio-Setup-1.0.0.exe** | ~806 MB | Complete offline installer (bundled CUDA, Vulkan, CPU engines) |
-| 🪶 **NexusAI-Studio-Setup-1.0.0-Lightweight.exe** | ~120 MB | Lightweight installer (download engines on-demand) |
+| File | Size | Direct Download Link | Description |
+|---|---|---|---|
+| 📦 **Complete Setup** | ~806 MB | [NexusAI-Studio-Setup-1.0.0.exe](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe) | Complete offline installer (bundled CUDA, Vulkan, CPU engines) |
+| 🪶 **Lightweight Setup** | ~120 MB | [NexusAI-Studio-Setup-1.0.0-Lightweight.exe](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0-Lightweight.exe) | Lightweight installer (download engines on-demand) |
 
 ---
 
