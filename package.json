@@ -1,0 +1,84 @@
+{
+  "name": "nexusai-studio",
+  "productName": "NexusAI Studio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Standalone AI Image Generation and Chat Studio with FLUX, SDXL, llama.cpp",
+  "author": "NexusAI",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "electron:dev": "npm run build && electron electron/main.cjs --dev",
+    "electron:pack": "npm run build && electron-builder --dir --win --x64",
+    "electron:build": "npm run build && electron-builder --win --x64",
+    "electron:portable": "npm run build && electron-builder --win portable --x64"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^36.0.0",
+    "electron-builder": "^25.0.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0"
+  },
+  "build": {
+    "appId": "com.nexusai.studio",
+    "productName": "NexusAI Studio",
+    "asar": true,
+    "icon": "electron/icon.png",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": ["x64"]
+        },
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "electron/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NexusAI Studio",
+      "differentialPackage": false
+    },
+    "portable": {
+      "artifactName": "NexusAI-Studio-Portable-${version}.exe"
+    },
+    "directories": {
+      "output": "release"
+    }
+  }
+}
