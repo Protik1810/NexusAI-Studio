@@ -95,6 +95,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [isReloadingModels, setIsReloadingModels] = useState<boolean>(false);
   const [reloadSuccessMsg, setReloadSuccessMsg] = useState<string | null>(null);
+  const [scanStatus, setScanStatus] = useState<string>('idle');
 
   useEffect(() => {
     fetch('/api/hardware-info')
@@ -121,8 +122,21 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
             vaes: toArr(data.vaes)
           });
 
-          if (data.checkpoints?.length > 0) setCheckpointModel(data.checkpoints[0].fullPath);
-          if (data.unets?.length > 0) setUnetModel(data.unets[0].fullPath);
+          if (data.scanStatus) setScanStatus(data.scanStatus);
+
+          // Select first available checkpoint if none or placeholder currently selected
+          if (data.checkpoints?.length > 0) {
+            setCheckpointModel(prev => {
+              const exists = data.checkpoints.some((c: any) => c.fullPath === prev);
+              return exists ? prev : data.checkpoints[0].fullPath;
+            });
+          }
+          if (data.unets?.length > 0) {
+            setUnetModel(prev => {
+              const exists = data.unets.some((u: any) => u.fullPath === prev);
+              return exists ? prev : data.unets[0].fullPath;
+            });
+          }
 
           const bestClip = data.clips?.find((c: any) =>
             c.name.toLowerCase().includes('text-encoder') || c.name.toLowerCase().includes('q8_0')
@@ -145,6 +159,27 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
       setIsReloadingModels(false);
     }
   };
+
+  // Poll scan status while scanning
+  useEffect(() => {
+    let interval: any;
+    if (scanStatus === 'scanning' || scanStatus === 'idle') {
+      interval = setInterval(async () => {
+        try {
+          const r = await fetch('/api/scan-status');
+          if (r.ok) {
+            const d = await r.json();
+            setScanStatus(d.status);
+            if (d.status === 'ready') {
+              reloadLocalModels();
+              clearInterval(interval);
+            }
+          }
+        } catch {}
+      }, 1500);
+    }
+    return () => clearInterval(interval);
+  }, [scanStatus]);
 
   useEffect(() => {
     reloadLocalModels();

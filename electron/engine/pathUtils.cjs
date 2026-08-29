@@ -1,4 +1,4 @@
-﻿/**
+/**
  * pathUtils.cjs — Model path resolution and executable discovery
  * Shared between electron/server.cjs (production) and vite.config.ts (dev mode)
  */
@@ -30,18 +30,40 @@ function getAllSystemScanPaths(rootDir = '', customPaths = []) {
     const driveRoot = `${letter}:/`;
     try {
       if (fs.existsSync(driveRoot)) {
+        // Direct standard AI directories
         for (const sub of STANDARD_MODEL_DIRS) {
           const full = path.join(driveRoot, sub);
           if (fs.existsSync(full)) {
             candidates.push({ path: full.replace(/\\/g, '/'), label: `${letter}: ${sub}`, isBuiltIn: true });
           }
         }
+
+        // Auto-discover any top-level project folders containing models/ or checkpoints/
+        try {
+          const topEntries = fs.readdirSync(driveRoot, { withFileTypes: true });
+          for (const entry of topEntries) {
+            if (!entry.isDirectory()) continue;
+            if (entry.name.startsWith('$') || entry.name.startsWith('.') || ['Windows', 'Program Files', 'Program Files (x86)', 'System Volume Information', '$Recycle.Bin'].includes(entry.name)) continue;
+
+            const subModels = path.join(driveRoot, entry.name, 'models');
+            if (fs.existsSync(subModels)) {
+              candidates.push({ path: subModels.replace(/\\/g, '/'), label: `${letter}: ${entry.name}/models`, isBuiltIn: true });
+            }
+            const subCheckpoints = path.join(driveRoot, entry.name, 'checkpoints');
+            if (fs.existsSync(subCheckpoints)) {
+              candidates.push({ path: subCheckpoints.replace(/\\/g, '/'), label: `${letter}: ${entry.name}/checkpoints`, isBuiltIn: true });
+            }
+          }
+        } catch (e2) {}
       }
     } catch (e) {}
   }
 
-  // 2. User home directories (HuggingFace, LM Studio, Ollama, etc.)
+  // 2. User home & AppData directories (HuggingFace, LM Studio, Ollama, NexusAI, etc.)
+  const appDataDir = process.env.APPDATA || (process.platform === 'win32' ? path.join(userHome, 'AppData/Roaming') : userHome);
   const userDirs = [
+    { path: path.join(appDataDir, 'NexusAI Studio/models'), label: 'AppData NexusAI Models' },
+    { path: path.join(userHome, '.nexusai/models'), label: 'User Home NexusAI Models' },
     { path: path.join(userHome, '.cache/huggingface/hub'), label: 'Hugging Face Cache' },
     { path: path.join(userHome, '.lmstudio/models'), label: 'LM Studio Models' },
     { path: path.join(userHome, '.lmstudio/.internal/bundled-models'), label: 'LM Studio Built-in' },

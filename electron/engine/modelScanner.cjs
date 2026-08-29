@@ -1,4 +1,4 @@
-﻿/**
+/**
  * modelScanner.cjs — Model file discovery, classification, and caching
  * Shared between electron/server.cjs (production) and vite.config.ts (dev mode)
  */
@@ -75,6 +75,15 @@ function classifyModelFile(fullPath, sourceLabel, rootDir = '') {
     category = 'unets';
   } else if (isGguf) {
     category = 'llms';
+  } else if (
+    lower.includes('/llm/') || lower.includes('\\llm\\') ||
+    lower.includes('qwen') || lower.includes('llama') ||
+    lower.includes('instruct') || lower.includes('bge-') ||
+    lower.includes('embedding') || lower.includes('bert')
+  ) {
+    category = 'llms';
+  } else {
+    category = 'checkpoints';
   }
 
   return {
@@ -121,6 +130,16 @@ function getFullSystemModels(rootDir = '', customPaths = [], state = {}) {
       } catch (e) {}
     }
   }
+
+  // Sort categories: put dedicated models/ folders and prominent models first
+  const checkpointScore = (m) => {
+    const p = m.fullPath.toLowerCase();
+    if (p.includes('/checkpoints/') || p.includes('\\checkpoints\\')) return 100;
+    if (p.includes('lightning') || p.includes('realvis') || p.includes('juggernaut')) return 80;
+    if (p.includes('sdxl') || p.includes('nsfw') || p.includes('pony')) return 60;
+    return 10;
+  };
+  modelsByCategory.checkpoints.sort((a, b) => checkpointScore(b) - checkpointScore(a));
 
   return { modelsByCategory, scanPaths };
 }
