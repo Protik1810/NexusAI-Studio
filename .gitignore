@@ -49,6 +49,7 @@ outputs/
 *.webp
 !public/logo.png
 !public/solframe-icon.png
+!public/favicon.png
 !public/themes/*.jpg
 !public/avatars/*.jpg
 !electron/icon.png

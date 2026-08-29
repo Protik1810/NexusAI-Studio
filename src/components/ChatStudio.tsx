@@ -35,7 +35,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
-      const saved = localStorage.getItem('nexus_chat_history');
+      const saved = localStorage.getItem('solframe_chat_history');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -80,7 +80,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('nexus_chat_history', JSON.stringify(messages));
+    localStorage.setItem('solframe_chat_history', JSON.stringify(messages));
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -195,7 +195,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
   const handleClearChat = () => {
     setMessages([]);
-    localStorage.removeItem('nexus_chat_history');
+    localStorage.removeItem('solframe_chat_history');
   };
 
   const handleCopyMessage = (text: string, index: number) => {

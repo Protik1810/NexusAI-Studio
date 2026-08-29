@@ -97,8 +97,8 @@ export const SettingsStudio: React.FC<SettingsStudioProps> = ({
     setChecking(true);
     comfyService.setBaseUrl(comfyUrl);
     llmService.setBaseUrl(llmUrl);
-    localStorage.setItem('nexus_comfy_url', comfyUrl);
-    localStorage.setItem('nexus_llm_url', llmUrl);
+    localStorage.setItem('solframe_comfy_url', comfyUrl);
+    localStorage.setItem('solframe_llm_url', llmUrl);
 
     try {
       await onRefreshStatus();

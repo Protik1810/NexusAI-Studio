@@ -29,7 +29,7 @@ export function App() {
   // Gallery
   const [gallery, setGallery] = useState<GalleryItem[]>(() => {
     try {
-      const saved = localStorage.getItem('nexus_gallery');
+      const saved = localStorage.getItem('solframe_gallery');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -115,7 +115,7 @@ export function App() {
 
   // Save gallery changes
   useEffect(() => {
-    localStorage.setItem('nexus_gallery', JSON.stringify(gallery));
+    localStorage.setItem('solframe_gallery', JSON.stringify(gallery));
   }, [gallery]);
 
   const handleImageGenerated = (image: GalleryItem) => {

@@ -49,7 +49,7 @@ export const GalleryStudio: React.FC<GalleryStudioProps> = ({
   const handleDownload = (url: string, filename?: string) => {
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename || `Nexus_Art_${Date.now()}.png`;
+    a.download = filename || `Solframe_Art_${Date.now()}.png`;
     a.click();
   };
 

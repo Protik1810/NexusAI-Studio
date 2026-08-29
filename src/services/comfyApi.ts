@@ -41,9 +41,9 @@ export class ComfyService {
   private clientId: string;
 
   constructor(baseUrl: string = 'http://127.0.0.1:8188') {
-    const saved = localStorage.getItem('nexus_comfy_url');
+    const saved = localStorage.getItem('solframe_comfy_url');
     this.baseUrl = (saved || baseUrl).replace(/\/+$/, '');
-    this.clientId = 'nexus_studio_' + Math.random().toString(36).substring(2, 9);
+    this.clientId = 'solframe_studio_' + Math.random().toString(36).substring(2, 9);
   }
 
   setBaseUrl(url: string) {
@@ -214,7 +214,7 @@ export class ComfyService {
       // 9. Save Image
       "9": {
         "inputs": {
-          "filename_prefix": "NexusStudio_FLUX",
+          "filename_prefix": "SolframeStudio_FLUX",
           "images": ["8", 0]
         },
         "class_type": "SaveImage"
@@ -300,7 +300,7 @@ export class ComfyService {
       // 7. Save Image
       "7": {
         "inputs": {
-          "filename_prefix": "NexusStudio_SD",
+          "filename_prefix": "SolframeStudio_SD",
           "images": ["6", 0]
         },
         "class_type": "SaveImage"

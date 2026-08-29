@@ -18,7 +18,7 @@ interface SidebarProps {
 
 function applyTheme(theme: AppThemeId) {
   document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem("nexus-theme", theme);
+  localStorage.setItem("solframe-theme", theme);
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -31,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   missingLibrariesCount = 0
 }) => {
   const [currentTheme, setCurrentTheme] = useState<AppThemeId>(() => {
-    return (localStorage.getItem("nexus-theme") as AppThemeId) || "dark";
+    return (localStorage.getItem("solframe-theme") as AppThemeId) || "cinema";
   });
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
 

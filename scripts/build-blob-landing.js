@@ -14,6 +14,7 @@ const toBase64 = (relPath, mimeType) => {
 };
 
 const logoBase64 = toBase64('public/logo.png', 'image/png');
+const faviconBase64 = toBase64('public/favicon.png', 'image/png');
 const creatorAvatarBase64 = toBase64('public/avatars/protik-github.jpg', 'image/jpeg');
 const CREATOR_GITHUB_URL = 'https://github.com/Protik1810';
 const CREATOR_NAME = 'Lord Protik';
@@ -44,22 +45,30 @@ const html = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Solframe Studio — Sovereign Desktop Generative AI Workstation</title>
   <meta name="description" content="100% private, sovereign desktop AI workstation combining FLUX.2 Klein & SDXL Lightning image synthesis with native llama.cpp GGUF dialogue engines. Designed & engineered by Protik.">
-  <link rel="icon" type="image/png" href="${logoBase64}">
+  <link rel="icon" type="image/png" href="${faviconBase64}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
+      /* Cinema Gold is the default theme on first visit (no saved preference yet) */
       --bg-color: #030712;
       --panel-bg: rgba(13, 20, 36, 0.82);
-      --accent: #06b6d4;
-      --accent-secondary: #8b5cf6;
-      --accent-glow: rgba(6, 182, 212, 0.45);
+      --accent: #eab308;
+      --accent-secondary: #f97316;
+      --accent-glow: rgba(234, 179, 8, 0.45);
       --text-primary: #ffffff;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
       --border-color: rgba(255, 255, 255, 0.1);
       --card-bg: rgba(255, 255, 255, 0.04);
+      --wallpaper: url('${themes.cinemaGold}');
+    }
+
+    [data-theme="dark-void"] {
+      --accent: #06b6d4;
+      --accent-secondary: #8b5cf6;
+      --accent-glow: rgba(6, 182, 212, 0.45);
       --wallpaper: url('${themes.darkVoid}');
     }
 

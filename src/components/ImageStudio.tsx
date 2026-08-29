@@ -292,7 +292,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
     if (!currentImage) return;
     const a = document.createElement('a');
     a.href = currentImage;
-    a.download = `Nexus_Art_${Date.now()}.png`;
+    a.download = `Solframe_Art_${Date.now()}.png`;
     a.click();
   };
 
