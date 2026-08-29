@@ -2,8 +2,13 @@ const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-console.log('🔄 Synchronizing latest dist and server code to release package...');
-require('./sync-release.js');
+const rootDir = path.resolve(__dirname, '..');
+const unpackedExe = path.join(rootDir, 'release', 'win-unpacked', 'NexusAI Studio.exe');
+
+if (!fs.existsSync(unpackedExe)) {
+  console.log('📦 release/win-unpacked not found — building it with electron-builder first...');
+  execSync('npm run electron:pack', { cwd: rootDir, stdio: 'inherit' });
+}
 
 const isccPath = 'C:\\Users\\proti\\AppData\\Local\\Programs\\Antigravity IDE\\_\\resources\\app\\node_modules\\innosetup\\bin\\ISCC.exe';
 const issComplete = path.resolve(__dirname, '../installer.iss');
@@ -11,6 +16,7 @@ const issLightweight = path.resolve(__dirname, '../installer-lightweight.iss');
 
 if (!fs.existsSync(isccPath)) {
   console.error('ISCC compiler not found at:', isccPath);
+  console.error('Install Inno Setup (https://jrsoftware.org/isinfo.php) and update isccPath in this script.');
   process.exit(1);
 }
 

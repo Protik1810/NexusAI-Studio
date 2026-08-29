@@ -18,11 +18,11 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
 DefaultGroupName={#MyAppName}
-OutputDir=d:\genimg_comic\installer-output
+OutputDir={#SourcePath}installer-output
 OutputBaseFilename=NexusAI-Studio-Setup-1.0.0
-SetupIconFile=d:\genimg_comic\electron\icon.ico
-WizardImageFile=d:\genimg_comic\public\wizard-large.bmp
-WizardSmallImageFile=d:\genimg_comic\public\wizard-small.bmp
+SetupIconFile={#SourcePath}electron\icon.ico
+WizardImageFile={#SourcePath}public\wizard-large.bmp
+WizardSmallImageFile={#SourcePath}public\wizard-small.bmp
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -37,7 +37,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "d:\genimg_comic\release-pkg\NexusAI Studio-win32-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourcePath}release\win-unpacked\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
