@@ -1,60 +1,104 @@
-# ✨ NexusAI Studio v1.0.0
+# ✨ NexusAI Studio v1.1.0
 
 Autonomous, sovereign & 100% offline local Generative AI workstation by **Protik**.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GNU%20GPL%20v3.0-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20x64-blue.svg)](https://github.com/Protik1810/NexusAI-Studio)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20(full)%20%7C%20Linux%2FmacOS%20(UI%20preview)-blue.svg)](https://github.com/Protik1810/NexusAI-Studio)
+[![CI](https://github.com/Protik1810/NexusAI-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Protik1810/NexusAI-Studio/actions/workflows/ci.yml)
 
 ---
 
-### 🚀 Highlights
-- **Image Studio**: Native `stable-diffusion.cpp` support for FLUX.2-Klein, SDXL Lightning (4-step), and LoRA dynamic stacking.
-- **Uncensored LLM Chat**: Native `llama.cpp` streaming engine for GGUF models (Qwen 2.5, Llama 3, DeepSeek) with 1-click prompt export to Image Studio.
-- **Dynamic Drive Scanner**: Auto-discovers checkpoints and weights across all drives (`C:`, `D:`, `E:`, ComfyUI, WebUI) with sub-ms cache load.
-- **Hardware Acceleration**: Automatic routing to **NVIDIA CUDA 12**, **AMD/Intel Vulkan**, or **AVX2 CPU**.
-- **6 Ambient Themes**: Dark Void, Neon Cyber, Cinema Gold, Synthwave Sunset, Anime Fantasy, and Emerald Matrix.
+### 🩹 Critical Fix
 
----
+- **The desktop app build was broken.** Root `index.html` — the actual entry point Vite and Electron load — had been overwritten by the GitHub Pages showcase page in a prior release, so `npm run build` silently produced a marketing page instead of the real app. Restored it, fixed the generator script so it can't happen again, and added CI that fails the build if this regresses.
 
-### 📦 Windows Downloads
+### 🔒 Security Hardening
 
-| File | Size | Direct Download Link | Description |
+- The local control server (`127.0.0.1:1420`) accepted requests from **any website** open in your browser, not just the app itself — a malicious page could have spawned processes, triggered downloads, or read your filesystem layout. It now validates the request's Origin before doing anything.
+- `/api/download-model` didn't validate its target path — a crafted request could write outside the app directory via `../..`. Fixed with a path-containment check.
+- Removed `webSecurity: false` from the main window, which had disabled same-origin protections in the renderer for no documented reason.
+
+### 🐛 Bug Fixes
+
+- **Download progress bars in the Model Hub never updated.** The per-model progress state was wired to a setter that nothing ever called; every download silently showed 0% regardless of real progress. Now reads from the poller that already worked correctly elsewhere in the same screen.
+- A failed Hugging Face download (bad repo/filename, 404) was reported as **"completed"** instead of an error, because `curl` was missing `--fail`. Fixed.
+- `/api/llama/start` resolved model paths without searching custom scan folders, unlike every other model-loading path in the app. Now consistent.
+- Two engine modules carried genuinely dead code (a value always overwritten before being read) — caught by finally turning linting on for the first time; cleaned up.
+
+### 🐧🍎 New: Linux & macOS Builds
+
+First real cross-platform installers, built and verified end-to-end (not just configured):
+
+| Platform | Format | Size | Notes |
 |---|---|---|---|
-| 📦 **Complete Setup** | ~806 MB | [NexusAI-Studio-Setup-1.0.0.exe](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe) | Complete offline installer (bundled CUDA, Vulkan, CPU engines) |
-| 🪶 **Lightweight Setup** | ~120 MB | [NexusAI-Studio-Setup-1.0.0-Lightweight.exe](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0-Lightweight.exe) | Lightweight installer (download engines on-demand) |
+| Linux | AppImage | ~133 MB | Portable, no install — `chmod +x` and run |
+| Linux | `.deb` | ~86 MB | `sudo apt install ./nexusai-studio_1.0.0_amd64.deb` |
+| macOS | `.zip` | ~127 MB | Unsigned — right-click → Open on first launch |
+
+These ship the UI shell only — the bundled diffusion/LLM engines are still Windows-only binaries. Get them from [Releases](https://github.com/Protik1810/NexusAI-Studio/releases/latest), or build your own: `npm run electron:build:linux` / `electron:build:mac`.
+
+### 🌐 Showcase Page
+
+The [GitHub Pages site](https://protik1810.github.io/NexusAI-Studio/) now detects your OS and highlights the right install method automatically, and has real download cards for Linux and macOS alongside Windows — not just a terminal command. The old "Windows (winget)" install command is gone; it never worked (no such package exists, and that wasn't valid winget syntax regardless).
+
+### ⚙️ Engineering
+
+- Added CI (lint, unit tests, build) running on every push/PR, plus a workflow that builds the Linux/macOS installers on native GitHub-hosted runners.
+- Added ESLint + Prettier — previously nothing enforced code style or caught obvious bugs before merge.
+- Unified the dev-server and production local API implementations into one shared module; they were two independent ~700-line copies that had already started drifting.
+- Removed ~26 MB of duplicated showcase-page HTML that had been committed three times over; consolidated to one generated source.
+- Removed `scripts/sync-release.js` and the abandoned `electron-packager`/`release-pkg` build path it fed — the Inno Setup installer scripts now read from `electron-builder`'s output and use portable paths instead of one machine's hardcoded absolute path.
 
 ---
 
-### 🛠️ Key Fixes in v1.0.0
-- Fixed CUDA exit code 1 file flush handling via async retry poller.
-- Enhanced multi-drive recursive checkpoint auto-discovery.
-- Fixed non-diffusion model misclassification.
-- Modularized core backend engine and decoupled React 19 UI components.
+### 📦 Downloads
+
+| Platform | File | Size | Description |
+|---|---|---|---|
+| 🪟 Windows | Complete Setup | ~780 MB | Bundled CUDA, Vulkan, CPU engines |
+| 🪟 Windows | Lightweight Setup | ~94 MB | Downloads engine libraries on first run |
+| 🐧 Linux | AppImage | ~133 MB | Portable, no install |
+| 🐧 Linux | `.deb` | ~86 MB | Debian / Ubuntu |
+| 🍎 macOS | `.zip` | ~127 MB | Unsigned app bundle |
+
+**⚠️ Draft note:** none of these are attached to a `v1.1.0` tag yet — rebuild the Windows installers from this commit (`npm run build:installer`) and upload all five files (plus the Windows two) to a new GitHub Release before publishing, then swap this table for direct `releases/download/v1.1.0/...` links like the v1.0.0 section below has. Until then, point people at **[Releases](https://github.com/Protik1810/NexusAI-Studio/releases/latest)**.
 
 ---
 
 ### 💻 Quick Installation Commands
 
-#### 🐧 Linux & 🍎 macOS (1-Line Terminal Install)
+#### 🪟 Windows
+Download an installer from the table above. There is currently no winget package.
+
+#### 🐧 Linux & 🍎 macOS — UI Preview
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Protik1810/NexusAI-Studio/main/install.sh | bash
 ```
-*Or via Git:*
-```bash
-git clone https://github.com/Protik1810/NexusAI-Studio.git && cd NexusAI-Studio && npm install && npm run dev
-```
 
-#### 🪟 Windows (winget Install)
-```powershell
-winget install --id Protik.NexusAIStudio -e
+#### 🐧 Linux & 🍎 macOS — Native Installer (Recommended)
+```bash
+git clone https://github.com/Protik1810/NexusAI-Studio.git && cd NexusAI-Studio && npm install && npm run electron:build:linux
 ```
-*Or directly via release executable URL:*
-```powershell
-winget install https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0.0/NexusAI-Studio-Setup-1.0.0.exe
-```
+*(swap `electron:build:linux` for `electron:build:mac` on macOS)*
 
 ---
 
 ### 📜 License
-Released under the **GNU General Public License v3.0 (GPL-3.0)**.  
+Released under the **GNU General Public License v3.0 (GPL-3.0)**.
 *Created & Engineered by **[Protik](https://github.com/Protik1810)**.*
+
+---
+
+## Previous Releases
+
+### v1.0.0
+
+- **Image Studio**: Native `stable-diffusion.cpp` support for FLUX.2-Klein, SDXL Lightning (4-step), and LoRA dynamic stacking.
+- **Uncensored LLM Chat**: Native `llama.cpp` streaming engine for GGUF models (Qwen 2.5, Llama 3, DeepSeek) with 1-click prompt export to Image Studio.
+- **Dynamic Drive Scanner**: Auto-discovers checkpoints and weights across all drives (`C:`, `D:`, `E:`, ComfyUI, WebUI) with sub-ms cache load.
+- **Hardware Acceleration**: Automatic routing to NVIDIA CUDA 12, AMD/Intel Vulkan, or AVX2 CPU.
+- **6 Ambient Themes**: Dark Void, Neon Cyber, Cinema Gold, Synthwave Sunset, Anime Fantasy, and Emerald Matrix.
+- Fixed CUDA exit code 1 file flush handling via async retry poller.
+- Enhanced multi-drive recursive checkpoint auto-discovery.
+- Fixed non-diffusion model misclassification.
+- Modularized core backend engine and decoupled React 19 UI components.
