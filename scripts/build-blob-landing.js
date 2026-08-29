@@ -648,9 +648,91 @@ const html = `<!DOCTYPE html>
       .hero-title { font-size: 36px; }
       .nav-links { display: none; }
     }
+
+    /* Scroll-driven cinematic reveal system */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+      box-shadow: 0 0 12px var(--accent-glow);
+      z-index: 2000;
+      transition: width 0.1s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(26px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-badge, .hero-logo, .hero-title, .hero-subtitle {
+      opacity: 0;
+      animation: fadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .hero-badge { animation-delay: 0.05s; }
+    .hero-logo { animation-delay: 0.12s; }
+    .hero-title { animation-delay: 0.2s; }
+    .hero-subtitle { animation-delay: 0.32s; }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(36px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-scale {
+      opacity: 0;
+      transform: scale(0.94);
+      transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal-scale.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .reveal-stagger > * {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal-stagger.visible > *:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.04s; }
+    .reveal-stagger.visible > *:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
+    .reveal-stagger.visible > *:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.16s; }
+    .reveal-stagger.visible > *:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.22s; }
+    .reveal-stagger.visible > *:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
+    .reveal-stagger.visible > *:nth-child(6) { opacity: 1; transform: translateY(0); transition-delay: 0.34s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .hero-badge, .hero-logo, .hero-title, .hero-subtitle,
+      .reveal, .reveal-scale, .reveal-stagger > * {
+        animation: none !important;
+        transition: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
   </style>
 </head>
 <body>
+
+  <div class="scroll-progress" id="scroll-progress"></div>
+  <noscript>
+    <style>
+      .hero-badge, .hero-logo, .hero-title, .hero-subtitle,
+      .reveal, .reveal-scale, .reveal-stagger > * { opacity: 1 !important; transform: none !important; animation: none !important; }
+    </style>
+  </noscript>
 
   <!-- Navigation Bar -->
   <nav class="navbar">
@@ -690,7 +772,7 @@ const html = `<!DOCTYPE html>
       </p>
 
       <!-- Live Theme Switcher -->
-      <div class="theme-switcher-box" id="themes">
+      <div class="theme-switcher-box reveal" id="themes">
         <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span>🎨</span> Live Visual Wallpaper Themes (Click to Change Backdrop):
         </div>
@@ -725,12 +807,12 @@ const html = `<!DOCTYPE html>
 
     <!-- Product Showcase Gallery with Real App Screenshots -->
     <section id="showcase" class="showcase-section">
-      <div class="showcase-header">
+      <div class="showcase-header reveal">
         <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">🖼️ Product Showcase & Viewport</h2>
         <p style="font-size: 15px; color: var(--text-secondary);">Interactive preview of Solframe Studio running real local inference on GPU.</p>
       </div>
 
-      <div class="showcase-nav">
+      <div class="showcase-nav reveal-stagger">
         <button class="showcase-tab active" onclick="switchScreenshot('lion', this)">
           <span>🦁</span> Photorealistic Synthesis
         </button>
@@ -748,7 +830,7 @@ const html = `<!DOCTYPE html>
         </button>
       </div>
 
-      <div class="showcase-frame">
+      <div class="showcase-frame reveal-scale">
         <div class="window-header">
           <div class="window-dots">
             <div class="window-dot" style="background: #ef4444;"></div>
@@ -764,14 +846,14 @@ const html = `<!DOCTYPE html>
 
     <!-- Downloads Section -->
     <section id="downloads">
-      <div style="text-align: center; margin-bottom: 32px;">
+      <div style="text-align: center; margin-bottom: 32px;" class="reveal">
         <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">📦 Download Solframe Studio</h2>
         <p style="font-size: 15px; color: var(--text-secondary);">Native installers for Windows, Linux, and macOS &mdash; hosted on GitHub Releases.</p>
       </div>
 
-      <div class="platform-group" data-platform="windows">
+      <div class="platform-group reveal" data-platform="windows">
         <div class="platform-group-title">🪟 Windows &mdash; full local inference (CUDA / Vulkan / CPU)</div>
-        <div class="downloads-grid">
+        <div class="downloads-grid reveal-stagger">
 
           <!-- Full Setup -->
           <div class="download-card">
@@ -807,9 +889,9 @@ const html = `<!DOCTYPE html>
         </div>
       </div>
 
-      <div class="platform-group" data-platform="linux">
+      <div class="platform-group reveal" data-platform="linux">
         <div class="platform-group-title">🐧 Linux &mdash; UI shell (native engines coming later, see below)</div>
-        <div class="downloads-grid">
+        <div class="downloads-grid reveal-stagger">
 
           <!-- AppImage -->
           <div class="download-card">
@@ -845,9 +927,9 @@ const html = `<!DOCTYPE html>
         </div>
       </div>
 
-      <div class="platform-group" data-platform="mac">
+      <div class="platform-group reveal" data-platform="mac">
         <div class="platform-group-title">🍎 macOS &mdash; UI shell (native engines coming later, see below)</div>
-        <div class="downloads-grid">
+        <div class="downloads-grid reveal-stagger">
 
           <!-- macOS zip -->
           <div class="download-card">
@@ -874,7 +956,7 @@ const html = `<!DOCTYPE html>
 
     <!-- Direct Terminal Installation -->
     <section id="terminal-install" class="terminal-section">
-      <div class="glass-card">
+      <div class="glass-card reveal">
         <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 6px;">💻 Direct Installation by Terminal</h2>
         <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">
           Install and launch Solframe Studio instantly via terminal on Windows, Linux, and macOS.
@@ -920,7 +1002,7 @@ const html = `<!DOCTYPE html>
     </section>
 
     <!-- Creator Spotlight -->
-    <section class="creator-card">
+    <section class="creator-card reveal-scale">
       <a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener">
         <img class="creator-avatar" src="${creatorAvatarBase64}" alt="${CREATOR_NAME} on GitHub">
       </a>
@@ -944,7 +1026,7 @@ const html = `<!DOCTYPE html>
   </div>
 
   <!-- Footer -->
-  <footer>
+  <footer class="reveal">
     <div class="container">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -1037,6 +1119,42 @@ const html = `<!DOCTYPE html>
     }
 
     applyPlatformDetection();
+
+    // Cinematic scroll interactions: a top progress bar, gentle hero-logo
+    // parallax, and Intersection Observer-driven reveal-on-scroll for every
+    // section below the fold. Kept dependency-free since this page is a
+    // single self-contained file with no bundler.
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const scrollProgressEl = document.getElementById('scroll-progress');
+    const heroLogoEl = document.querySelector('.hero-logo');
+
+    function updateScrollEffects() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      if (scrollProgressEl) scrollProgressEl.style.width = pct + '%';
+      if (heroLogoEl && !prefersReducedMotion) {
+        const offset = Math.min(scrollTop * 0.12, 60);
+        heroLogoEl.style.transform = 'translateY(' + offset + 'px)';
+      }
+    }
+    window.addEventListener('scroll', updateScrollEffects, { passive: true });
+    updateScrollEffects();
+
+    if (!prefersReducedMotion && 'IntersectionObserver' in window) {
+      const revealEls = document.querySelectorAll('.reveal, .reveal-scale, .reveal-stagger');
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+      revealEls.forEach((el) => revealObserver.observe(el));
+    } else {
+      document.querySelectorAll('.reveal, .reveal-scale, .reveal-stagger').forEach((el) => el.classList.add('visible'));
+    }
   </script>
 </body>
 </html>`;
