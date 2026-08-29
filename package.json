@@ -107,7 +107,8 @@
         { "target": "deb", "arch": ["x64"] }
       ],
       "category": "Graphics",
-      "icon": "electron/icon.png"
+      "icon": "electron/icon.png",
+      "maintainer": "Protik <protik@nexusai.local>"
     },
     "mac": {
       "target": [
