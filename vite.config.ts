@@ -948,8 +948,10 @@ function sdCppBackendPlugin() {
 }
 
 export default defineConfig({
+  base: './',
   plugins: [react(), sdCppBackendPlugin()],
   clearScreen: false,
+
   server: {
     port: 1420,
     strictPort: true,
