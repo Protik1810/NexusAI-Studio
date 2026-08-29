@@ -41,7 +41,7 @@ These ship the UI shell only — the bundled diffusion/LLM engines are still Win
 
 ### 🌐 Showcase Page
 
-The [GitHub Pages site](https://protik1810.github.io/NexusAI-Studio/) now detects your OS and highlights the right install method automatically, and has real download cards for Linux and macOS alongside Windows — not just a terminal command. The old "Windows (winget)" install command is gone; it never worked (no such package exists, and that wasn't valid winget syntax regardless).
+The [GitHub Pages site](https://protik1810.github.io/Solframe-Studio/) now detects your OS and highlights the right install method automatically, and has real download cards for Linux and macOS alongside Windows — not just a terminal command. The old "Windows (winget)" install command is gone; it never worked (no such package exists, and that wasn't valid winget syntax regardless).
 
 ### ⚙️ Engineering
 

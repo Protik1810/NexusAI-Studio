@@ -54,4 +54,4 @@ execSync('git remote add origin https://github.com/Protik1810/NexusAI-Studio.git
 execSync('git push -f origin gh-pages', { cwd: deployDir, stdio: 'inherit' });
 
 fs.rmSync(deployDir, { recursive: true, force: true });
-console.log('GitHub Pages successfully deployed to https://protik1810.github.io/NexusAI-Studio/');
+console.log('GitHub Pages successfully deployed to https://protik1810.github.io/Solframe-Studio/');
