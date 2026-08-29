@@ -8,7 +8,7 @@
 [![Hardware](https://img.shields.io/badge/Hardware-NVIDIA%20CUDA%20%7C%20AMD%2FIntel%20Vulkan-success?style=for-the-badge&logo=nvidia)](https://github.com/Protik1810/NexusAI-Studio)
 [![Engine](https://img.shields.io/badge/Diffusion%20Engine-stable--diffusion.cpp-orange?style=for-the-badge)](https://github.com/leejet/stable-diffusion.cpp)
 [![LLM](https://img.shields.io/badge/Dialogue%20Engine-llama.cpp%20GGUF-purple?style=for-the-badge)](https://github.com/ggerganov/llama.cpp)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-GNU%20GPL%20v3.0-blue?style=for-the-badge)](LICENSE)
 
 <br/>
 

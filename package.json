@@ -4,7 +4,8 @@
   "private": true,
   "version": "1.0.0",
   "description": "Standalone AI Image Generation and Chat Studio with FLUX, SDXL, llama.cpp",
-  "author": "NexusAI",
+  "author": "Protik",
+  "license": "GPL-3.0-or-later",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
