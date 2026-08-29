@@ -18,36 +18,36 @@
 
 ---
 
-## ðŸŒŸ Overview
+##  Overview
 
 **NexusAI Studio** is a standalone, self-contained desktop generative AI suite engineered for 100% private, offline inference. Combining **`stable-diffusion.cpp`** (supporting FLUX.2 Klein, SDXL Lightning, and standard SD checkpoints) with **`llama.cpp`** (running GGUF text models with full GPU offloading), NexusAI Studio brings high-performance generative AI directly to consumer hardware with zero subscription fees, zero cloud telemetry, and complete offline autonomy.
 
 ---
 
-## ðŸš€ Key Features
+##  Key Features
 
-### ðŸŽ¨ 1. Image Studio (Multi-Architecture Diffusion)
+###  1. Image Studio (Multi-Architecture Diffusion)
 - **FLUX.2-Klein Architecture Support**: Auto-configured `--prediction flux2_flow` with 32-channel VAEs (`flux2-vae.safetensors` / `ae.safetensors`) and GGUF text encoders.
 - **SDXL Lightning & Turbo**: 4-step ultra-fast photo-realistic generation.
 - **LoRA Dynamic Stacking**: Real-time slider strength control for fine-tuned LoRA weights.
 - **Distraction-Free Canvas**: Pure studio neutral generation viewport for accurate color fidelity.
 
-### ðŸ’¬ 2. Uncensored Local LLM Chat
+###  2. Uncensored Local LLM Chat
 - **Native `llama.cpp` GPU Server**: Stream tokens in real time from quantized GGUF models (DeepSeek, Qwen 2.5, Gemma 4, Llama 3, Dolphin).
 - **Custom Personas**: Seamless roleplay switching (Creative Visionary, Technical Prompt Engineer, Uncensored Assistant).
 - **Cross-Studio Pipeline**: Send generated prompts directly to the Image Studio with one click.
 
-### ðŸŽ® 3. Dynamic Hardware Auto-Detection
+###  3. Dynamic Hardware Auto-Detection
 - **NVIDIA GPUs**: Auto-routes to **CUDA** (`backend/win/cuda/`) leveraging Tensor Cores.
 - **AMD Radeon & Intel Arc GPUs**: Auto-routes to **Vulkan** (`backend/win/vulkan/`) using cross-platform compute shaders.
 - **CPU Fallback**: Automatic multi-threaded AVX2 CPU execution when no discrete GPU is found.
 
-### ðŸ—„ï¸ 4. Universal Dynamic Model Scanner
+###  4. Universal Dynamic Model Scanner
 - **Multi-Drive Auto-Discovery**: Dynamically detects mounted drive letters (`C:`, `D:`, `E:`, `Z:`) and indexes standard AI directories (`/models`, `/ComfyUI/models`, `/stable-diffusion-webui/models`, `/LLM`).
 - **Instant Load with Disk Cache**: Persists scan indices to `~/.nexusai/scan_cache.json` for sub-millisecond cold starts.
 - **Hugging Face Hub Downloader**: Built-in repository tree explorer with real-time download speed and progress tracking.
 
-### ðŸŒŒ 5. 6 Generative AI Ambient Themes
+###  5. 6 Generative AI Ambient Themes
 - **Visual Theme Gallery Modal**: Card previews of high-resolution AI-generated wallpaper backdrops.
 - **Themes**:
   1. ðŸŒŒ **Dark Void** (Cosmic Neural Dust)
@@ -59,7 +59,7 @@
 
 ---
 
-## ðŸ—ï¸ Architecture & Technology Stack
+##  Architecture & Technology Stack
 
 | Layer | Technology |
 |---|---|
@@ -72,7 +72,7 @@
 
 ---
 
-## ðŸ“¦ Getting Started
+## ¦ Getting Started
 
 ### Prerequisites
 - Windows 10/11 x64, Linux, or macOS
@@ -105,7 +105,7 @@ npm run electron:pack
 
 ---
 
-## ðŸ‘¤ Author & Credits
+##  Author & Credits
 
 - **Creator & Lead Architect**: **Protik**
 - **Core Open Source Engines**: [`stable-diffusion.cpp`](https://github.com/leejet/stable-diffusion.cpp), [`llama.cpp`](https://github.com/ggerganov/llama.cpp)
