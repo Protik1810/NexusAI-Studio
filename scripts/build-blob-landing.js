@@ -430,11 +430,24 @@ const html = `<!DOCTYPE html>
     }
 
     /* Downloads Grid */
+    .platform-group {
+      margin-bottom: 36px;
+    }
+
+    .platform-group-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+
     .downloads-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 24px;
-      margin: 40px 0;
+      margin: 16px 0;
     }
 
     .download-card {
@@ -748,47 +761,111 @@ const html = `<!DOCTYPE html>
     <!-- Downloads Section -->
     <section id="downloads">
       <div style="text-align: center; margin-bottom: 32px;">
-        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">📦 Windows Installer Packages</h2>
-        <p style="font-size: 15px; color: var(--text-secondary);">Direct executable setup files hosted on GitHub Releases v1.0.</p>
-        <p id="not-windows-note" style="font-size: 13px; margin-top: 8px; display: none;">
-          Not on Windows? <a href="#terminal-install" style="color: var(--accent);">Jump to Linux/macOS installers ↓</a>
-        </p>
+        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">📦 Download NexusAI Studio</h2>
+        <p style="font-size: 15px; color: var(--text-secondary);">Native installers for Windows, Linux, and macOS &mdash; hosted on GitHub Releases.</p>
       </div>
 
-      <div class="downloads-grid" data-platform="windows">
+      <div class="platform-group" data-platform="windows">
+        <div class="platform-group-title">🪟 Windows &mdash; full local inference (CUDA / Vulkan / CPU)</div>
+        <div class="downloads-grid">
 
-        <!-- Full Setup -->
-        <div class="download-card">
-          <div class="download-badge-popular">Recommended</div>
-          <div>
-            <div class="download-icon">📦</div>
-            <h3 class="download-title">Complete Installer</h3>
-            <div class="download-size">Size: ~806 MB &bull; Standalone Setup</div>
-            <p class="download-desc">
-              All-in-one offline installation package. Bundles all pre-compiled C++ inference engines (NVIDIA CUDA 12, AMD/Intel Vulkan, AVX2 CPU, and <code>llama-server</code>).
-            </p>
+          <!-- Full Setup -->
+          <div class="download-card">
+            <div class="download-badge-popular">Recommended</div>
+            <div>
+              <div class="download-icon">📦</div>
+              <h3 class="download-title">Complete Installer</h3>
+              <div class="download-size">Size: ~806 MB &bull; Standalone Setup</div>
+              <p class="download-desc">
+                All-in-one offline installation package. Bundles all pre-compiled C++ inference engines (NVIDIA CUDA 12, AMD/Intel Vulkan, AVX2 CPU, and <code>llama-server</code>).
+              </p>
+            </div>
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe" class="btn-primary" style="justify-content: center;">
+              <span>⬇️</span> Download Full Setup (.exe)
+            </a>
           </div>
-          <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe" class="btn-primary" style="justify-content: center;">
-            <span>⬇️</span> Download Full Setup (.exe)
-          </a>
-        </div>
 
-        <!-- Lightweight Setup -->
-        <div class="download-card">
-          <div>
-            <div class="download-icon">🪶</div>
-            <h3 class="download-title">Lightweight Installer</h3>
-            <div class="download-size">Size: ~120 MB &bull; Fast Download</div>
-            <p class="download-desc">
-              Lightweight distribution. Lets you download your specific GPU backend libraries on demand via the in-app <strong>About / Settings</strong> tab.
-            </p>
+          <!-- Lightweight Setup -->
+          <div class="download-card">
+            <div>
+              <div class="download-icon">🪶</div>
+              <h3 class="download-title">Lightweight Installer</h3>
+              <div class="download-size">Size: ~120 MB &bull; Fast Download</div>
+              <p class="download-desc">
+                Lightweight distribution. Lets you download your specific GPU backend libraries on demand via the in-app <strong>About / Settings</strong> tab.
+              </p>
+            </div>
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0-Lightweight.exe" class="btn-secondary" style="justify-content: center;">
+              <span>⬇️</span> Download Lightweight (.exe)
+            </a>
           </div>
-          <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0-Lightweight.exe" class="btn-secondary" style="justify-content: center;">
-            <span>⬇️</span> Download Lightweight (.exe)
-          </a>
-        </div>
 
+        </div>
       </div>
+
+      <div class="platform-group" data-platform="linux">
+        <div class="platform-group-title">🐧 Linux &mdash; UI shell (native engines coming later, see below)</div>
+        <div class="downloads-grid">
+
+          <!-- AppImage -->
+          <div class="download-card">
+            <div class="download-badge-popular">Recommended</div>
+            <div>
+              <div class="download-icon">📦</div>
+              <h3 class="download-title">AppImage</h3>
+              <div class="download-size">Size: ~133 MB &bull; Any distro, no install</div>
+              <p class="download-desc">
+                Portable single-file app &mdash; <code>chmod +x</code> then run. Works across most modern Linux distributions.
+              </p>
+            </div>
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/latest" class="btn-primary" style="justify-content: center;">
+              <span>⬇️</span> Get AppImage from Releases
+            </a>
+          </div>
+
+          <!-- .deb -->
+          <div class="download-card">
+            <div>
+              <div class="download-icon">📥</div>
+              <h3 class="download-title">.deb Package</h3>
+              <div class="download-size">Size: ~86 MB &bull; Debian / Ubuntu</div>
+              <p class="download-desc">
+                Install with <code>sudo apt install ./nexusai-studio_1.0.0_amd64.deb</code> on Debian-based distributions.
+              </p>
+            </div>
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/latest" class="btn-secondary" style="justify-content: center;">
+              <span>⬇️</span> Get .deb from Releases
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="platform-group" data-platform="mac">
+        <div class="platform-group-title">🍎 macOS &mdash; UI shell (native engines coming later, see below)</div>
+        <div class="downloads-grid">
+
+          <!-- macOS zip -->
+          <div class="download-card">
+            <div>
+              <div class="download-icon">🗜️</div>
+              <h3 class="download-title">App Bundle (.zip)</h3>
+              <div class="download-size">Size: ~127 MB &bull; Unsigned build</div>
+              <p class="download-desc">
+                Unzip and move to Applications. Unsigned, so the first launch needs right-click &rarr; Open to bypass Gatekeeper.
+              </p>
+            </div>
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/latest" class="btn-secondary" style="justify-content: center;">
+              <span>⬇️</span> Get .zip from Releases
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-muted); text-align: center; margin-top: -8px;">
+        Linux and macOS builds ship the interface only right now &mdash; the bundled diffusion/LLM engines are Windows-only binaries. See <a href="#terminal-install" style="color: var(--accent);">Direct Installation by Terminal</a> below to build your own from source.
+      </p>
     </section>
 
     <!-- Direct Terminal Installation -->
@@ -937,15 +1014,9 @@ const html = `<!DOCTYPE html>
       const labels = { windows: 'Windows', mac: 'macOS', linux: 'Linux' };
       const banner = document.getElementById('platform-banner');
       if (banner) {
-        const jumpTarget = platform === 'windows' ? '#downloads' : '#terminal-install';
         banner.innerHTML = '<span>✅</span> Detected: ' + labels[platform] +
-          ' — <a href="' + jumpTarget + '">jump to your install method ↓</a>';
+          ' — <a href="#downloads">jump to your download ↓</a>';
         banner.style.display = 'inline-flex';
-      }
-
-      const notWindowsNote = document.getElementById('not-windows-note');
-      if (notWindowsNote && platform !== 'windows') {
-        notWindowsNote.style.display = 'block';
       }
 
       document.querySelectorAll('[data-platform]').forEach(el => {
