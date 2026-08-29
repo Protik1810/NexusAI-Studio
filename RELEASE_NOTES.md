@@ -33,6 +33,15 @@ Autonomous, sovereign & 100% offline local Generative AI workstation by **Protik
 
 ---
 
+### 💻 Linux & macOS Quick Start (Terminal)
+
+```bash
+# 🐧 Linux & 🍎 macOS: Clone, Install & Launch
+git clone https://github.com/Protik1810/NexusAI-Studio.git && cd NexusAI-Studio && npm install && npm run dev
+```
+
+---
+
 ### 📜 License
 Released under the **GNU General Public License v3.0 (GPL-3.0)**.  
 *Created & Engineered by **[Protik](https://github.com/Protik1810)**.*

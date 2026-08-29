@@ -85,11 +85,16 @@ Double-click `NexusAI Studio.lnk` or run:
 release-pkg\NexusAI Studio-win32-x64\NexusAI Studio.exe
 ```
 
+### 🐧 Linux & 🍎 macOS Quick Terminal Install
+```bash
+git clone https://github.com/Protik1810/NexusAI-Studio.git && cd NexusAI-Studio && npm install && npm run dev
+```
+
 ### Running in Development Mode
 ```bash
 # 1. Clone repository
 git clone https://github.com/Protik1810/NexusAI-Studio.git
-cd nexusai-studio
+cd NexusAI-Studio
 
 # 2. Install dependencies
 npm install
