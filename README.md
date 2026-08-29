@@ -1,6 +1,6 @@
 ﻿<div align="center">
 
-# âœ¨ NexusAI Studio
+# NexusAI Studio
 
 **Autonomous, Sovereign & Zero-Cloud Local Generative AI Workstation**
 
