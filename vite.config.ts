@@ -460,6 +460,105 @@ function sdCppBackendPlugin() {
       runBackgroundScan();
 
       // 0. Scan status endpoint
+      
+      server.middlewares.use('/api/libraries-status', async (req: any, res: any) => {
+        const hw = detectHardware();
+
+        const libraryDefinitions = [
+          {
+            id: 'vulkan-sd',
+            name: 'Vulkan Diffusion Engine',
+            category: 'Vulkan GPU (Cross-Platform)',
+            description: 'High-speed GPU diffusion engine for AMD Radeon, Intel Arc & NVIDIA GPUs',
+            requiredFor: 'AMD/Intel/NVIDIA Image Synthesis',
+            files: [
+              { path: 'backend/win/vulkan/sd-cli.exe', name: 'sd-cli.exe', required: true },
+              { path: 'backend/win/vulkan/stable-diffusion.dll', name: 'stable-diffusion.dll (Vulkan)', required: true }
+            ]
+          },
+          {
+            id: 'cuda-sd',
+            name: 'CUDA 12 Diffusion Engine',
+            category: 'NVIDIA CUDA Acceleration',
+            description: 'NVIDIA Tensor Core accelerated diffusion kernel for FLUX.2 & SDXL',
+            requiredFor: 'NVIDIA Maximum GPU Speed',
+            files: [
+              { path: 'backend/win/cuda/sd-cli.exe', name: 'sd-cli.exe (CUDA)', required: true },
+              { path: 'backend/win/cuda/stable-diffusion.dll', name: 'stable-diffusion.dll (CUDA)', required: true },
+              { path: 'backend/win/cuda/cublasLt64_12.dll', name: 'cublasLt64_12.dll (Tensor Cores)', required: true },
+              { path: 'backend/win/cuda/cublas64_12.dll', name: 'cublas64_12.dll (cuBLAS)', required: true },
+              { path: 'backend/win/cuda/cudart64_12.dll', name: 'cudart64_12.dll (CUDA Runtime)', required: true }
+            ]
+          },
+          {
+            id: 'llama-engine',
+            name: 'llama.cpp Server Runtime',
+            category: 'Local LLM Dialogue Engine',
+            description: 'Real-time GGUF token streaming engine with CUDA & Vulkan GPU offload',
+            requiredFor: 'Uncensored LLM Chat',
+            files: [
+              { path: 'backend/win/llama/llama-server.exe', name: 'llama-server.exe', required: true },
+              { path: 'backend/win/llama/llama.dll', name: 'llama.dll', required: true },
+              { path: 'backend/win/llama/llama-common.dll', name: 'llama-common.dll', required: true },
+              { path: 'backend/win/llama/llama-server-impl.dll', name: 'llama-server-impl.dll', required: true },
+              { path: 'backend/win/llama/libomp.dll', name: 'libomp.dll (OpenMP)', required: true }
+            ]
+          },
+          {
+            id: 'llama-cuda',
+            name: 'llama.cpp CUDA GPU Layer',
+            category: 'NVIDIA CUDA Acceleration',
+            description: 'CUDA GPU offloading kernel for llama.cpp token generation',
+            requiredFor: 'NVIDIA LLM GPU Speed',
+            files: [
+              { path: 'backend/win/llama/ggml-cuda.dll', name: 'ggml-cuda.dll', required: false }
+            ]
+          }
+        ];
+
+        const evaluated = libraryDefinitions.map(def => {
+          let allFilesPresent = true;
+          const fileDetails = def.files.map(f => {
+            const p1 = path.join(rootDir, f.path);
+            const exists = fs.existsSync(p1);
+            let sizeMB = '0 MB';
+            if (exists) {
+              try { sizeMB = (fs.statSync(p1).size / (1024 * 1024)).toFixed(1) + ' MB'; } catch (e) {}
+            } else {
+              if (f.required) allFilesPresent = false;
+            }
+            return {
+              name: f.name,
+              defaultRelativePath: f.path,
+              absolutePath: p1,
+              exists,
+              sizeMB,
+              required: f.required
+            };
+          });
+
+          return {
+            id: def.id,
+            name: def.name,
+            category: def.category,
+            description: def.description,
+            requiredFor: def.requiredFor,
+            installed: allFilesPresent,
+            files: fileDetails
+          };
+        });
+
+        const totalRequiredMissing = evaluated.filter(e => !e.installed).length;
+
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({
+          libraries: evaluated,
+          allReady: totalRequiredMissing === 0,
+          missingCount: totalRequiredMissing,
+          hardware: hw
+        }));
+      });
+
       server.middlewares.use('/api/hardware-info', async (req: any, res: any) => {
         const hw = detectHardware();
         res.setHeader('Content-Type', 'application/json');

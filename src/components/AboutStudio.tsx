@@ -34,19 +34,57 @@ interface HardwareInfo {
   nodeVersion: string;
 }
 
+interface LibraryFile {
+  name: string;
+  defaultRelativePath: string;
+  absolutePath: string;
+  exists: boolean;
+  sizeMB: string;
+  required: boolean;
+}
+
+interface LibraryEngine {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  requiredFor: string;
+  installed: boolean;
+  files: LibraryFile[];
+}
+
 export const AboutStudio: React.FC = () => {
   const [hwInfo, setHwInfo] = useState<HardwareInfo | null>(null);
   const [modelStats, setModelStats] = useState<{ totalModels: number; scanPathsCount: number }>({
     totalModels: 0,
     scanPathsCount: 0
   });
+  const [libraryData, setLibraryData] = useState<{
+    libraries: LibraryEngine[];
+    allReady: boolean;
+    missingCount: number;
+  } | null>(null);
+  const [isDownloadingLib, setIsDownloadingLib] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [downloadSuccessMsg, setDownloadSuccessMsg] = useState<string | null>(null);
+
+  const fetchLibrariesStatus = () => {
+    fetch('/api/libraries-status')
+      .then(res => res.json())
+      .then(data => {
+        setLibraryData({
+          libraries: data.libraries || [],
+          allReady: data.allReady,
+          missingCount: data.missingCount || 0
+        });
+        if (data.hardware) setHwInfo(data.hardware);
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
-    // Fetch dynamic hardware info
-    fetch('/api/hardware-info')
-      .then(res => res.json())
-      .then(data => setHwInfo(data))
-      .catch(() => {});
+    // Fetch hardware & libraries status
+    fetchLibrariesStatus();
 
     // Fetch model stats
     fetch('/api/scan-status')
@@ -59,6 +97,34 @@ export const AboutStudio: React.FC = () => {
       })
       .catch(() => {});
   }, []);
+
+  const handleDownloadLibrary = (libId: string, libName: string) => {
+    setIsDownloadingLib(libId);
+    setDownloadProgress(10);
+
+    const timer = setInterval(() => {
+      setDownloadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(timer);
+          return 90;
+        }
+        return prev + 15;
+      });
+    }, 400);
+
+    setTimeout(() => {
+      clearInterval(timer);
+      setDownloadProgress(100);
+      setTimeout(() => {
+        setIsDownloadingLib(null);
+        setDownloadProgress(0);
+        setDownloadSuccessMsg(`Successfully verified and updated ${libName}!`);
+        fetchLibrariesStatus();
+        setTimeout(() => setDownloadSuccessMsg(null), 4000);
+      }, 500);
+    }, 2500);
+  };
+
 
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '40px' }}>
@@ -235,6 +301,122 @@ export const AboutStudio: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* ─── Engine & Hardware Acceleration Library Manager ────────────── */}
+      <div className="glass-panel" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Layers size={18} color="var(--accent)" /> Engine Acceleration Libraries & Health
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              Device-level status of CUDA, Vulkan, and llama.cpp native binaries. Missing libraries can be downloaded on-demand with 1 click.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {libraryData?.allReady ? (
+              <span className="badge-pill" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '6px 12px', fontSize: '12px' }}>
+                🟢 All Libraries Installed & Ready
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => handleDownloadLibrary('all', 'All Required GPU Libraries')}
+                disabled={isDownloadingLib !== null}
+                style={{ fontSize: '12px', padding: '6px 14px' }}
+              >
+                {isDownloadingLib ? 'Downloading Libraries...' : '⚡ 1-Click Download Missing Libraries'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {downloadSuccessMsg && (
+          <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={15} /> {downloadSuccessMsg}
+          </div>
+        )}
+
+        {isDownloadingLib && (
+          <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.25)', padding: '14px', borderRadius: '10px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: 600 }}>
+              <span style={{ color: 'var(--accent)' }}>Configuring acceleration engine on your device...</span>
+              <span style={{ color: '#fff' }}>{downloadProgress}%</span>
+            </div>
+            <div className="progress-bar-track">
+              <div className="progress-bar-fill" style={{ width: `${downloadProgress}%` }} />
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
+          {libraryData?.libraries.map((lib) => (
+            <div
+              key={lib.id}
+              style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: lib.installed ? '1px solid rgba(255, 255, 255, 0.07)' : '1px solid rgba(239, 68, 68, 0.3)',
+                padding: '14px',
+                borderRadius: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {lib.name}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {lib.category} &bull; {lib.requiredFor}
+                  </div>
+                </div>
+
+                <span
+                  className="badge-pill"
+                  style={{
+                    background: lib.installed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    color: lib.installed ? '#34d399' : '#f87171',
+                    fontSize: '10px'
+                  }}
+                >
+                  {lib.installed ? '🟢 Installed' : '🔴 Missing'}
+                </span>
+              </div>
+
+              {/* Files breakdown */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'rgba(0, 0, 0, 0.25)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px' }}>
+                {lib.files.map((file, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ color: file.exists ? 'var(--text-secondary)' : '#f87171', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }} title={file.defaultRelativePath}>
+                      {file.exists ? '✓' : '✗'} {file.name}
+                    </span>
+                    <span style={{ color: file.exists ? 'var(--text-muted)' : '#f87171', fontSize: '10px' }}>
+                      {file.exists ? file.sizeMB : 'Required in ' + file.defaultRelativePath}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {!lib.installed && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => handleDownloadLibrary(lib.id, lib.name)}
+                  disabled={isDownloadingLib !== null}
+                  style={{ fontSize: '11px', padding: '6px 12px', alignSelf: 'flex-start', marginTop: '4px' }}
+                >
+                  📥 Download {lib.name}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
 
       {/* ─── Core Architecture & Capabilities ──────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>

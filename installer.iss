@@ -1,4 +1,4 @@
-; Inno Setup Script for NexusAI Studio
+; Inno Setup Script for NexusAI Studio with Complete Branding
 ; Designed & Crafted by Protik
 
 #define MyAppName "NexusAI Studio"
@@ -21,8 +21,10 @@ DefaultGroupName={#MyAppName}
 OutputDir=d:\genimg_comic\installer-output
 OutputBaseFilename=NexusAI-Studio-Setup-1.0.0
 SetupIconFile=d:\genimg_comic\electron\icon.ico
+WizardImageFile=d:\genimg_comic\public\wizard-large.bmp
+WizardSmallImageFile=d:\genimg_comic\public\wizard-small.bmp
 UninstallDisplayIcon={app}\{#MyAppExeName}
-Compression=lzma2/fast
+Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=lowest
