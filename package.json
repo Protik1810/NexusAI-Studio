@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "deploy": "tsc && vite build && node scripts/deploy-ghpages.js",
     "electron:dev": "npm run build && electron electron/main.cjs --dev",
     "electron:pack": "npm run build && electron-builder --dir --win --x64",
     "electron:build": "npm run build && electron-builder --win --x64",
