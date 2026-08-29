@@ -656,8 +656,8 @@ const html = `<!DOCTYPE html>
         <a href="#terminal-install" class="nav-link">Terminal Install</a>
         <a href="#themes" class="nav-link">Themes</a>
         <a href="https://github.com/Protik1810/NexusAI-Studio" target="_blank" class="nav-link">GitHub</a>
-        <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe" class="btn-nav-download">
-          <span>🚀</span> Download v1.0
+        <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/NexusAI-Studio-Setup-1.0.0.exe" class="btn-nav-download">
+          <span>🚀</span> Download v1.1.0
         </a>
       </div>
     </div>
@@ -775,7 +775,7 @@ const html = `<!DOCTYPE html>
                 All-in-one offline installation package. Bundles all pre-compiled C++ inference engines (NVIDIA CUDA 12, AMD/Intel Vulkan, AVX2 CPU, and <code>llama-server</code>).
               </p>
             </div>
-            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe" class="btn-primary" style="justify-content: center;">
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/NexusAI-Studio-Setup-1.0.0.exe" class="btn-primary" style="justify-content: center;">
               <span>⬇️</span> Download Full Setup (.exe)
             </a>
           </div>
@@ -790,7 +790,7 @@ const html = `<!DOCTYPE html>
                 Lightweight distribution. Lets you download your specific GPU backend libraries on demand via the in-app <strong>About / Settings</strong> tab.
               </p>
             </div>
-            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0-Lightweight.exe" class="btn-secondary" style="justify-content: center;">
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/NexusAI-Studio-Setup-1.0.0-Lightweight.exe" class="btn-secondary" style="justify-content: center;">
               <span>⬇️</span> Download Lightweight (.exe)
             </a>
           </div>
@@ -813,7 +813,7 @@ const html = `<!DOCTYPE html>
                 Portable single-file app &mdash; <code>chmod +x</code> then run. Works across most modern Linux distributions.
               </p>
             </div>
-            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-1.0.0-x86_64.AppImage" class="btn-primary" style="justify-content: center;">
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/NexusAI-Studio-1.0.0-x86_64.AppImage" class="btn-primary" style="justify-content: center;">
               <span>⬇️</span> Download AppImage
             </a>
           </div>
@@ -828,7 +828,7 @@ const html = `<!DOCTYPE html>
                 Install with <code>sudo apt install ./nexusai-studio_1.0.0_amd64.deb</code> on Debian-based distributions.
               </p>
             </div>
-            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/nexusai-studio_1.0.0_amd64.deb" class="btn-secondary" style="justify-content: center;">
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/nexusai-studio_1.0.0_amd64.deb" class="btn-secondary" style="justify-content: center;">
               <span>⬇️</span> Download .deb
             </a>
           </div>
@@ -850,7 +850,7 @@ const html = `<!DOCTYPE html>
                 Unzip and move to Applications. Unsigned, so the first launch needs right-click &rarr; Open to bypass Gatekeeper.
               </p>
             </div>
-            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-1.0.0-mac.zip" class="btn-secondary" style="justify-content: center;">
+            <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/NexusAI-Studio-1.0.0-mac.zip" class="btn-secondary" style="justify-content: center;">
               <span>⬇️</span> Download .zip
             </a>
           </div>

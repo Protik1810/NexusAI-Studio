@@ -55,13 +55,13 @@ The [GitHub Pages site](https://protik1810.github.io/NexusAI-Studio/) now detect
 
 | Platform | File | Size | Direct Link |
 |---|---|---|---|
-| 🪟 Windows | Complete Setup | ~806 MB | [NexusAI-Studio-Setup-1.0.0.exe](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe) |
-| 🪟 Windows | Lightweight Setup | ~120 MB | [NexusAI-Studio-Setup-1.0.0-Lightweight.exe](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0-Lightweight.exe) |
-| 🐧 Linux | AppImage | ~133 MB | [NexusAI-Studio-1.0.0-x86_64.AppImage](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-1.0.0-x86_64.AppImage) |
-| 🐧 Linux | `.deb` | ~86 MB | [nexusai-studio_1.0.0_amd64.deb](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/nexusai-studio_1.0.0_amd64.deb) |
-| 🍎 macOS | `.zip` | ~127 MB | [NexusAI-Studio-1.0.0-mac.zip](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-1.0.0-mac.zip) |
+| 🪟 Windows | Complete Setup | ~806 MB | [NexusAI-Studio-Setup-1.0.0.exe](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/NexusAI-Studio-Setup-1.0.0.exe) |
+| 🪟 Windows | Lightweight Setup | ~120 MB | [NexusAI-Studio-Setup-1.0.0-Lightweight.exe](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/NexusAI-Studio-Setup-1.0.0-Lightweight.exe) |
+| 🐧 Linux | AppImage | ~133 MB | [NexusAI-Studio-1.0.0-x86_64.AppImage](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/NexusAI-Studio-1.0.0-x86_64.AppImage) |
+| 🐧 Linux | `.deb` | ~86 MB | [nexusai-studio_1.0.0_amd64.deb](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/nexusai-studio_1.0.0_amd64.deb) |
+| 🍎 macOS | `.zip` | ~127 MB | [NexusAI-Studio-1.0.0-mac.zip](https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.1.0/NexusAI-Studio-1.0.0-mac.zip) |
 
-**Note:** all five are attached to the existing `v1.0` release tag (verified live — each link 302s to a real signed asset). The Windows two are the original v1.0.0 build; the Linux/macOS three were built from this session's fixed code. If you cut an actual `v1.1.0` tag later, re-upload the Windows installers from this commit too so all five match one source.
+**Note:** all five are attached to the `v1.1.0` release tag (verified live — each link 302s to a real signed asset).
 
 ---
 
