@@ -11,6 +11,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "deploy": "tsc && vite build && node scripts/deploy-ghpages.js",
+    "deploy:product": "node scripts/build-product-page.js",
+    "build:installer": "node scripts/build-installer.js",
     "electron:dev": "npm run build && electron electron/main.cjs --dev",
     "electron:pack": "npm run build && electron-builder --dir --win --x64",
     "electron:build": "npm run build && electron-builder --win --x64",
