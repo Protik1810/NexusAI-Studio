@@ -14,6 +14,9 @@ const toBase64 = (relPath, mimeType) => {
 };
 
 const logoBase64 = toBase64('public/logo.png', 'image/png');
+const creatorAvatarBase64 = toBase64('public/avatars/protik-github.jpg', 'image/jpeg');
+const CREATOR_GITHUB_URL = 'https://github.com/Protik1810';
+const CREATOR_NAME = 'Lord Protik';
 
 const screenshots = {
   lion: toBase64('public/screenshots/showcase-lion-artwork.png', 'image/png'),
@@ -614,13 +617,11 @@ const html = `<!DOCTYPE html>
       width: 80px;
       height: 80px;
       border-radius: 20px;
-      background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 36px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
       flex-shrink: 0;
+      display: block;
     }
 
     /* Footer */
@@ -911,14 +912,19 @@ const html = `<!DOCTYPE html>
 
     <!-- Creator Spotlight -->
     <section class="creator-card">
-      <div class="creator-avatar">👨‍💻</div>
+      <a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener">
+        <img class="creator-avatar" src="${creatorAvatarBase64}" alt="${CREATOR_NAME} on GitHub">
+      </a>
       <div style="flex: 1; min-width: 280px;">
         <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #a78bfa; margin-bottom: 4px;">
           Lead Creator & Architect
         </div>
-        <h2 style="font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 12px;">Protik</h2>
+        <h2 style="font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 12px;">
+          <a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="color: #fff; text-decoration: none;">${CREATOR_NAME}</a>
+          <a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="font-size: 14px; font-weight: 600; color: var(--accent); text-decoration: none; margin-left: 8px;">@Protik1810</a>
+        </h2>
         <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 16px;">
-          Engineered and crafted by <strong>Protik</strong> with a mission for sovereign, privacy-first generative AI. Built to give creators complete autonomy over cutting-edge diffusion synthesis and large language models directly on personal desktop hardware — free from cloud subscriptions, data mining, and platform lock-in.
+          Engineered and crafted by <strong><a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="color: inherit;">${CREATOR_NAME}</a></strong> with a mission for sovereign, privacy-first generative AI. Built to give creators complete autonomy over cutting-edge diffusion synthesis and large language models directly on personal desktop hardware — free from cloud subscriptions, data mining, and platform lock-in.
         </p>
         <div style="font-size: 13px; color: var(--text-muted);">
           NexusAI Studio Engine &bull; Released under GNU General Public License v3.0 (GPL-3.0)
@@ -934,7 +940,7 @@ const html = `<!DOCTYPE html>
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <img src="${logoBase64}" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px;">
-          <strong>NexusAI Studio</strong> &bull; Created by <strong>Protik</strong>
+          <strong>NexusAI Studio</strong> &bull; Created by <strong><a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="color: inherit;">${CREATOR_NAME}</a></strong>
         </div>
         <div>
           Powered by <code>stable-diffusion.cpp</code> &amp; <code>llama.cpp</code> &bull; <a href="LICENSE" style="color: var(--accent); text-decoration: none;">GNU GPL v3.0</a>

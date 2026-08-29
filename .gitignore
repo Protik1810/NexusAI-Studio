@@ -50,6 +50,7 @@ outputs/
 !public/logo.png
 !public/nexusai-icon.png
 !public/themes/*.jpg
+!public/avatars/*.jpg
 !electron/icon.png
 !electron/icon.ico
 
