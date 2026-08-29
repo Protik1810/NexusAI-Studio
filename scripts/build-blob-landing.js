@@ -159,6 +159,15 @@ const html = `<!DOCTYPE html>
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
+    .hero-logo {
+      width: 88px;
+      height: 88px;
+      border-radius: 22px;
+      box-shadow: 0 0 55px var(--accent-glow), 0 0 110px var(--accent-glow);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      margin-bottom: 24px;
+    }
+
     .brand-title {
       font-size: 20px;
       font-weight: 800;
@@ -660,6 +669,7 @@ const html = `<!DOCTYPE html>
         <span>⚡</span> v1.0.0 Production Release &bull; 100% Sovereign & Offline
       </div>
       <div id="platform-banner" class="platform-banner" style="display:none;"></div>
+      <img src="${logoBase64}" alt="NexusAI Studio Logo" class="hero-logo">
       <h1 class="hero-title">
         The Sovereign Desktop<br>
         <span class="hero-gradient">Generative AI Workstation</span>
