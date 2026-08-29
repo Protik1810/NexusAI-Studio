@@ -10,6 +10,11 @@ function createServer(options = {}) {
   const distDir = options.distDir || path.join(rootDir, 'dist');
   const publicDir = options.publicDir || path.join(rootDir, 'public');
 
+  // User-writable output directory (works even when app is installed in Program Files)
+  const userDataDir = path.join(process.env.APPDATA || process.env.HOME || rootDir, 'NexusAI Studio');
+  const userOutputsDir = path.join(userDataDir, 'outputs');
+  try { if (!fs.existsSync(userOutputsDir)) fs.mkdirSync(userOutputsDir, { recursive: true }); } catch (e) {}
+
   let llamaProc = null;
   let currentLlamaModel = null;
   let llamaPort = 8080;
@@ -1046,8 +1051,19 @@ function createServer(options = {}) {
           const execPath = getSdCliExecutable();
           const workingDir = path.dirname(execPath);
 
-          const outDir = path.join(publicDir, 'outputs');
-          if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+          // Use user-writable dir (Program Files is read-only after install)
+          let outDir = userOutputsDir;
+          try {
+            if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+            // Quick write-test
+            const testFile = path.join(outDir, '.write-test');
+            fs.writeFileSync(testFile, '1');
+            fs.unlinkSync(testFile);
+          } catch (e) {
+            // Fallback to publicDir/outputs
+            outDir = path.join(publicDir, 'outputs');
+            try { if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true }); } catch (e2) {}
+          }
 
           const outFilename = `gen_${Date.now()}.png`;
           const outFullPath = path.join(outDir, outFilename);
@@ -1093,20 +1109,29 @@ function createServer(options = {}) {
           child.stderr?.on('data', d => { stderrLog += d.toString(); });
           child.stdout?.on('data', d => { console.log('[sd-cli]', d.toString().trim()); });
           child.on('close', code => {
-            const imageGenerated = fs.existsSync(outFullPath) && fs.statSync(outFullPath).size > 1000;
-            if (imageGenerated) {
-              console.log(`[NexusAI sd-generate] Image generation SUCCESS: ${outFullPath}`);
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ success: true, imageUrl: `/outputs/${outFilename}?t=${Date.now()}`, outputPath: outFullPath }));
-            } else {
-              console.error('[sd-cli STDERR]:', stderrLog);
-              res.statusCode = 500;
-              res.setHeader('Content-Type', 'application/json');
-              const errMsg = stderrLog
-                ? `sd-cli exit code ${code}:\n${stderrLog.slice(-2000)}`
-                : `sd-cli exited with code ${code}. Check model path or GPU memory.`;
-              res.end(JSON.stringify({ success: false, error: errMsg }));
-            }
+            // sd-cli on Windows/CUDA always exits with code 1 even on success.
+            // Check if the image file was actually written instead of trusting the exit code.
+            const checkAndRespond = (attempt) => {
+              const imageGenerated = fs.existsSync(outFullPath) && fs.statSync(outFullPath).size > 1000;
+              if (imageGenerated) {
+                console.log(`[NexusAI sd-generate] Image generation SUCCESS: ${outFullPath}`);
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, imageUrl: `/outputs/${outFilename}?t=${Date.now()}`, outputPath: outFullPath }));
+              } else if (attempt < 3) {
+                // Retry up to 3x with 300ms gap — CUDA file write may lag slightly behind process exit
+                setTimeout(() => checkAndRespond(attempt + 1), 300);
+              } else {
+                console.error('[sd-cli STDERR]:', stderrLog);
+                console.error('[sd-cli] Expected output at:', outFullPath, '— exists:', fs.existsSync(outFullPath));
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                const errMsg = stderrLog
+                  ? `sd-cli exit code ${code}:\n${stderrLog.slice(-2000)}`
+                  : `sd-cli exited with code ${code}. Check model path or GPU memory.`;
+                res.end(JSON.stringify({ success: false, error: errMsg }));
+              }
+            };
+            checkAndRespond(0);
           });
         } catch (e) {
           res.statusCode = 500;
@@ -1119,15 +1144,24 @@ function createServer(options = {}) {
 
     // ─── Static File Serving (dist/ and public/) ─────────────────────────────
     let requestedFile = pathname === '/' ? '/index.html' : pathname;
-    
-    // Check public directory (outputs, themes, icons)
-    let filePath = path.join(publicDir, requestedFile);
-    if (!fs.existsSync(filePath)) {
-      filePath = path.join(distDir, requestedFile);
-    }
-    // Fallback to index.html for SPA client-side routing
-    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-      filePath = path.join(distDir, 'index.html');
+
+    // /outputs/* — serve from user-writable data dir first, then publicDir
+    let filePath;
+    if (requestedFile.startsWith('/outputs/')) {
+      const outputFilename = requestedFile.replace(/^.*\//, '').split('?')[0];
+      const userFile = path.join(userOutputsDir, outputFilename);
+      const publicFile = path.join(publicDir, 'outputs', outputFilename);
+      filePath = fs.existsSync(userFile) ? userFile : publicFile;
+    } else {
+      // Check public directory (themes, icons)
+      filePath = path.join(publicDir, requestedFile);
+      if (!fs.existsSync(filePath)) {
+        filePath = path.join(distDir, requestedFile);
+      }
+      // Fallback to index.html for SPA client-side routing
+      if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+        filePath = path.join(distDir, 'index.html');
+      }
     }
 
     if (fs.existsSync(filePath)) {
