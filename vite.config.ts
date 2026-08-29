@@ -206,6 +206,27 @@ function sdCppBackendPlugin() {
     };
   }
 
+  function resolveModelFullPath(p?: string): string {
+    if (!p) return '';
+    if (path.isAbsolute(p) && fs.existsSync(p)) return p;
+    const rootCandidate = path.resolve(rootDir, p);
+    if (fs.existsSync(rootCandidate)) return rootCandidate;
+    const workspaceCandidate = path.resolve('D:/genimg_comic', p);
+    if (fs.existsSync(workspaceCandidate)) return workspaceCandidate;
+    const baseName = path.basename(p);
+    const allPaths = getAllSystemScanPaths();
+    for (const sp of allPaths) {
+      const direct = path.join(sp.path, baseName);
+      if (fs.existsSync(direct)) return direct;
+      const subfolders = ['checkpoints', 'unet', 'clip', 'vae', 'loras', 'llm'];
+      for (const sub of subfolders) {
+        const subCandidate = path.join(sp.path, sub, baseName);
+        if (fs.existsSync(subCandidate)) return subCandidate;
+      }
+    }
+    return rootCandidate;
+  }
+
   function getAllSystemScanPaths(): { path: string; label: string; isBuiltIn: boolean }[] {
     const userHome = process.env.USERPROFILE || process.env.HOME || '';
     const candidates: { path: string; label: string; isBuiltIn: boolean }[] = [];

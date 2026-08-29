@@ -236,6 +236,27 @@ function createServer(options = {}) {
     return candidates[0];
   }
 
+  function resolveModelFullPath(p) {
+    if (!p) return '';
+    if (path.isAbsolute(p) && fs.existsSync(p)) return p;
+    const rootCandidate = path.resolve(rootDir, p);
+    if (fs.existsSync(rootCandidate)) return rootCandidate;
+    const workspaceCandidate = path.resolve('D:/genimg_comic', p);
+    if (fs.existsSync(workspaceCandidate)) return workspaceCandidate;
+    const baseName = path.basename(p);
+    const allPaths = getAllSystemScanPaths();
+    for (const sp of allPaths) {
+      const direct = path.join(sp.path, baseName);
+      if (fs.existsSync(direct)) return direct;
+      const subfolders = ['checkpoints', 'unet', 'clip', 'vae', 'loras', 'llm'];
+      for (const sub of subfolders) {
+        const subCandidate = path.join(sp.path, sub, baseName);
+        if (fs.existsSync(subCandidate)) return subCandidate;
+      }
+    }
+    return rootCandidate;
+  }
+
   function getAllSystemScanPaths() {
     const userHome = process.env.USERPROFILE || process.env.HOME || '';
     const exeDir = path.dirname(process.execPath || '');
