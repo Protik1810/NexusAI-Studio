@@ -1,13 +1,25 @@
 import { describe, it, expect } from 'vitest';
+import path from 'path';
+import os from 'os';
+import fs from 'fs';
 const { resolveModelFullPath, getAllSystemScanPaths } = require('../../electron/engine/pathUtils.cjs');
 
 describe('pathUtils - System Scan and Path Resolution', () => {
   it('should return an array of system scan paths', () => {
-    const paths = getAllSystemScanPaths(process.cwd(), []);
-    expect(Array.isArray(paths)).toBe(true);
-    expect(paths.length).toBeGreaterThan(0);
-    expect(paths[0]).toHaveProperty('path');
-    expect(paths[0]).toHaveProperty('label');
+    // A bare CI runner has none of the AI tool directories this function
+    // looks for (no HuggingFace cache, no Ollama, no models/ folder) — a
+    // guaranteed-existing custom path keeps this deterministic regardless
+    // of what happens to be installed on the machine running the test.
+    const guaranteedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexusai-scanpath-test-'));
+    try {
+      const paths = getAllSystemScanPaths(process.cwd(), [guaranteedDir]);
+      expect(Array.isArray(paths)).toBe(true);
+      expect(paths.length).toBeGreaterThan(0);
+      expect(paths[0]).toHaveProperty('path');
+      expect(paths[0]).toHaveProperty('label');
+    } finally {
+      fs.rmSync(guaranteedDir, { recursive: true, force: true });
+    }
   });
 
   it('should include user-defined custom paths when provided', () => {
