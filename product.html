@@ -12,7 +12,7 @@
   <style>
     :root {
       --bg-color: #030712;
-      --panel-bg: rgba(13, 20, 36, 0.76);
+      --panel-bg: rgba(13, 20, 36, 0.78);
       --accent: #06b6d4;
       --accent-secondary: #8b5cf6;
       --accent-glow: rgba(6, 182, 212, 0.45);
@@ -21,48 +21,54 @@
       --text-muted: #64748b;
       --border-color: rgba(255, 255, 255, 0.09);
       --card-bg: rgba(255, 255, 255, 0.035);
-      --wallpaper: url('public/themes/dark-void.jpg');
+      --wallpaper: url('themes/dark-void.jpg'), url('public/themes/dark-void.jpg');
     }
 
     [data-theme="neon-cyber"] {
       --accent: #ec4899;
       --accent-secondary: #06b6d4;
       --accent-glow: rgba(236, 72, 153, 0.45);
-      --wallpaper: url('public/themes/neon-cyber.jpg');
+      --wallpaper: url('themes/neon-cyber.jpg'), url('public/themes/neon-cyber.jpg');
     }
 
     [data-theme="cinema-gold"] {
       --accent: #eab308;
       --accent-secondary: #f97316;
       --accent-glow: rgba(234, 179, 8, 0.45);
-      --wallpaper: url('public/themes/cinema-gold.jpg');
+      --wallpaper: url('themes/cinema-gold.jpg'), url('public/themes/cinema-gold.jpg');
     }
 
     [data-theme="synthwave"] {
       --accent: #f43f5e;
       --accent-secondary: #8b5cf6;
       --accent-glow: rgba(244, 63, 94, 0.45);
-      --wallpaper: url('public/themes/synthwave.jpg');
+      --wallpaper: url('themes/synthwave.jpg'), url('public/themes/synthwave.jpg');
     }
 
     [data-theme="anime-fantasy"] {
       --accent: #a855f7;
       --accent-secondary: #ec4899;
       --accent-glow: rgba(168, 85, 247, 0.45);
-      --wallpaper: url('public/themes/anime-fantasy.jpg');
+      --wallpaper: url('themes/anime-fantasy.jpg'), url('public/themes/anime-fantasy.jpg');
     }
 
     [data-theme="emerald-matrix"] {
       --accent: #10b981;
       --accent-secondary: #06b6d4;
       --accent-glow: rgba(16, 185, 129, 0.45);
-      --wallpaper: url('public/themes/emerald-matrix.jpg');
+      --wallpaper: url('themes/emerald-matrix.jpg'), url('public/themes/emerald-matrix.jpg');
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+
+    html, body {
+      background-color: #030712 !important;
+      color: #ffffff !important;
+      min-height: 100vh;
     }
 
     body {
@@ -643,19 +649,19 @@
       </div>
 
       <div class="showcase-nav">
-        <button class="showcase-tab active" onclick="switchScreenshot('public/screenshots/showcase-lion-artwork.png', this)">
+        <button class="showcase-tab active" onclick="switchScreenshot('showcase-lion-artwork.png', this)">
           <span>🦁</span> Photorealistic Synthesis
         </button>
-        <button class="showcase-tab" onclick="switchScreenshot('public/screenshots/studio-image-canvas.png', this)">
+        <button class="showcase-tab" onclick="switchScreenshot('studio-image-canvas.png', this)">
           <span>🎨</span> Image Studio Canvas
         </button>
-        <button class="showcase-tab" onclick="switchScreenshot('public/screenshots/sampling-progress-step16.png', this)">
+        <button class="showcase-tab" onclick="switchScreenshot('sampling-progress-step16.png', this)">
           <span>⚡</span> Live Sampling (Step 16)
         </button>
-        <button class="showcase-tab" onclick="switchScreenshot('public/screenshots/sampling-progress-step44.png', this)">
+        <button class="showcase-tab" onclick="switchScreenshot('sampling-progress-step44.png', this)">
           <span>✨</span> Sampling Complete (Step 44)
         </button>
-        <button class="showcase-tab" onclick="switchScreenshot('public/screenshots/llm-chat-studio.png', this)">
+        <button class="showcase-tab" onclick="switchScreenshot('llm-chat-studio.png', this)">
           <span>💬</span> Uncensored LLM Chat
         </button>
       </div>
@@ -670,7 +676,7 @@
           <div class="window-title">NexusAI Studio — Hardware GPU Canvas</div>
           <div style="font-size: 11px; color: #06b6d4; font-weight: 700;">RTX 4070 Ti &bull; CUDA 12</div>
         </div>
-        <img id="active-screenshot" src="public/screenshots/showcase-lion-artwork.png" alt="NexusAI Studio Screenshot" class="showcase-img">
+        <img id="active-screenshot" src="screenshots/showcase-lion-artwork.png" onerror="if(!this.tried){this.tried=true;this.src='public/screenshots/showcase-lion-artwork.png';}" alt="NexusAI Studio Screenshot" class="showcase-img">
       </div>
     </section>
 
@@ -803,11 +809,14 @@
     const saved = localStorage.getItem('product-theme');
     if (saved) setTheme(saved);
 
-    function switchScreenshot(imgSrc, tabBtn) {
+    function switchScreenshot(imgName, tabBtn) {
       const img = document.getElementById('active-screenshot');
       img.style.opacity = '0.3';
       setTimeout(() => {
-        img.src = imgSrc;
+        img.src = 'screenshots/' + imgName;
+        img.onerror = function() {
+          this.src = 'public/screenshots/' + imgName;
+        };
         img.style.opacity = '1';
       }, 150);
 
