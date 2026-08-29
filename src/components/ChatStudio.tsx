@@ -50,6 +50,13 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   const [selectedGgufPath, setSelectedGgufPath] = useState<string>('');
   const [isStartingServer, setIsStartingServer] = useState<boolean>(false);
   const [embeddedServerStatus, setEmbeddedServerStatus] = useState<{ running: boolean; port: number; model: string | null }>({ running: false, port: 8080, model: null });
+  const [loadParams, setLoadParams] = useState<{ ctxSize: number; gpuLayers: number; batchSize: number; flashAttn: 'auto' | 'on' | 'off' }>(() => {
+    try {
+      const saved = localStorage.getItem('solframe_llm_load_params');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { ctxSize: 4096, gpuLayers: 99, batchSize: 2048, flashAttn: 'auto' };
+  });
   const [selectedModel, setSelectedModel] = useState<string>(llmStatus.currentModel || 'default');
   const [temperature, setTemperature] = useState<number>(0.7);
   const [streaming, setStreaming] = useState<boolean>(false);
@@ -86,6 +93,10 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   }, [messages]);
 
   useEffect(() => {
+    localStorage.setItem('solframe_llm_load_params', JSON.stringify(loadParams));
+  }, [loadParams]);
+
+  useEffect(() => {
     if (llmStatus.models.length > 0 && !llmStatus.models.includes(selectedModel)) {
       setSelectedModel(llmStatus.models[0]);
     }
@@ -99,7 +110,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
     setIsStartingServer(true);
     try {
-      const res = await llmService.startEmbeddedLlama(selectedGgufPath, 99, 4096);
+      const res = await llmService.startEmbeddedLlama(selectedGgufPath, loadParams.gpuLayers, loadParams.ctxSize, loadParams.batchSize, loadParams.flashAttn);
       setEmbeddedServerStatus({ running: true, port: res.port, model: res.model });
       setEngineMode('embedded');
       llmService.setMode('embedded');
@@ -440,6 +451,70 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                     </option>
                   ))}
                 </select>
+
+                {/* GGUF Load Parameters (LM Studio-style) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px', opacity: embeddedServerStatus.running ? 0.5 : 1 }}>
+                  <div>
+                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>Context Length</label>
+                    <input
+                      type="number"
+                      min={512}
+                      max={131072}
+                      step={512}
+                      value={loadParams.ctxSize}
+                      disabled={embeddedServerStatus.running}
+                      onChange={(e) => setLoadParams({ ...loadParams, ctxSize: parseInt(e.target.value, 10) || loadParams.ctxSize })}
+                      className="select-input"
+                      style={{ padding: '6px 8px', fontSize: '12px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>GPU Layers (99 = Max)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={999}
+                      value={loadParams.gpuLayers}
+                      disabled={embeddedServerStatus.running}
+                      onChange={(e) => setLoadParams({ ...loadParams, gpuLayers: parseInt(e.target.value, 10) || 0 })}
+                      className="select-input"
+                      style={{ padding: '6px 8px', fontSize: '12px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>Batch Size</label>
+                    <input
+                      type="number"
+                      min={32}
+                      max={8192}
+                      step={32}
+                      value={loadParams.batchSize}
+                      disabled={embeddedServerStatus.running}
+                      onChange={(e) => setLoadParams({ ...loadParams, batchSize: parseInt(e.target.value, 10) || loadParams.batchSize })}
+                      className="select-input"
+                      style={{ padding: '6px 8px', fontSize: '12px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>Flash Attention</label>
+                    <select
+                      value={loadParams.flashAttn}
+                      disabled={embeddedServerStatus.running}
+                      onChange={(e) => setLoadParams({ ...loadParams, flashAttn: e.target.value as 'auto' | 'on' | 'off' })}
+                      className="select-input"
+                      style={{ padding: '6px 8px', fontSize: '12px' }}
+                    >
+                      <option value="auto">Auto</option>
+                      <option value="on">On</option>
+                      <option value="off">Off</option>
+                    </select>
+                  </div>
+                </div>
+                {embeddedServerStatus.running && (
+                  <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '-6px', marginBottom: '10px' }}>
+                    Stop the engine to change load parameters.
+                  </p>
+                )}
 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {embeddedServerStatus.running ? (

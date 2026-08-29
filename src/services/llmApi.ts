@@ -90,11 +90,17 @@ export class LLMService {
     return [];
   }
 
-  async startEmbeddedLlama(modelPath: string, gpuLayers: number = 99, ctxSize: number = 4096): Promise<{ success: boolean; port: number; model: string; message: string }> {
+  async startEmbeddedLlama(
+    modelPath: string,
+    gpuLayers: number = 99,
+    ctxSize: number = 4096,
+    batchSize: number = 2048,
+    flashAttn: 'auto' | 'on' | 'off' = 'auto'
+  ): Promise<{ success: boolean; port: number; model: string; message: string }> {
     const res = await fetch('/api/llama/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modelPath, gpuLayers, ctxSize })
+      body: JSON.stringify({ modelPath, gpuLayers, ctxSize, batchSize, flashAttn })
     });
 
     const data = await res.json();

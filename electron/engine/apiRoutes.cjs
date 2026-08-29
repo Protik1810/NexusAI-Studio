@@ -9,6 +9,7 @@
 'use strict';
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
 const { spawn } = require('child_process');
 const { detectHardware } = require('./hardware.cjs');
 const { getAllSystemScanPaths } = require('./pathUtils.cjs');
@@ -156,8 +157,51 @@ function createApiRouter(ctx) {
    *   fall through to static file serving (production) or Vite's own
    *   middleware chain (dev).
    */
+  /**
+   * Reverse-proxy /llama-api/* to the embedded llama-server started by
+   * /api/llama/start, forwarding the request/response bodies unbuffered so
+   * SSE token streaming still works. Dev mode (vite.config.ts) previously
+   * had its own copy of this proxy hardcoded to port 8080; that copy never
+   * existed here, so the packaged production app had no way to reach the
+   * embedded LLM at all once it started — every chat request silently fell
+   * through to the SPA's index.html fallback instead of the model.
+   */
+  function proxyToLlama(req, res, pathname, search) {
+    return new Promise(resolve => {
+      if (!isAllowedOrigin(req, port)) {
+        sendJson(res, 403, { success: false, error: 'Forbidden origin' });
+        resolve(true);
+        return;
+      }
+      const targetPath = (pathname.replace(/^\/llama-api/, '') || '/') + (search || '');
+      const proxyReq = http.request({
+        host: '127.0.0.1',
+        port: llamaPort,
+        path: targetPath,
+        method: req.method,
+        headers: { ...req.headers, host: `127.0.0.1:${llamaPort}` }
+      }, proxyRes => {
+        res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+        proxyRes.pipe(res);
+        resolve(true);
+      });
+      proxyReq.on('error', () => {
+        if (!res.headersSent) {
+          sendJson(res, 502, { success: false, error: 'llama.cpp engine is not running. Click "Start Engine" first.' });
+        } else {
+          res.end();
+        }
+        resolve(true);
+      });
+      req.pipe(proxyReq);
+    });
+  }
+
   async function handle(req, res, parsedUrl) {
     const pathname = parsedUrl.pathname;
+    if (pathname.startsWith('/llama-api/')) {
+      return proxyToLlama(req, res, pathname, parsedUrl.search);
+    }
     if (!pathname.startsWith('/api/')) return false;
 
     // This server has no authentication. Any website open in the user's
@@ -327,20 +371,69 @@ function createApiRouter(ctx) {
         llamaPort = requestedPort;
         const ctxSize = Number(params.ctxSize) || 4096;
         const gpuLayers = params.gpuLayers !== undefined ? Number(params.gpuLayers) : 99;
+        const batchSize = Number(params.batchSize) || 2048;
+        const flashAttn = ['auto', 'on', 'off'].includes(params.flashAttn) ? params.flashAttn : 'auto';
 
-        const args = ['-m', modelFullPath, '--port', String(requestedPort), '--host', '127.0.0.1', '-ngl', String(gpuLayers), '-c', String(ctxSize)];
+        const args = ['-m', modelFullPath, '--port', String(requestedPort), '--host', '127.0.0.1', '-ngl', String(gpuLayers), '-c', String(ctxSize), '-b', String(batchSize), '-fa', flashAttn];
         console.log(`[llama.cpp] Starting llama-server: ${llamaExe}`);
-        llamaProc = spawn(llamaExe, args, { cwd: path.dirname(llamaExe), windowsHide: true });
+        const proc = spawn(llamaExe, args, { cwd: path.dirname(llamaExe), windowsHide: true });
+        llamaProc = proc;
         currentLlamaModel = path.basename(modelFullPath);
 
-        llamaProc.on('close', () => {
-          llamaProc = null;
-          currentLlamaModel = null;
+        let stderrTail = '';
+        proc.stderr && proc.stderr.on('data', chunk => {
+          stderrTail = (stderrTail + chunk.toString()).slice(-2000);
         });
 
-        setTimeout(() => {
-          sendJson(res, 200, { success: true, port: requestedPort, model: currentLlamaModel, message: `llama.cpp server started on port ${requestedPort}` });
-        }, 1200);
+        let spawnError = null;
+        proc.on('error', err => { spawnError = err.message; });
+
+        let exited = false;
+        proc.on('close', () => {
+          exited = true;
+          if (llamaProc === proc) {
+            llamaProc = null;
+            currentLlamaModel = null;
+          }
+        });
+
+        // Poll the server's own /health endpoint instead of guessing a fixed
+        // delay: a bad GPU-layer count or an incompatible/corrupt model file
+        // makes llama-server exit almost immediately, while a large model can
+        // legitimately take well over a second to finish loading into VRAM.
+        // The previous fixed 1.2s timeout reported success unconditionally,
+        // so the UI showed "GPU Active" even when the process had already
+        // died — this is why the engine "detected" models but never actually
+        // became usable.
+        const startTime = Date.now();
+        const timeoutMs = 120000;
+        let ready = false;
+        while (Date.now() - startTime < timeoutMs) {
+          if (spawnError) {
+            sendJson(res, 500, { success: false, error: `Failed to launch llama-server: ${spawnError}` });
+            return true;
+          }
+          if (exited) {
+            const tail = stderrTail.trim().split('\n').slice(-5).join(' | ');
+            sendJson(res, 500, { success: false, error: `llama-server exited before it was ready.${tail ? ' ' + tail : ''}` });
+            return true;
+          }
+          try {
+            const healthRes = await fetch(`http://127.0.0.1:${requestedPort}/health`);
+            if (healthRes.ok) { ready = true; break; }
+          } catch (e) {
+            // Not listening yet — keep polling.
+          }
+          await new Promise(r => setTimeout(r, 400));
+        }
+
+        if (!ready) {
+          try { proc.kill('SIGKILL'); } catch (e) {}
+          sendJson(res, 500, { success: false, error: 'Timed out waiting for llama-server to become ready (model may be too large for available VRAM).' });
+          return true;
+        }
+
+        sendJson(res, 200, { success: true, port: requestedPort, model: currentLlamaModel, message: `llama.cpp server started on port ${requestedPort}` });
       } catch (e) {
         sendJson(res, 500, { success: false, error: e.message });
       }
