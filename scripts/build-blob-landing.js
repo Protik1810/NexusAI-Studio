@@ -298,14 +298,6 @@ const html = `<!DOCTYPE html>
       line-height: 1.6;
     }
 
-    .hero-cta {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 40px;
-    }
-
     .btn-primary {
       background: linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%);
       color: #fff;
@@ -676,15 +668,6 @@ const html = `<!DOCTYPE html>
         Synthesize photorealistic <strong>FLUX.2 Klein & SDXL Lightning</strong> artwork and dialogue with uncensored <strong>GGUF LLMs</strong> — powered by native C++ hardware kernels directly on your GPU. Zero cloud telemetry. Zero subscription fees.
       </p>
 
-      <div class="hero-cta" data-platform="windows">
-        <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0.exe" class="btn-primary">
-          <span>📦</span> Download Full Setup (~806 MB)
-        </a>
-        <a href="https://github.com/Protik1810/NexusAI-Studio/releases/download/v1.0/NexusAI-Studio-Setup-1.0.0-Lightweight.exe" class="btn-secondary">
-          <span>🪶</span> Lightweight Setup (~120 MB)
-        </a>
-      </div>
-
       <!-- Live Theme Switcher -->
       <div class="theme-switcher-box" id="themes">
         <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -752,7 +735,7 @@ const html = `<!DOCTYPE html>
             <div class="window-dot" style="background: #22c55e;"></div>
           </div>
           <div class="window-title">NexusAI Studio — Hardware GPU Canvas</div>
-          <div style="font-size: 11px; color: #06b6d4; font-weight: 700;">RTX 4070 Ti &bull; CUDA 12</div>
+          <div style="font-size: 11px; color: #06b6d4; font-weight: 700;">GPU Accelerated &bull; Local Inference</div>
         </div>
         <img id="active-screenshot" src="${screenshots.lion}" alt="NexusAI Studio Screenshot" class="showcase-img">
       </div>
