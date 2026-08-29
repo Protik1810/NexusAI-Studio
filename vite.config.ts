@@ -994,21 +994,14 @@ function sdCppBackendPlugin() {
 
             const args: string[] = [];
             if (params.pipeline === 'flux') {
-              // FLUX.2 / FLUX.2-Klein: use --diffusion-model for the UNet/transformer
-              // --llm for the LLM-based text encoder (Qwen/Mistral for Klein)
-              // --t5xxl for T5 encoder (FLUX.1 dev/schnell)
-              // --vae for the VAE decoder
               args.push('--diffusion-model', modelFullPath);
-              // Auto-detect Klein architecture
               const isKlein = modelFullPath.toLowerCase().includes('klein') || (params.modelPath || '').toLowerCase().includes('klein');
               if (isKlein) {
                 args.push('--prediction', 'flux2_flow');
               }
-              if (clipFullPath) args.push('--llm', clipFullPath);
-              if (t5FullPath) args.push('--t5xxl', t5FullPath);
-              if (vaeFullPath) args.push('--vae', vaeFullPath);
-              // Use GPU backend for diffusion, CPU for text encoders to save VRAM
-              args.push('--backend', 'diffusion=cuda0,llm=cpu,vae=cuda0');
+              if (clipFullPath && fs.existsSync(clipFullPath)) args.push('--llm', clipFullPath);
+              if (t5FullPath && fs.existsSync(t5FullPath)) args.push('--t5xxl', t5FullPath);
+              if (vaeFullPath && fs.existsSync(vaeFullPath)) args.push('--vae', vaeFullPath);
             } else {
               args.push('-m', modelFullPath);
               if (params.negativePrompt) args.push('-n', params.negativePrompt);
@@ -1019,20 +1012,28 @@ function sdCppBackendPlugin() {
             if (params.samplingMethod) args.push('--sampling-method', params.samplingMethod);
             console.log(`[NexusAI sd-generate] Spawning: ${execPath}\n  Args: ${args.join(' ')}`);
 
-            const child = spawn(execPath, args, { cwd: workingDir, windowsHide: true });
+            const procEnv = {
+              ...process.env,
+              PATH: `${path.join(rootDir, 'backend/win/cuda')};${path.join(rootDir, 'backend/win/vulkan')};${path.join(rootDir, 'backend/win/llama')};${process.env.PATH || ''}`
+            };
+
+            const child = spawn(execPath, args, { cwd: workingDir, env: procEnv, windowsHide: true });
             let stderrLog = '';
             child.stderr?.on('data', (d: any) => { stderrLog += d.toString(); });
             child.stdout?.on('data', (d: any) => { console.log('[sd-cli]', d.toString().trim()); });
             child.on('close', (code: number) => {
-              if (code === 0 && fs.existsSync(outFullPath)) {
+              const imageGenerated = fs.existsSync(outFullPath) && fs.statSync(outFullPath).size > 1000;
+              if (imageGenerated) {
+                console.log(`[NexusAI sd-generate] Image generation SUCCESS: ${outFullPath}`);
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ success: true, imageUrl: `/outputs/${outFilename}?t=${Date.now()}`, outputPath: outFullPath }));
               } else {
                 console.error('[sd-cli STDERR]:', stderrLog);
                 res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
                 const errMsg = stderrLog
                   ? `sd-cli exit code ${code}:\n${stderrLog.slice(-2000)}`
-                  : `sd-cli exited with code ${code}. Model not found or CUDA error.`;
+                  : `sd-cli exited with code ${code}. Check model path or GPU memory.`;
                 res.end(JSON.stringify({ success: false, error: errMsg }));
               }
             });

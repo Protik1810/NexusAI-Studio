@@ -976,6 +976,12 @@ function createServer(options = {}) {
           const t5FullPath = resolveModelFullPath(params.t5Path);
           const vaeFullPath = resolveModelFullPath(params.vaePath);
 
+          if (!modelFullPath || !fs.existsSync(modelFullPath)) {
+            res.statusCode = 404;
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ success: false, error: `Model file not found: ${params.modelPath}` }));
+          }
+
           const args = [];
           if (params.pipeline === 'flux') {
             args.push('--diffusion-model', modelFullPath);
@@ -983,10 +989,9 @@ function createServer(options = {}) {
             if (isKlein) {
               args.push('--prediction', 'flux2_flow');
             }
-            if (clipFullPath) args.push('--llm', clipFullPath);
-            if (t5FullPath) args.push('--t5xxl', t5FullPath);
-            if (vaeFullPath) args.push('--vae', vaeFullPath);
-            args.push('--backend', 'diffusion=cuda0,llm=cpu,vae=cuda0');
+            if (clipFullPath && fs.existsSync(clipFullPath)) args.push('--llm', clipFullPath);
+            if (t5FullPath && fs.existsSync(t5FullPath)) args.push('--t5xxl', t5FullPath);
+            if (vaeFullPath && fs.existsSync(vaeFullPath)) args.push('--vae', vaeFullPath);
           } else {
             args.push('-m', modelFullPath);
             if (params.negativePrompt) args.push('-n', params.negativePrompt);
@@ -998,25 +1003,34 @@ function createServer(options = {}) {
 
           console.log(`[NexusAI sd-generate] Spawning: ${execPath}\n  Args: ${args.join(' ')}`);
 
-          const child = spawn(execPath, args, { cwd: workingDir, windowsHide: true });
+          const procEnv = {
+            ...process.env,
+            PATH: `${path.join(rootDir, 'backend/win/cuda')};${path.join(rootDir, 'backend/win/vulkan')};${path.join(rootDir, 'backend/win/llama')};${process.env.PATH || ''}`
+          };
+
+          const child = spawn(execPath, args, { cwd: workingDir, env: procEnv, windowsHide: true });
           let stderrLog = '';
           child.stderr?.on('data', d => { stderrLog += d.toString(); });
           child.stdout?.on('data', d => { console.log('[sd-cli]', d.toString().trim()); });
           child.on('close', code => {
-            if (code === 0 && fs.existsSync(outFullPath)) {
+            const imageGenerated = fs.existsSync(outFullPath) && fs.statSync(outFullPath).size > 1000;
+            if (imageGenerated) {
+              console.log(`[NexusAI sd-generate] Image generation SUCCESS: ${outFullPath}`);
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({ success: true, imageUrl: `/outputs/${outFilename}?t=${Date.now()}`, outputPath: outFullPath }));
             } else {
               console.error('[sd-cli STDERR]:', stderrLog);
               res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
               const errMsg = stderrLog
                 ? `sd-cli exit code ${code}:\n${stderrLog.slice(-2000)}`
-                : `sd-cli exited with code ${code}. Model not found or CUDA error.`;
+                : `sd-cli exited with code ${code}. Check model path or GPU memory.`;
               res.end(JSON.stringify({ success: false, error: errMsg }));
             }
           });
         } catch (e) {
           res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ success: false, error: e.message }));
         }
       });
