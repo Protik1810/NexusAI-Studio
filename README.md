@@ -9,6 +9,7 @@
 [![Engine](https://img.shields.io/badge/Diffusion%20Engine-stable--diffusion.cpp-orange?style=for-the-badge)](https://github.com/leejet/stable-diffusion.cpp)
 [![LLM](https://img.shields.io/badge/Dialogue%20Engine-llama.cpp%20GGUF-purple?style=for-the-badge)](https://github.com/ggerganov/llama.cpp)
 [![License](https://img.shields.io/badge/License-GNU%20GPL%20v3.0-blue?style=for-the-badge)](LICENSE)
+[![CI](https://github.com/Protik1810/NexusAI-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Protik1810/NexusAI-Studio/actions/workflows/ci.yml)
 
 <br/>
 
@@ -97,6 +98,8 @@ curl -fsSL https://raw.githubusercontent.com/Protik1810/NexusAI-Studio/main/inst
 ```
 This clones the repo and runs `npm run dev`, which brings up the NexusAI Studio interface. The bundled diffusion/LLM engines under `backend/win/` are Windows-only binaries, so **image generation and local LLM chat will not run** until native Linux/macOS engine builds ship — this path is useful today for UI development and preview, not for production inference.
 
+Prefer an installable app over the terminal preview? `npm run electron:build:linux` (AppImage + .deb) and `npm run electron:build:mac` (.dmg + .zip) package the same UI-only build as a native app — run them on the target OS, or grab the artifacts from the [Build Linux/macOS Installers](https://github.com/Protik1810/NexusAI-Studio/actions/workflows/release-build.yml) GitHub Actions workflow.
+
 ### Running in Development Mode
 ```bash
 # 1. Clone repository
@@ -106,7 +109,8 @@ cd NexusAI-Studio
 # 2. Install dependencies
 npm install
 
-# 3. Run unit tests
+# 3. Lint and run unit tests
+npm run lint
 npm test
 
 # 4. Start local development server
@@ -118,8 +122,14 @@ npm run dev
 # Build production bundle
 npm run build
 
-# Build Windows Setup Installers (Complete + Lightweight)
+# Windows: build Setup Installers (Complete + Lightweight)
 npm run build:installer
+
+# Linux: build AppImage + .deb (UI shell only, see Platform status above)
+npm run electron:build:linux
+
+# macOS: build .dmg + .zip (UI shell only, see Platform status above)
+npm run electron:build:mac
 ```
 
 ---

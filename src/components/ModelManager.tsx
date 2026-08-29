@@ -17,7 +17,6 @@ import { HuggingFaceDownloader } from './models/HuggingFaceDownloader';
 interface ModelManagerProps {
   availableModels: AvailableModels;
   onDownloadModel: (url: string, filename: string, targetFolder: string) => Promise<void>;
-  downloadProgress: { [filename: string]: number };
   onNavigateToStudio?: () => void;
   onNavigateToChat?: () => void;
   onSuccess: (title: string, message: string) => void;
@@ -26,7 +25,6 @@ interface ModelManagerProps {
 
 export const ModelManager: React.FC<ModelManagerProps> = ({
   onDownloadModel,
-  downloadProgress,
   onNavigateToStudio,
   onNavigateToChat,
   onSuccess,
@@ -111,7 +109,14 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  const totalLocalCount = 
+  // The backend tracks a single in-flight download; expose it to
+  // HuggingFaceDownloader as a per-filename map so it can show per-card
+  // progress without knowing about the underlying single-download API shape.
+  const liveDownloadProgress: { [filename: string]: number } = activeDownloadState.isDownloading && activeDownloadState.filename
+    ? { [activeDownloadState.filename]: activeDownloadState.percent }
+    : {};
+
+  const totalLocalCount =
     systemModels.checkpoints.length + 
     systemModels.unets.length + 
     systemModels.clips.length + 
@@ -302,7 +307,7 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
           isHfSearching={isHfSearching}
           onHfSearch={handleHfSearch}
           onDownloadModel={onDownloadModel}
-          downloadProgress={downloadProgress}
+          downloadProgress={liveDownloadProgress}
           onNavigateToStudio={onNavigateToStudio}
           onSuccess={onSuccess}
           onError={onError}

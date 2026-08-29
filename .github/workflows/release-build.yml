@@ -1,0 +1,58 @@
+name: Build Linux/macOS Installers
+
+# Builds the NexusAI Studio UI shell as a native Linux (AppImage/.deb) and
+# macOS (.dmg/.zip) app package. These platforms have no bundled
+# stable-diffusion.cpp/llama.cpp engines yet (see README "Platform status"),
+# so the packaged app is the interface only — same scope as install.sh today,
+# just as an installable native app instead of `npm run dev`.
+#
+# The Windows installer is built separately/manually (installer.iss +
+# scripts/build-installer.js) because it bundles large CUDA/Vulkan/llama.cpp
+# binaries that aren't checked into this repo.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run electron:build:linux
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nexusai-studio-linux
+          path: |
+            release/*.AppImage
+            release/*.deb
+
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run electron:build:mac
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nexusai-studio-macos
+          path: |
+            release/*.dmg
+            release/*.zip

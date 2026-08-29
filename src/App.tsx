@@ -39,9 +39,6 @@ export function App() {
   // Cross-Studio Prompt Transfer
   const [studioPrompt, setStudioPrompt] = useState<string>('');
 
-  // Download tracking
-  const [downloadProgress, setDownloadProgress] = useState<{ [filename: string]: number }>({});
-
   // Modal Dialogue
   const [modal, setModal] = useState<ModalProps>({
     show: false,
@@ -253,7 +250,6 @@ export function App() {
           <ModelManager
             availableModels={availableModels}
             onDownloadModel={handleDownloadModel}
-            downloadProgress={downloadProgress}
             onNavigateToStudio={() => setActiveTab('image')}
             onNavigateToChat={() => setActiveTab('chat')}
             onSuccess={triggerSuccess}

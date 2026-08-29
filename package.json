@@ -21,7 +21,9 @@
     "electron:dev": "npm run build && electron electron/main.cjs --dev",
     "electron:pack": "npm run build && electron-builder --dir --win --x64",
     "electron:build": "npm run build && electron-builder --win --x64",
-    "electron:portable": "npm run build && electron-builder --win portable --x64"
+    "electron:portable": "npm run build && electron-builder --win portable --x64",
+    "electron:build:linux": "npm run build && electron-builder --linux",
+    "electron:build:mac": "npm run build && electron-builder --mac"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
@@ -56,16 +58,16 @@
       "public/**/*",
       "package.json"
     ],
-    "extraResources": [
-      {
-        "from": "backend",
-        "to": "backend",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
     "win": {
+      "extraResources": [
+        {
+          "from": "backend",
+          "to": "backend",
+          "filter": [
+            "**/*"
+          ]
+        }
+      ],
       "target": [
         {
           "target": "dir",
@@ -98,6 +100,22 @@
     },
     "portable": {
       "artifactName": "NexusAI-Studio-Portable-${version}.exe"
+    },
+    "linux": {
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb", "arch": ["x64"] }
+      ],
+      "category": "Graphics",
+      "icon": "electron/icon.png"
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ],
+      "category": "public.app-category.graphics-design",
+      "icon": "electron/icon.png"
     },
     "directories": {
       "output": "release"
