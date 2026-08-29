@@ -1,0 +1,7 @@
+dist
+release
+release-pkg
+docs
+node_modules
+package-lock.json
+*.html

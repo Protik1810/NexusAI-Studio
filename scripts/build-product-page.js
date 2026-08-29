@@ -13,8 +13,8 @@ if (fs.existsSync(outDir)) {
 }
 fs.mkdirSync(outDir, { recursive: true });
 
-// Copy product.html as index.html and 404.html
-const productHtml = fs.readFileSync(path.join(rootDir, 'product.html'), 'utf8');
+// docs/index.html is the single canonical showcase page (see build-blob-landing.js)
+const productHtml = fs.readFileSync(path.join(rootDir, 'docs/index.html'), 'utf8');
 fs.writeFileSync(path.join(outDir, 'index.html'), productHtml, 'utf8');
 fs.writeFileSync(path.join(outDir, '404.html'), productHtml, 'utf8');
 fs.writeFileSync(path.join(outDir, '.nojekyll'), '');

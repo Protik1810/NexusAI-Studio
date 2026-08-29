@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Type-check and build the app bundle
+        run: npm run build
+
+      - name: Verify the built app is the real React app, not a static page
+        shell: bash
+        run: |
+          if ! ls dist/assets/*.js >/dev/null 2>&1; then
+            echo "::error::dist/assets contains no JS bundle — index.html is not wired to src/main.tsx"
+            exit 1
+          fi

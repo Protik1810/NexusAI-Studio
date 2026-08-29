@@ -1,25 +1,66 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import path from 'path';
+import os from 'os';
 import fs from 'fs';
-
-// Check if classifyModelFile is accessible
 const { classifyModelFile } = require('../../electron/engine/modelScanner.cjs');
 
-describe('modelScanner - File Classification', () => {
-  it('should classify checkpoints correctly based on file and path', () => {
-    // If classifyModelFile reads fs.statSync, let's test with an existing file in models/ or mock
-    const sampleCheckpoint = path.join(process.cwd(), 'public/icon.ico'); // Small dummy file for size test
-    if (fs.existsSync(sampleCheckpoint)) {
-      const item = classifyModelFile(sampleCheckpoint, 'Test Source', process.cwd());
-      expect(item).toHaveProperty('name');
-      expect(item).toHaveProperty('category');
-      expect(item).toHaveProperty('formattedSize');
-    }
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexusai-scanner-test-'));
+// classifyModelFile only enforces a size threshold for the flux/unet heuristic
+// (>3GB); the 5MB scan-time floor lives in scanDirectoryRecursive, not here.
+const DEFAULT_SIZE = 1024;
+
+function makeFile(relPath: string, size = DEFAULT_SIZE) {
+  const full = path.join(tmpDir, relPath);
+  fs.mkdirSync(path.dirname(full), { recursive: true });
+  fs.writeFileSync(full, Buffer.alloc(size));
+  return full;
+}
+
+afterAll(() => {
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+describe('modelScanner - classifyModelFile', () => {
+  it('classifies a .gguf file as an llm', () => {
+    const f = makeFile('llm/qwen2.5-coder-7b-instruct.gguf');
+    const item = classifyModelFile(f, 'Test Source', tmpDir);
+    expect(item?.category).toBe('llms');
+    expect(item?.isGguf).toBe(true);
   });
 
-  it('should categorize GGUF models appropriately', () => {
-    const isGgufPattern = (name: string) => name.toLowerCase().endsWith('.gguf');
-    expect(isGgufPattern('qwen2.5-coder-7b.gguf')).toBe(true);
-    expect(isGgufPattern('realvisxl.safetensors')).toBe(false);
+  it('classifies a file under a loras/ folder as a lora', () => {
+    const f = makeFile('loras/my-style-lora.safetensors');
+    const item = classifyModelFile(f, 'Test Source', tmpDir);
+    expect(item?.category).toBe('loras');
+  });
+
+  it('classifies a vae-named file as a vae', () => {
+    const f = makeFile('checkpoints/flux2-vae.safetensors');
+    const item = classifyModelFile(f, 'Test Source', tmpDir);
+    expect(item?.category).toBe('vaes');
+  });
+
+  it('classifies a controlnet-named file as a controlnet', () => {
+    const f = makeFile('checkpoints/controlnet-union-sdxl-promax.safetensors');
+    const item = classifyModelFile(f, 'Test Source', tmpDir);
+    expect(item?.category).toBe('controlnets');
+  });
+
+  it('classifies a plain large safetensors file as a checkpoint by default', () => {
+    const f = makeFile('checkpoints/RealVisXL_V5.0_Lightning_fp16.safetensors');
+    const item = classifyModelFile(f, 'Test Source', tmpDir);
+    expect(item?.category).toBe('checkpoints');
+  });
+
+  it('filters out ggml-vocab- helper files entirely', () => {
+    const f = makeFile('llm/ggml-vocab-llama.gguf');
+    const item = classifyModelFile(f, 'Test Source', tmpDir);
+    expect(item).toBeNull();
+  });
+
+  it('reports a relative path rooted at the scan directory', () => {
+    const f = makeFile('llm/model.gguf');
+    const item = classifyModelFile(f, 'Test Source', tmpDir);
+    expect(item?.relativePath).toBe('llm/model.gguf');
   });
 });

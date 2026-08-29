@@ -77,7 +77,7 @@ export class StableDiffusionCppService {
       };
     } catch (err: any) {
       clearInterval(progressInterval);
-      throw new Error(`GPU Inference Error:\n\n${err.message}`);
+      throw new Error(`GPU Inference Error:\n\n${err.message}`, { cause: err });
     }
   }
 }

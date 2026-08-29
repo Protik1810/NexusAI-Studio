@@ -4,7 +4,7 @@
 
 **Autonomous, Sovereign & Zero-Cloud Local Generative AI Workstation**
 
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue?style=for-the-badge&logo=windows)](https://github.com/Protik1810/NexusAI-Studio)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20(full)%20%7C%20Linux%2FmacOS%20(UI%20preview)-blue?style=for-the-badge&logo=windows)](https://github.com/Protik1810/NexusAI-Studio)
 [![Hardware](https://img.shields.io/badge/Hardware-NVIDIA%20CUDA%20%7C%20AMD%2FIntel%20Vulkan-success?style=for-the-badge&logo=nvidia)](https://github.com/Protik1810/NexusAI-Studio)
 [![Engine](https://img.shields.io/badge/Diffusion%20Engine-stable--diffusion.cpp-orange?style=for-the-badge)](https://github.com/leejet/stable-diffusion.cpp)
 [![LLM](https://img.shields.io/badge/Dialogue%20Engine-llama.cpp%20GGUF-purple?style=for-the-badge)](https://github.com/ggerganov/llama.cpp)
@@ -21,6 +21,8 @@
 ## 🌟 Overview
 
 **NexusAI Studio** is a standalone, self-contained desktop generative AI suite engineered for 100% private, offline inference. Combining **`stable-diffusion.cpp`** (supporting FLUX.2 Klein, SDXL Lightning, and standard SD checkpoints) with **`llama.cpp`** (running GGUF text models with full GPU offloading), NexusAI Studio brings high-performance generative AI directly to consumer hardware with zero subscription fees, zero cloud telemetry, and complete offline autonomy.
+
+> **Platform status:** the bundled inference engines (`backend/win/**`) are Windows x64 binaries (CUDA/Vulkan/CPU). On Windows, image generation and local LLM chat both run out of the box. On Linux/macOS, only the UI shell currently runs (see [Getting Started](#-getting-started)) — native engine builds for those platforms are planned, not shipped yet.
 
 ---
 
@@ -69,7 +71,10 @@
 | **Image Synthesis Engine** | `stable-diffusion.cpp` (CUDA / Vulkan / CPU C++ kernels) |
 | **Language Dialogue Engine** | `llama.cpp` (`llama-server.exe` CUDA / Vulkan) |
 | **Model Persistence** | Global JSON Cache (`~/.nexusai/scan_cache.json`) |
-| **Testing** | Vitest unit test suite |
+| **Testing** | Vitest — path resolution, model classification, and local-server security (origin checks, path-traversal guards) |
+
+### Optional Integrations
+- **ComfyUI Bridge** *(optional)*: if you already run [ComfyUI](https://github.com/comfyanonymous/ComfyUI) locally, `src/services/comfyApi.ts` can proxy generation requests to your own `127.0.0.1:8188` instance instead of the bundled `stable-diffusion.cpp` engine. This is an opt-in convenience for existing ComfyUI users — it talks to a process on your own machine, never a remote service, and NexusAI Studio's core Image/Chat Studios do not require it.
 
 ---
 
@@ -79,19 +84,18 @@
 - Windows 10/11 x64, Linux, or macOS
 - Node.js (v18+) & npm
 
-### 🪟 Windows Setup (winget / Executable)
-```powershell
-# Install via winget (Windows Package Manager)
-winget install --id Protik.NexusAIStudio -e
+### 🪟 Windows Setup (Installer)
+Download the latest installer from [Releases](https://github.com/Protik1810/NexusAI-Studio/releases/latest):
+- `NexusAI-Studio-Setup-<version>.exe` — full installer (all backends)
+- `NexusAI-Studio-Setup-<version>-Lightweight.exe` — smaller installer, downloads engines on first run
 
-# Or launch standalone executable directly:
-release-pkg\NexusAI Studio-win32-x64\NexusAI Studio.exe
-```
+There is currently no winget package; the links above are the only official builds.
 
-### 🐧 Linux & 🍎 macOS (1-Line Terminal Install)
+### 🐧 Linux & 🍎 macOS (UI Preview — 1-Line Terminal Install)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Protik1810/NexusAI-Studio/main/install.sh | bash
 ```
+This clones the repo and runs `npm run dev`, which brings up the NexusAI Studio interface. The bundled diffusion/LLM engines under `backend/win/` are Windows-only binaries, so **image generation and local LLM chat will not run** until native Linux/macOS engine builds ship — this path is useful today for UI development and preview, not for production inference.
 
 ### Running in Development Mode
 ```bash

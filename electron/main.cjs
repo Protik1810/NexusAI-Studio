@@ -89,7 +89,6 @@ function createMainWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false,
     },
   });
 
@@ -125,7 +124,7 @@ app.whenReady().then(() => {
   const paths = getPaths();
   console.log("[NexusAI Desktop] Initializing standalone engine with paths:", paths);
 
-  appServer = createServer(paths);
+  appServer = createServer({ ...paths, port: PORT });
   appServer.listen(PORT, () => {
     console.log(`[NexusAI Desktop] Engine listening on http://127.0.0.1:${PORT}`);
     createMainWindow();

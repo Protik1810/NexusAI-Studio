@@ -11,7 +11,8 @@ function detectHardware() {
   if (_cached) return _cached;
 
   let gpus = [];
-  let preferredBackend = 'vulkan';
+  // Always recomputed from `gpus` in the exhaustive if/else below.
+  let preferredBackend;
   let primaryGpu = 'Auto-Detect GPU';
 
   try {
@@ -30,7 +31,6 @@ function detectHardware() {
       });
     }
     if (gpus.length > 0) {
-      preferredBackend = 'cuda';
       primaryGpu = `${gpus[0].name} (${gpus[0].vram} - CUDA)`;
     }
   } catch (e) {}

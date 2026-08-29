@@ -53,7 +53,8 @@ function classifyModelFile(fullPath, sourceLabel, rootDir = '') {
 
   if (isGguf && filename.startsWith('ggml-vocab-')) return null;
 
-  let category = 'checkpoints';
+  // Always assigned below — the chain ends in an unconditional else.
+  let category;
   if (lower.includes('controlnet') || lower.includes('union-sdxl') || lower.includes('promax')) {
     category = 'controlnets';
   } else if (lower.includes('vae') || filename.toLowerCase().startsWith('ae.') || lower.includes('flux2-vae') || lower.includes('flux-vae')) {

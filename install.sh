@@ -30,5 +30,15 @@ fi
 echo "📦 Installing dependencies..."
 npm install
 
+OS_NAME="$(uname -s)"
+case "$OS_NAME" in
+    MINGW*|MSYS*|CYGWIN*) ;; # Windows-under-bash: bundled .exe engines apply
+    *)
+        echo "⚠️  Note: the bundled diffusion/LLM engines (backend/win/) are Windows-only binaries."
+        echo "    On $OS_NAME this launches the UI shell only — image generation and local LLM"
+        echo "    chat will not run until native engine builds are available for this platform."
+        ;;
+esac
+
 echo "🚀 Starting NexusAI Studio..."
 npm run dev

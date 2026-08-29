@@ -14,6 +14,10 @@ build/
 *.node
 *.asar
 
+# Generated showcase page (canonical source: docs/index.html, see
+# scripts/build-blob-landing.js) — regenerate locally, don't commit a copy.
+/product.html
+
 # Local AI Models (Never commit heavy weights to git)
 models/**/*.safetensors
 models/**/*.gguf
