@@ -95,4 +95,68 @@ describe('apiRoutes - /api/download-model path safety', () => {
     expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body).success).toBe(false);
   });
+
+  it('rejects a repo id containing characters outside owner/name', async () => {
+    const router = createApiRouter(makeCtx());
+    const req = mockReq('POST', {}, JSON.stringify({
+      repo: 'evil@host.com', filename: 'model.gguf', targetFolder: 'models/llm'
+    }));
+    const res = mockRes();
+    const handled = await router.handle(req, res, new URL('http://localhost/api/download-model'));
+    expect(handled).toBe(true);
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/Invalid repo format/);
+  });
+
+  it('accepts a canonical repo id with no owner segment (e.g. "bert-base-uncased")', async () => {
+    // The handler fires the actual download detached from the response, so
+    // stub fetch to keep this a real unit test rather than a live network
+    // call — only the synchronous format-validation path is under test.
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true, body: null, headers: new Headers()
+    } as Response);
+    try {
+      const router = createApiRouter(makeCtx());
+      const req = mockReq('POST', {}, JSON.stringify({
+        repo: 'bert-base-uncased', filename: 'config.json', targetFolder: 'models/llm'
+      }));
+      const res = mockRes();
+      const handled = await router.handle(req, res, new URL('http://localhost/api/download-model'));
+      expect(handled).toBe(true);
+      expect(res.statusCode).not.toBe(400);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+});
+
+describe('apiRoutes - mutating routes require POST', () => {
+  const cases: [string, string][] = [
+    ['/api/rescan', 'GET'],
+    ['/api/llama/stop', 'GET'],
+    ['/api/cancel-download', 'GET']
+  ];
+
+  for (const [route, method] of cases) {
+    it(`rejects ${method} ${route} with 405 (only POST performs the side effect)`, async () => {
+      const router = createApiRouter(makeCtx());
+      const req = mockReq(method);
+      const res = mockRes();
+      const handled = await router.handle(req, res, new URL(`http://localhost${route}`));
+      expect(handled).toBe(true);
+      expect(res.statusCode).toBe(405);
+    });
+  }
+});
+
+describe('apiRoutes - /api/download-progress', () => {
+  it('never serializes the internal abortController', async () => {
+    const router = createApiRouter(makeCtx());
+    const req = mockReq('GET');
+    const res = mockRes();
+    const handled = await router.handle(req, res, new URL('http://localhost/api/download-progress'));
+    expect(handled).toBe(true);
+    expect(res.body).not.toContain('abortController');
+    expect(() => JSON.parse(res.body)).not.toThrow();
+  });
 });

@@ -10,6 +10,7 @@ const {
 } = require('./engine/pathUtils.cjs');
 const { getOutputDir } = require('./engine/sdEngine.cjs');
 const { createApiRouter } = require('./engine/apiRoutes.cjs');
+const { safeJoin } = require('./engine/security.cjs');
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -40,7 +41,9 @@ function createServer(options = {}) {
       try {
         const data = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
         if (Array.isArray(data)) return data.filter(p => typeof p === 'string' && fs.existsSync(p));
-      } catch (e) {}
+      } catch (e) {
+        console.warn(`[Solframe] Failed to parse ${cfgFile} — your custom scan paths won't be included until this is fixed: ${e.message}`);
+      }
     }
     return [];
   };
@@ -87,23 +90,36 @@ function createServer(options = {}) {
     const pathname = parsedUrl.pathname;
     let requestedFile = pathname === '/' ? '/index.html' : pathname;
 
-    // /outputs/* — serve from user-writable data dir first, then publicDir
+    // requestedFile comes straight from the request URL — WHATWG URL
+    // parsing already normalizes "..", "%2e%2e", and similar tricks out of
+    // pathname before we ever see it, so this is safe today regardless, but
+    // safeJoin is what every other request-driven path in this codebase
+    // uses and costs nothing here.
     let filePath;
-    if (requestedFile.startsWith('/outputs/')) {
-      const outputFilename = requestedFile.replace(/^.*\//, '').split('?')[0];
-      const userFile = path.join(userOutputsDir, outputFilename);
-      const publicFile = path.join(publicDir, 'outputs', outputFilename);
-      filePath = fs.existsSync(userFile) ? userFile : publicFile;
-    } else {
-      // Check public directory (themes, icons)
-      filePath = path.join(publicDir, requestedFile);
-      if (!fs.existsSync(filePath)) {
-        filePath = path.join(distDir, requestedFile);
+    try {
+      // /outputs/* — serve from user-writable data dir first, then publicDir
+      if (requestedFile.startsWith('/outputs/')) {
+        const outputFilename = requestedFile.replace(/^.*\//, '').split('?')[0];
+        const userFile = safeJoin(userOutputsDir, outputFilename);
+        const publicFile = safeJoin(publicDir, 'outputs', outputFilename);
+        filePath = fs.existsSync(userFile) ? userFile : publicFile;
+      } else {
+        // safeJoin resolves a leading "/" as a Windows drive-root anchor
+        // (path.resolve(base, "/x") discards base entirely) — strip it so
+        // the segment is relative to publicDir/distDir like it should be.
+        const relFile = requestedFile.replace(/^\/+/, '');
+        // Check public directory (themes, icons)
+        filePath = safeJoin(publicDir, relFile);
+        if (!fs.existsSync(filePath)) {
+          filePath = safeJoin(distDir, relFile);
+        }
+        // Fallback to index.html for SPA client-side routing
+        if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+          filePath = path.join(distDir, 'index.html');
+        }
       }
-      // Fallback to index.html for SPA client-side routing
-      if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-        filePath = path.join(distDir, 'index.html');
-      }
+    } catch (e) {
+      filePath = path.join(distDir, 'index.html');
     }
 
     if (fs.existsSync(filePath)) {

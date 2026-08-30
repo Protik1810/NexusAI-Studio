@@ -22,7 +22,9 @@ function sdCppBackendPlugin() {
       try {
         const data = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
         if (Array.isArray(data)) return data.filter((p: unknown) => typeof p === 'string' && fs.existsSync(p));
-      } catch (e) {}
+      } catch (e: any) {
+        console.warn(`[Solframe] Failed to parse ${cfgFile} — your custom scan paths won't be included until this is fixed: ${e.message}`);
+      }
     }
     return [];
   }
@@ -80,11 +82,12 @@ export default defineConfig({
     port: 1420,
     strictPort: true,
     proxy: {
-      '/llama-api': {
-        target: 'http://127.0.0.1:8080',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/llama-api/, ''),
-      },
+      // /llama-api has no entry here on purpose: apiRoutes.cjs's own
+      // dynamic-port proxy (registered directly in configureServer below,
+      // which runs before Vite's built-in proxy middleware) already
+      // handles it in both dev and production — a hardcoded-port entry
+      // here would be dead code that also can't follow the engine to
+      // whatever port it actually started on.
       '/comfy-api': {
         target: 'http://127.0.0.1:8188',
         changeOrigin: true,

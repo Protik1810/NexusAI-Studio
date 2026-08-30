@@ -153,7 +153,9 @@ function loadScanCache(paths = {}) {
   const tryParse = (file) => {
     try {
       if (file && fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'));
-    } catch (e) {}
+    } catch (e) {
+      console.warn(`[Solframe] Ignoring corrupt scan cache ${file}, will rescan: ${e.message}`);
+    }
     return null;
   };
   return tryParse(globalCacheFile) || tryParse(localCacheFile) || null;
@@ -169,14 +171,18 @@ function saveScanCache(data, paths = {}) {
     try {
       if (globalCacheDir && !fs.existsSync(globalCacheDir)) fs.mkdirSync(globalCacheDir, { recursive: true });
       fs.writeFileSync(globalCacheFile, payload);
-    } catch (e) {}
+    } catch (e) {
+      console.warn(`[Solframe] Failed to write scan cache ${globalCacheFile}: ${e.message}`);
+    }
   }
   if (localCacheFile) {
     try {
       const dir = path.dirname(localCacheFile);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(localCacheFile, payload);
-    } catch (e) {}
+    } catch (e) {
+      console.warn(`[Solframe] Failed to write scan cache ${localCacheFile}: ${e.message}`);
+    }
   }
 }
 

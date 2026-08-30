@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { sdCppService } from '../services/stableDiffusionCpp';
 import { AvailableModels, ComfyStatus } from '../services/comfyApi';
 import { ImageCanvas } from './image/ImageCanvas';
@@ -72,10 +72,10 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
   const [vaeModel, setVaeModel] = useState<string>('models/vae/flux2-vae.safetensors');
   const [activeGpu, setActiveGpu] = useState<string>('');
 
-  // LoRA Stack
-  const [loraModel, setLoraModel] = useState<string>('flux_lustly-ai_v1.safetensors');
+  // LoRA Stack — no LoRA pre-selected; the user opts in explicitly.
+  const [loraModel, setLoraModel] = useState<string>('');
   const [loraStrength, setLoraStrength] = useState<number>(0.85);
-  const [useLora, setUseLora] = useState<boolean>(true);
+  const [useLora, setUseLora] = useState<boolean>(false);
 
   // Generation Parameters
   const [prompt, setPrompt] = useState<string>(initialPrompt || 'Sensual photorealistic portrait of an alluring woman, intricate realistic skin texture, soft dramatic studio lighting, 8k resolution, raw photo, natural eyes');
@@ -96,6 +96,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
   const [isReloadingModels, setIsReloadingModels] = useState<boolean>(false);
   const [reloadSuccessMsg, setReloadSuccessMsg] = useState<string | null>(null);
   const [scanStatus, setScanStatus] = useState<string>('idle');
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     fetch('/api/hardware-info')
@@ -236,6 +237,8 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
     setProgress({ step: 0, total: steps, node: 'stable-diffusion.cpp: Preparing GPU VRAM...' });
 
     const activeRatio = ASPECT_RATIOS[selectedRatio];
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       const result = await sdCppService.generateImage({
@@ -255,7 +258,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         samplingMethod
       }, (step, total, node) => {
         setProgress({ step, total, node });
-      });
+      }, controller.signal);
 
       setCurrentImage(result.imageUrl);
       setLastSeed(result.seedUsed);
@@ -275,11 +278,18 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         timestamp: Date.now()
       });
     } catch (err: any) {
-      onError('GPU Generation Error', err.message || 'An error occurred during inference.');
+      if (err.message !== 'Generation cancelled.') {
+        onError('GPU Generation Error', err.message || 'An error occurred during inference.');
+      }
     } finally {
+      abortControllerRef.current = null;
       setGenerating(false);
       onGenerateEnd?.();
     }
+  };
+
+  const handleCancelGenerate = () => {
+    abortControllerRef.current?.abort();
   };
 
   const handleCopyPrompt = () => {
@@ -309,6 +319,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         generating={generating}
         progress={progress}
         onDownloadImage={handleDownloadImage}
+        onCancelGenerate={handleCancelGenerate}
       />
 
       <ImageControls

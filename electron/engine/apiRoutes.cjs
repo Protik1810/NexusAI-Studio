@@ -10,6 +10,7 @@
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const { Readable } = require('stream');
 const { spawn } = require('child_process');
 const { detectHardware } = require('./hardware.cjs');
 const { getAllSystemScanPaths } = require('./pathUtils.cjs');
@@ -93,6 +94,7 @@ function createApiRouter(ctx) {
   let llamaProc = null;
   let currentLlamaModel = null;
   let llamaPort = 8080;
+  let activeSdProc = null;
 
   let activeDownload = {
     isDownloading: false, filename: '', repo: '', targetFolder: '',
@@ -514,10 +516,10 @@ function createApiRouter(ctx) {
     }
 
     if (pathname === '/api/download-progress') {
-      // childProc is a raw Node ChildProcess (circular internal refs via its
-      // stdio streams) — never send it, only serve the plain status fields.
+      // abortController isn't meaningfully serializable — only serve the
+      // plain status fields.
       const downloadStatus = { ...activeDownload };
-      delete downloadStatus.childProc;
+      delete downloadStatus.abortController;
       sendJson(res, 200, downloadStatus);
       return true;
     }
@@ -528,8 +530,8 @@ function createApiRouter(ctx) {
         res.end('Method Not Allowed');
         return true;
       }
-      if (activeDownload.childProc) {
-        try { activeDownload.childProc.kill('SIGKILL'); } catch (e) {}
+      if (activeDownload.abortController) {
+        try { activeDownload.abortController.abort(); } catch (e) {}
       }
       activeDownload.isDownloading = false;
       activeDownload.status = 'idle';
@@ -554,6 +556,13 @@ function createApiRouter(ctx) {
           sendJson(res, 400, { success: false, error: 'Missing required parameters (repo, filename, targetFolder)' });
           return true;
         }
+        // A Hugging Face repo id is "owner/name", or just "name" for
+        // canonical/legacy models (e.g. "bert-base-uncased", "gpt2") —
+        // reject anything else before it goes anywhere near a URL or disk.
+        if (!/^[\w.-]+(\/[\w.-]+)?$/.test(repo)) {
+          sendJson(res, 400, { success: false, error: 'Invalid repo format — expected "owner/name" or "name"' });
+          return true;
+        }
 
         const finalFilename = path.basename(customFilename || filename);
         let destDir, targetPath;
@@ -570,48 +579,58 @@ function createApiRouter(ctx) {
         if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
         const downloadUrl = `https://huggingface.co/${repo}/resolve/main/${filename}`;
 
+        // Node's own fetch replaces a hardcoded curl.exe dependency — this
+        // now also works on the Linux/macOS UI-preview path, not just Windows.
+        const abortController = new AbortController();
         activeDownload = {
           isDownloading: true, filename: finalFilename, repo, targetFolder, targetPath,
-          downloadedBytes: 0, totalBytes: 0, percent: 0, speedMBs: 0, status: 'downloading', startTime: Date.now()
+          downloadedBytes: 0, totalBytes: 0, percent: 0, speedMBs: 0, status: 'downloading', startTime: Date.now(),
+          abortController
         };
 
-        try {
-          const headRes = await fetch(downloadUrl, { method: 'HEAD' });
-          const len = headRes.headers.get('content-length');
-          if (len) activeDownload.totalBytes = parseInt(len, 10);
-        } catch (e) {}
-
-        // --fail makes curl exit non-zero on HTTP error responses (e.g. a 404
-        // from a bad repo/filename); without it curl writes the error page to
-        // disk and exits 0, and the 'close' handler below reports "completed".
-        const curlProc = spawn('curl.exe', ['-L', '--fail', downloadUrl, '-o', targetPath, '--silent', '--show-error'], { windowsHide: true });
-        activeDownload.childProc = curlProc;
-
-        const progressTimer = setInterval(() => {
-          if (fs.existsSync(targetPath)) {
-            const stat = fs.statSync(targetPath);
-            activeDownload.downloadedBytes = stat.size;
-            if (activeDownload.totalBytes > 0) {
-              activeDownload.percent = Math.min(100, Math.round((stat.size / activeDownload.totalBytes) * 100));
+        (async () => {
+          try {
+            const dlRes = await fetch(downloadUrl, { signal: abortController.signal });
+            if (!dlRes.ok || !dlRes.body) {
+              throw new Error(`HTTP ${dlRes.status}`);
             }
-            const elapsedSec = (Date.now() - (activeDownload.startTime || Date.now())) / 1000;
-            if (elapsedSec > 0) {
-              activeDownload.speedMBs = parseFloat(((stat.size / (1024 * 1024)) / elapsedSec).toFixed(1));
-            }
-          }
-        }, 500);
+            const len = dlRes.headers.get('content-length');
+            if (len) activeDownload.totalBytes = parseInt(len, 10);
 
-        curlProc.on('close', code => {
-          clearInterval(progressTimer);
-          activeDownload.isDownloading = false;
-          if (code === 0 && fs.existsSync(targetPath)) {
+            const nodeStream = Readable.fromWeb(dlRes.body);
+            nodeStream.on('data', chunk => {
+              activeDownload.downloadedBytes += chunk.length;
+              if (activeDownload.totalBytes > 0) {
+                activeDownload.percent = Math.min(100, Math.round((activeDownload.downloadedBytes / activeDownload.totalBytes) * 100));
+              }
+              const elapsedSec = (Date.now() - activeDownload.startTime) / 1000;
+              if (elapsedSec > 0) {
+                activeDownload.speedMBs = parseFloat(((activeDownload.downloadedBytes / (1024 * 1024)) / elapsedSec).toFixed(1));
+              }
+            });
+
+            await new Promise((resolve, reject) => {
+              const writeStream = fs.createWriteStream(targetPath);
+              nodeStream.pipe(writeStream);
+              writeStream.on('finish', resolve);
+              writeStream.on('error', reject);
+              nodeStream.on('error', reject);
+            });
+
+            activeDownload.isDownloading = false;
             activeDownload.status = 'completed';
             activeDownload.percent = 100;
-          } else {
-            activeDownload.status = 'error';
-            activeDownload.error = `Download failed with exit code ${code}`;
+          } catch (err) {
+            activeDownload.isDownloading = false;
+            if (err.name === 'AbortError') {
+              activeDownload.status = 'idle';
+            } else {
+              activeDownload.status = 'error';
+              activeDownload.error = `Download failed: ${err.message}`;
+              try { fs.unlinkSync(targetPath); } catch (e) {}
+            }
           }
-        });
+        })();
 
         sendJson(res, 200, { success: true, targetPath });
       } catch (e) {
@@ -639,7 +658,8 @@ function createApiRouter(ctx) {
           modelPath: resolveModel(params.modelPath),
           clipPath: resolveModel(params.clipPath),
           t5Path: resolveModel(params.t5Path),
-          vaePath: resolveModel(params.vaePath)
+          vaePath: resolveModel(params.vaePath),
+          loraPath: params.loraPath ? resolveModel(params.loraPath) : undefined
         };
 
         if (!resolvedParams.modelPath || !fs.existsSync(resolvedParams.modelPath)) {
@@ -664,11 +684,26 @@ function createApiRouter(ctx) {
           'Cache-Control': 'no-cache',
           Connection: 'keep-alive'
         });
-        const sendEvent = payload => res.write(`data: ${JSON.stringify(payload)}\n\n`);
+        // Writing after the client aborts (its usual way to cancel a
+        // generation — see stableDiffusionCpp.ts's AbortController) would
+        // otherwise emit an unhandled 'error' on the response stream.
+        res.on('error', () => {});
+        const sendEvent = payload => { try { res.write(`data: ${JSON.stringify(payload)}\n\n`); } catch (e) {} };
+
+        // There's no dedicated cancel endpoint: the client cancels by
+        // aborting its fetch, which tears down this connection and fires
+        // 'close' here — at which point there's nothing left to stream a
+        // response to anyway, so just kill the still-running process.
+        req.on('close', () => {
+          if (activeSdProc) {
+            try { activeSdProc.kill('SIGKILL'); } catch (e) {}
+          }
+        });
 
         try {
           const result = await runSdCli({
             execPath, args, outFullPath, outFilename, workingDir, env: procEnv,
+            onSpawn: proc => { activeSdProc = proc; },
             onStdout: line => {
               const m = line.match(/(\d+)\/(\d+)\s*-\s*([\d.]+)(it\/s|s\/it)/);
               if (!m) return;
@@ -679,6 +714,8 @@ function createApiRouter(ctx) {
           sendEvent({ done: true, success: true, ...result });
         } catch (genErr) {
           sendEvent({ done: true, success: false, error: genErr.message });
+        } finally {
+          activeSdProc = null;
         }
         res.end();
       } catch (e) {
@@ -700,8 +737,12 @@ function createApiRouter(ctx) {
       try { llamaProc.kill('SIGKILL'); } catch (e) {}
       llamaProc = null;
     }
-    if (activeDownload.childProc) {
-      try { activeDownload.childProc.kill('SIGKILL'); } catch (e) {}
+    if (activeDownload.abortController) {
+      try { activeDownload.abortController.abort(); } catch (e) {}
+    }
+    if (activeSdProc) {
+      try { activeSdProc.kill('SIGKILL'); } catch (e) {}
+      activeSdProc = null;
     }
   }
 

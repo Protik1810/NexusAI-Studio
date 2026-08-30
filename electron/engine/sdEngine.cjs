@@ -20,11 +20,13 @@ const { spawn } = require('child_process');
  * @param {string} opts.workingDir - Working directory for the process
  * @param {object} opts.env - Environment variables
  * @param {function} [opts.onStdout] - Callback for stdout lines
+ * @param {function} [opts.onSpawn] - Callback with the ChildProcess, so callers can cancel it
  * @returns {Promise<{success:true, imageUrl:string, outputPath:string}>}
  */
-function runSdCli({ execPath, args, outFullPath, outFilename, workingDir, env, onStdout }) {
+function runSdCli({ execPath, args, outFullPath, outFilename, workingDir, env, onStdout, onSpawn }) {
   return new Promise((resolve, reject) => {
     const child = spawn(execPath, args, { cwd: workingDir, env, windowsHide: true });
+    if (onSpawn) onSpawn(child);
     let stderrLog = '';
 
     child.stderr?.on('data', d => { stderrLog += d.toString(); });
@@ -103,6 +105,7 @@ function getOutputDir(publicDir) {
  */
 function buildSdCliArgs(params, outFullPath) {
   const args = [];
+  let prompt = params.prompt || '';
   if (params.pipeline === 'flux') {
     args.push('--diffusion-model', params.modelPath);
     const isKlein = (params.modelPath || '').toLowerCase().includes('klein');
@@ -114,8 +117,20 @@ function buildSdCliArgs(params, outFullPath) {
     args.push('-m', params.modelPath);
     if (params.negativePrompt) args.push('-n', params.negativePrompt);
   }
+
+  // sd-cli has no standalone --lora flag: LoRAs are applied via a
+  // <lora:name:strength> tag inside the prompt text itself, plus
+  // --lora-model-dir pointing at the folder containing that file (verified
+  // against the real binary — confirmed "loading LoRA from ..." in its log).
+  if (params.loraPath && fs.existsSync(params.loraPath)) {
+    const loraName = path.basename(params.loraPath, path.extname(params.loraPath));
+    const loraStrength = params.loraStrength !== undefined ? params.loraStrength : 1;
+    args.push('--lora-model-dir', path.dirname(params.loraPath));
+    prompt = `${prompt} <lora:${loraName}:${loraStrength}>`;
+  }
+
   args.push(
-    '-p', params.prompt,
+    '-p', prompt,
     '-o', outFullPath,
     '-W', String(params.width || 512),
     '-H', String(params.height || 512),

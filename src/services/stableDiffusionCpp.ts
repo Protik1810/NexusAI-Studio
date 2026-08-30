@@ -35,7 +35,8 @@ export const SD_CPP_SAMPLERS = [
 export class StableDiffusionCppService {
   async generateImage(
     req: SDCppGenerationParams,
-    onProgress: (step: number, total: number, message?: string) => void
+    onProgress: (step: number, total: number, message?: string) => void,
+    signal?: AbortSignal
   ): Promise<SDCppResult> {
     const seedUsed = req.seed === -1 ? Math.floor(Math.random() * 1000000) : req.seed;
     const finalParams = { ...req, seed: seedUsed };
@@ -47,9 +48,11 @@ export class StableDiffusionCppService {
       res = await fetch('/api/sd-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalParams)
+        body: JSON.stringify(finalParams),
+        signal
       });
     } catch (err: any) {
+      if (err.name === 'AbortError') throw new Error('Generation cancelled.', { cause: err });
       throw new Error(`GPU Inference Error:\n\n${err.message}`, { cause: err });
     }
 
@@ -97,6 +100,7 @@ export class StableDiffusionCppService {
         }
       }
     } catch (err: any) {
+      if (err.name === 'AbortError') throw new Error('Generation cancelled.', { cause: err });
       throw new Error(`GPU Inference Error:\n\n${err.message}`, { cause: err });
     }
 

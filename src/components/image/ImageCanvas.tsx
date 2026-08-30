@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Maximize2, Image as ImageIcon } from 'lucide-react';
+import { Download, Maximize2, Image as ImageIcon, X } from 'lucide-react';
 
 export interface ImageCanvasProps {
   activeGpu: string;
@@ -12,6 +12,7 @@ export interface ImageCanvasProps {
   generating: boolean;
   progress: { step: number; total: number; node?: string };
   onDownloadImage: () => void;
+  onCancelGenerate?: () => void;
 }
 
 export const ImageCanvas: React.FC<ImageCanvasProps> = ({
@@ -24,7 +25,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   currentImage,
   generating,
   progress,
-  onDownloadImage
+  onDownloadImage,
+  onCancelGenerate
 }) => {
   return (
     <div className="studio-canvas glass-panel">
@@ -75,11 +77,21 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
               </p>
             </div>
             <div className="progress-bar-track">
-              <div 
-                className="progress-bar-fill" 
+              <div
+                className="progress-bar-fill"
                 style={{ width: `${progress.total > 0 ? (progress.step / progress.total) * 100 : 35}%` }}
               />
             </div>
+            {onCancelGenerate && (
+              <button
+                type="button"
+                onClick={onCancelGenerate}
+                className="btn-secondary"
+                style={{ marginTop: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}
+              >
+                <X size={14} /> Cancel Generation
+              </button>
+            )}
           </div>
         ) : currentImage ? (
           <img 
