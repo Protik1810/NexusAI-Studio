@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Solframe Studio — The Sovereign Desktop Generative AI Workstation</title>
-  <meta name="description" content="Synthesize photorealistic FLUX.2 Klein & SDXL Lightning artwork and dialogue with uncensored GGUF LLMs — powered by native C++ hardware kernels directly on your GPU." />
+  <meta name="description" content="Solframe Studio is a privacy-first, offline generative AI workstation for local LLMs and FLUX image generation — synthesize photorealistic FLUX.2 Klein & SDXL Lightning artwork and chat with uncensored GGUF LLMs, powered by native C++ hardware kernels directly on your GPU." />
   <link rel="icon" type="image/png" href="{{FAVICON_URL}}" />
   <!-- Open Graph / Twitter Card: link-preview crawlers (WhatsApp, Facebook,
        Slack, Discord, etc.) look for these tags specifically, and og:image
@@ -14,13 +14,13 @@
   <meta property="og:site_name" content="Solframe Studio" />
   <meta property="og:url" content="{{SITE_BASE_URL}}" />
   <meta property="og:title" content="Solframe Studio — The Sovereign Desktop Generative AI Workstation" />
-  <meta property="og:description" content="Synthesize photorealistic FLUX.2 Klein & SDXL Lightning artwork and dialogue with uncensored GGUF LLMs — powered by native C++ hardware kernels directly on your GPU." />
+  <meta property="og:description" content="Solframe Studio is a privacy-first, offline generative AI workstation for local LLMs and FLUX image generation — synthesize photorealistic FLUX.2 Klein & SDXL Lightning artwork and chat with uncensored GGUF LLMs, powered by native C++ hardware kernels directly on your GPU." />
   <meta property="og:image" content="{{OG_IMAGE_URL}}" />
   <meta property="og:image:width" content="512" />
   <meta property="og:image:height" content="512" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Solframe Studio — The Sovereign Desktop Generative AI Workstation" />
-  <meta name="twitter:description" content="Synthesize photorealistic FLUX.2 Klein & SDXL Lightning artwork and dialogue with uncensored GGUF LLMs — powered by native C++ hardware kernels directly on your GPU." />
+  <meta name="twitter:description" content="Solframe Studio is a privacy-first, offline generative AI workstation for local LLMs and FLUX image generation — synthesize photorealistic FLUX.2 Klein & SDXL Lightning artwork and chat with uncensored GGUF LLMs, powered by native C++ hardware kernels directly on your GPU." />
   <meta name="twitter:image" content="{{OG_IMAGE_URL}}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1102,6 +1102,50 @@
       line-height: 1.65;
     }
 
+    /* Hardware Requirements — same visual language as .feature-card, sized
+       down for a compact reference panel above the download grid. */
+    .hw-req-panel {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto 48px auto;
+    }
+    .hw-req-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .hw-req-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .hw-req-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+    .hw-req-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.82rem;
+      padding: 4px 0;
+    }
+    .hw-req-row-label {
+      color: var(--text-secondary);
+    }
+    .hw-req-row-value {
+      color: var(--primary-light);
+      font-weight: 600;
+      text-align: right;
+    }
+
     /* Download Section with Themed Background Backdrop */
     .download-section {
       position: relative;
@@ -2104,6 +2148,39 @@
         <span class="overline-badge">Get Started</span>
         <h2 class="section-title">Download Solframe Studio</h2>
         <p class="section-subtitle">Native installers for Windows, Linux, and macOS — hosted on GitHub Releases.</p>
+      </div>
+
+      <!-- Hardware Requirements -->
+      <div class="hw-req-panel reveal-item">
+        <div class="hw-req-grid">
+          <div class="hw-req-card">
+            <div class="hw-req-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary);"><path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z"/></svg>
+              Image Generation
+            </div>
+            <div class="hw-req-row"><span class="hw-req-row-label">Minimum</span><span class="hw-req-row-value">6GB VRAM (SDXL Lightning)</span></div>
+            <div class="hw-req-row"><span class="hw-req-row-label">Recommended</span><span class="hw-req-row-value">8GB+ VRAM (FLUX.2 Klein)</span></div>
+          </div>
+          <div class="hw-req-card">
+            <div class="hw-req-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+              LLM Chat (GGUF)
+            </div>
+            <div class="hw-req-row"><span class="hw-req-row-label">Minimum</span><span class="hw-req-row-value">4GB VRAM (7B, Q4)</span></div>
+            <div class="hw-req-row"><span class="hw-req-row-label">Recommended</span><span class="hw-req-row-value">8GB+ VRAM (13B+)</span></div>
+          </div>
+          <div class="hw-req-card">
+            <div class="hw-req-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary);"><path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"/></svg>
+              No Discrete GPU?
+            </div>
+            <div class="hw-req-row"><span class="hw-req-row-label">Fallback</span><span class="hw-req-row-value">AVX2 CPU (both)</span></div>
+            <div class="hw-req-row"><span class="hw-req-row-label">Trade-off</span><span class="hw-req-row-value">Works, just slower</span></div>
+          </div>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-secondary); text-align: center; margin-top: 14px;">
+          VRAM needs scale with model size and quantization — these are typical figures for the model sizes named. NVIDIA CUDA and AMD/Intel Vulkan are both auto-detected; no discrete GPU falls back to a multi-threaded AVX2 CPU engine automatically.
+        </p>
       </div>
 
       <div class="download-grid">
