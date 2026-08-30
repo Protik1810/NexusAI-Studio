@@ -8,9 +8,8 @@ import {
   Bot, 
   User, 
   StopCircle, 
-  Image as ImageIcon, 
-  Zap, 
-  RefreshCw, 
+  Image as ImageIcon,
+  RefreshCw,
   Sliders,
   Cpu,
   Play,
@@ -45,7 +44,6 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
   const [input, setInput] = useState<string>('');
   const [activePersona, setActivePersona] = useState<PersonaPreset>(PERSONA_PRESETS[0]);
-  const [engineMode, setEngineMode] = useState<'embedded' | 'external'>('embedded');
   const [localGgufModels, setLocalGgufModels] = useState<LocalGgufModel[]>([]);
   const [selectedGgufPath, setSelectedGgufPath] = useState<string>('');
   const [isStartingServer, setIsStartingServer] = useState<boolean>(false);
@@ -57,7 +55,6 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
     } catch {}
     return { ctxSize: 4096, gpuLayers: 99, batchSize: 2048, flashAttn: 'auto' };
   });
-  const [selectedModel, setSelectedModel] = useState<string>(llmStatus.currentModel || 'default');
   const [temperature, setTemperature] = useState<number>(0.7);
   const [streaming, setStreaming] = useState<boolean>(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -96,12 +93,6 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
     localStorage.setItem('solframe_llm_load_params', JSON.stringify(loadParams));
   }, [loadParams]);
 
-  useEffect(() => {
-    if (llmStatus.models.length > 0 && !llmStatus.models.includes(selectedModel)) {
-      setSelectedModel(llmStatus.models[0]);
-    }
-  }, [llmStatus.models]);
-
   const handleStartEmbeddedServer = async () => {
     if (!selectedGgufPath) {
       onError('No GGUF Model Selected', 'Please select a downloaded .gguf text model from the dropdown or download one from the Model Hub.');
@@ -112,8 +103,6 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
     try {
       const res = await llmService.startEmbeddedLlama(selectedGgufPath, loadParams.gpuLayers, loadParams.ctxSize, loadParams.batchSize, loadParams.flashAttn);
       setEmbeddedServerStatus({ running: true, port: res.port, model: res.model });
-      setEngineMode('embedded');
-      llmService.setMode('embedded');
     } catch (err: any) {
       onError('llama.cpp Startup Error', err.message || 'Failed to initialize CUDA llama-server on GPU.');
     } finally {
@@ -129,19 +118,13 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   const handleSendMessage = async () => {
     if (!input.trim() || streaming) return;
 
-    if (engineMode === 'embedded' && !embeddedServerStatus.running) {
+    if (!embeddedServerStatus.running) {
       if (selectedGgufPath) {
         await handleStartEmbeddedServer();
       } else {
         onError('Engine Not Running', "Please select a .gguf text model and click 'Start Engine' to launch native GPU text generation.");
         return;
       }
-    } else if (engineMode === 'external' && !llmStatus.connected) {
-      onError(
-        'LLM Backend Offline',
-        `Cannot connect to local LLM backend at ${llmService.getBaseUrl()}.\n\nTo chat:\n1. Switch to 'Native llama.cpp' above.\n2. Or start LM Studio on port 1234.\n3. Or start Ollama on port 11434.`
-      );
-      return;
     }
 
     const userMessage: ChatMessage = {
@@ -169,10 +152,9 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
     let accumulatedContent = '';
 
     try {
-      const activeModel = engineMode === 'embedded' ? (embeddedServerStatus.model || 'local-gguf') : selectedModel;
       await llmService.streamChat(
         newMessages,
-        activeModel,
+        embeddedServerStatus.model || 'local-gguf',
         activePersona.systemPrompt,
         temperature,
         (token) => {
@@ -235,7 +217,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                   </span>
                 ) : llmStatus.connected ? (
                   <span className="badge-pill" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent)', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-                    Connected via {llmStatus.type.toUpperCase()}
+                    Connected (llama.cpp CUDA)
                   </span>
                 ) : (
                   <span className="badge-pill" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
@@ -390,36 +372,8 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
           <Sliders size={16} color="var(--accent)" /> LLM Engine & Config
         </h3>
 
-        {/* Engine Switcher */}
-        <div className="control-group">
-          <label className="control-label">Inference Engine</label>
-          <div className="tab-pill-group">
-            <button
-              type="button"
-              className={`tab-pill ${engineMode === 'embedded' ? 'active' : ''}`}
-              onClick={() => {
-                setEngineMode('embedded');
-                llmService.setMode('embedded');
-              }}
-            >
-              <Cpu size={13} /> Native llama.cpp
-            </button>
-            <button
-              type="button"
-              className={`tab-pill ${engineMode === 'external' ? 'active' : ''}`}
-              onClick={() => {
-                setEngineMode('external');
-                llmService.setMode('external');
-              }}
-            >
-              <Zap size={13} /> External Server
-            </button>
-          </div>
-        </div>
-
         {/* EMBEDDED LLAMA.CPP CONTROLS */}
-        {engineMode === 'embedded' ? (
-          <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', marginBottom: '16px' }}>
+        <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <label className="control-label" style={{ marginBottom: 0, fontSize: '12px' }}>
                 Local GGUF Models (models/llm)
@@ -452,7 +406,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                   ))}
                 </select>
 
-                {/* GGUF Load Parameters (LM Studio-style) */}
+                {/* GGUF Load Parameters */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px', opacity: embeddedServerStatus.running ? 0.5 : 1 }}>
                   <div>
                     <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>Context Length</label>
@@ -557,24 +511,6 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               </div>
             )}
           </div>
-        ) : (
-          <div className="control-group" style={{ marginBottom: '16px' }}>
-            <label className="control-label">External Server Model</label>
-            <select 
-              value={selectedModel} 
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="select-input"
-            >
-              {llmStatus.models.length > 0 ? (
-                llmStatus.models.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))
-              ) : (
-                <option value="default">Default Active Model</option>
-              )}
-            </select>
-          </div>
-        )}
 
         {/* Active Persona */}
         <div className="control-group">

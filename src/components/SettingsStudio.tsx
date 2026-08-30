@@ -5,9 +5,8 @@ import {
   Activity, 
   RefreshCw, 
   CheckCircle, 
-  AlertTriangle, 
+  AlertTriangle,
   ExternalLink,
-  Flame,
   Bot,
   Zap,
   Info,
@@ -16,12 +15,10 @@ import {
   FolderCheck,
   Folder
 } from 'lucide-react';
-import { comfyService, ComfyStatus } from '../services/comfyApi';
-import { llmService, LLMStatus } from '../services/llmApi';
+import { LLMStatus } from '../services/llmApi';
 import { systemModelsService, SystemScanPath, SystemModelsResult } from '../services/systemModelsApi';
 
 interface SettingsStudioProps {
-  comfyStatus: ComfyStatus;
   llmStatus: LLMStatus;
   onRefreshStatus: () => Promise<void>;
   onSuccess: (title: string, message: string) => void;
@@ -29,14 +26,11 @@ interface SettingsStudioProps {
 }
 
 export const SettingsStudio: React.FC<SettingsStudioProps> = ({
-  comfyStatus,
   llmStatus,
   onRefreshStatus,
   onSuccess,
   onError
 }) => {
-  const [comfyUrl, setComfyUrl] = useState<string>(comfyService.getBaseUrl());
-  const [llmUrl, setLlmUrl] = useState<string>(llmService.getBaseUrl());
   const [checking, setChecking] = useState<boolean>(false);
 
   // System Model Scanning State
@@ -93,16 +87,11 @@ export const SettingsStudio: React.FC<SettingsStudioProps> = ({
     }
   };
 
-  const handleSaveEndpoints = async () => {
+  const handleRefreshEngineStatus = async () => {
     setChecking(true);
-    comfyService.setBaseUrl(comfyUrl);
-    llmService.setBaseUrl(llmUrl);
-    localStorage.setItem('solframe_comfy_url', comfyUrl);
-    localStorage.setItem('solframe_llm_url', llmUrl);
-
     try {
       await onRefreshStatus();
-      onSuccess('Endpoints Updated', 'Saved and verified backend connections.');
+      onSuccess('Status Refreshed', 'Re-checked the embedded engine connection.');
     } catch (e: any) {
       onError('Connection Test Failed', e.message);
     } finally {
@@ -220,92 +209,40 @@ export const SettingsStudio: React.FC<SettingsStudioProps> = ({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
-        {/* COMFYUI CONFIG */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Flame size={18} color="#c084fc" /> Image Generation Engine (ComfyUI)
-            </h3>
-            <span style={{ fontSize: '12px', color: comfyStatus.connected ? '#10b981' : '#ef4444', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              {comfyStatus.connected ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
-              {comfyStatus.connected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-
-          <div className="input-group">
-            <label className="control-label">ComfyUI REST & WebSocket Endpoint</label>
-            <input
-              type="text"
-              value={comfyUrl}
-              onChange={(e) => setComfyUrl(e.target.value)}
-              placeholder="http://127.0.0.1:8188"
-              className="styled-input"
-            />
-          </div>
-
-          {comfyStatus.connected && (
-            <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-              <div><strong style={{ color: 'var(--text-primary)' }}>Hardware Device:</strong> {comfyStatus.device}</div>
-              <div><strong style={{ color: 'var(--text-primary)' }}>Free VRAM:</strong> {comfyStatus.vramFree} / {comfyStatus.vramTotal}</div>
-              <div><strong style={{ color: 'var(--text-primary)' }}>ComfyUI Version:</strong> {comfyStatus.version}</div>
-            </div>
-          )}
-
-          <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px' }}>
-            <p>💡 <strong>Native sd-cli Engine:</strong></p>
-            <p>Direct GPU inference runs automatically via <code>sd-cli.exe</code> on NVIDIA RTX GPUs without requiring external servers.</p>
-          </div>
+      <div className="glass-panel" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Bot size={18} color="#06b6d4" /> LLM Dialogue Engine
+          </h3>
+          <span style={{ fontSize: '12px', color: llmStatus.connected ? '#10b981' : '#ef4444', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            {llmStatus.connected ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
+            {llmStatus.connected ? 'Connected' : 'Ready to Launch'}
+          </span>
         </div>
 
-        {/* LLM CONFIG */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Bot size={18} color="#06b6d4" /> LLM Dialogue Engine
-            </h3>
-            <span style={{ fontSize: '12px', color: llmStatus.connected ? '#10b981' : '#ef4444', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              {llmStatus.connected ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
-              {llmStatus.connected ? 'Connected' : 'Ready to Launch'}
-            </span>
+        {llmStatus.connected && (
+          <div style={{ marginBottom: '12px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <div><strong style={{ color: 'var(--text-primary)' }}>Active Model:</strong> {llmStatus.currentModel || 'Default Model'}</div>
           </div>
+        )}
 
-          <div className="input-group">
-            <label className="control-label">External OpenAI-Compatible / Ollama URL</label>
-            <input
-              type="text"
-              value={llmUrl}
-              onChange={(e) => setLlmUrl(e.target.value)}
-              placeholder="http://localhost:1234/v1"
-              className="styled-input"
-            />
-          </div>
-
-          {llmStatus.connected && (
-            <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-              <div><strong style={{ color: 'var(--text-primary)' }}>Engine Type:</strong> {llmStatus.type.toUpperCase()}</div>
-              <div><strong style={{ color: 'var(--text-primary)' }}>Active Model:</strong> {llmStatus.currentModel || 'Default Model'}</div>
-            </div>
-          )}
-
-          <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px' }}>
-            <p>💡 <strong>Native llama.cpp Engine:</strong></p>
-            <p>In Chat Studio, select any detected GGUF model and click <strong>'Start Engine (CUDA)'</strong> to run with maximum GPU acceleration.</p>
-          </div>
+        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px' }}>
+          <p>💡 <strong>Native llama.cpp Engine:</strong></p>
+          <p>In Chat Studio, select any detected GGUF model and click <strong>'Start Engine (CUDA)'</strong> to run with maximum GPU acceleration. Image generation runs the same way, automatically via <code>sd-cli.exe</code> — no external servers required.</p>
         </div>
       </div>
 
-      {/* Save Button */}
+      {/* Refresh Button */}
       <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
         <button
           type="button"
-          onClick={handleSaveEndpoints}
+          onClick={handleRefreshEngineStatus}
           disabled={checking}
           className="generate-btn"
           style={{ width: 'auto', padding: '12px 28px' }}
         >
           <RefreshCw size={16} className={checking ? 'spin' : ''} />
-          {checking ? 'Testing & Saving...' : 'Save & Test Connection'}
+          {checking ? 'Checking...' : 'Refresh Engine Status'}
         </button>
       </div>
     </div>

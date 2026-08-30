@@ -38,7 +38,7 @@
 
 ### 💬 2. Uncensored Local LLM Chat
 - **Native `llama.cpp` GPU Server**: Stream tokens in real time from quantized GGUF models (DeepSeek, Qwen 2.5, Gemma 4, Llama 3, Dolphin).
-- **LM Studio-Style Load Parameters**: Context Length, GPU Layers, Batch Size, and Flash Attention, set before loading instead of hardcoded.
+- **Configurable Load Parameters**: Context Length, GPU Layers, Batch Size, and Flash Attention, set before loading instead of hardcoded.
 - **Custom Personas**: Seamless roleplay switching (Creative Visionary, Technical Prompt Engineer, Uncensored Assistant).
 - **Cross-Studio Pipeline**: Send generated prompts directly to the Image Studio with one click.
 
@@ -75,9 +75,6 @@
 | **Language Dialogue Engine** | `llama.cpp` (`llama-server.exe` CUDA / Vulkan) |
 | **Model Persistence** | Global JSON Cache (`~/.solframe/scan_cache.json`) |
 | **Testing** | Vitest — path resolution, model classification, local-server security (origin checks, path-traversal guards, POST-only enforcement), and CLI arg construction |
-
-### Optional Integrations
-- **ComfyUI Bridge** *(optional)*: if you already run [ComfyUI](https://github.com/comfyanonymous/ComfyUI) locally, `src/services/comfyApi.ts` can proxy generation requests to your own `127.0.0.1:8188` instance instead of the bundled `stable-diffusion.cpp` engine. This is an opt-in convenience for existing ComfyUI users — it talks to a process on your own machine, never a remote service, and Solframe Studio's core Image/Chat Studios do not require it.
 
 ---
 

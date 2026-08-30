@@ -8,14 +8,12 @@ import {
   Globe, 
   Loader2 
 } from 'lucide-react';
-import { AvailableModels } from '../services/comfyApi';
 import { hfHubService, HfModelResult, DownloadProgressState } from '../services/hfHubApi';
 import { systemModelsService, SystemModelsResult } from '../services/systemModelsApi';
 import { LocalModelList } from './models/LocalModelList';
 import { HuggingFaceDownloader } from './models/HuggingFaceDownloader';
 
 interface ModelManagerProps {
-  availableModels: AvailableModels;
   onDownloadModel: (url: string, filename: string, targetFolder: string) => Promise<void>;
   onNavigateToStudio?: () => void;
   onNavigateToChat?: () => void;

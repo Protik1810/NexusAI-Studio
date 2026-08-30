@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { sdCppService } from '../services/stableDiffusionCpp';
-import { AvailableModels, ComfyStatus } from '../services/comfyApi';
 import { ImageCanvas } from './image/ImageCanvas';
 import { ImageControls, AspectRatioOption, LocalModelsState } from './image/ImageControls';
 
 interface ImageStudioProps {
-  comfyStatus?: ComfyStatus;
-  availableModels?: AvailableModels;
   onImageGenerated: (image: {
     id: string;
     url: string;

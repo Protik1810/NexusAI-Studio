@@ -47,7 +47,7 @@ export interface LocalGgufModel {
 
 export interface LLMStatus {
   connected: boolean;
-  type: 'embedded-llama' | 'lmstudio' | 'ollama' | 'llamacpp' | 'custom';
+  type: 'embedded-llama';
   models: string[];
   currentModel?: string;
   error?: string;
@@ -55,28 +55,6 @@ export interface LLMStatus {
 }
 
 export class LLMService {
-  private baseUrl: string = '/llama-api/v1';
-  private mode: 'embedded' | 'external' = 'embedded';
-
-  setBaseUrl(url: string) {
-    this.baseUrl = url.replace(/\/+$/, '');
-  }
-
-  getBaseUrl() {
-    return this.baseUrl;
-  }
-
-  setMode(mode: 'embedded' | 'external') {
-    this.mode = mode;
-    if (mode === 'embedded') {
-      this.baseUrl = '/llama-api/v1';
-    }
-  }
-
-  getMode() {
-    return this.mode;
-  }
-
   async getLocalGgufModels(): Promise<LocalGgufModel[]> {
     try {
       const res = await fetch('/api/local-llm-models');
@@ -108,8 +86,6 @@ export class LLMService {
       throw new Error(data.error || 'Failed to start llama.cpp server');
     }
 
-    this.baseUrl = '/llama-api/v1';
-    this.mode = 'embedded';
     return data;
   }
 
@@ -127,8 +103,7 @@ export class LLMService {
     return { running: false, port: 8080, model: null };
   }
 
-  async detectBackend(url: string = this.baseUrl): Promise<LLMStatus> {
-    // 1. Check embedded llama.cpp status first
+  async detectBackend(): Promise<LLMStatus> {
     const embedded = await this.getEmbeddedLlamaStatus();
     if (embedded.running && embedded.model) {
       return {
@@ -139,49 +114,6 @@ export class LLMService {
         isEmbedded: true
       };
     }
-
-    const cleanUrl = url.replace(/\/+$/, '');
-    
-    // 2. Try OpenAI-compatible /v1/models (LM Studio, llama.cpp, vLLM, Ollama with /v1)
-    try {
-      const res = await fetch(`${cleanUrl}/models`, { signal: AbortSignal.timeout(2000) });
-      if (res.ok) {
-        const data = await res.json();
-        const models = Array.isArray(data.data) 
-          ? data.data.map((m: any) => m.id || m.name)
-          : Array.isArray(data.models) 
-            ? data.models.map((m: any) => m.name || m.id) 
-            : [];
-        
-        let type: 'lmstudio' | 'ollama' | 'llamacpp' | 'custom' = 'lmstudio';
-        if (cleanUrl.includes('11434')) type = 'ollama';
-        else if (cleanUrl.includes('8080') || cleanUrl.includes('llama')) type = 'llamacpp';
-        else if (cleanUrl.includes('1234')) type = 'lmstudio';
-        else type = 'custom';
-
-        return {
-          connected: true,
-          type,
-          models,
-          currentModel: models[0] || 'Default Model'
-        };
-      }
-    } catch (e) {}
-
-    // 3. Try Ollama native /api/tags if /v1 was not responding
-    try {
-      const res = await fetch(cleanUrl.replace('/v1', '') + '/api/tags', { signal: AbortSignal.timeout(1500) });
-      if (res.ok) {
-        const data = await res.json();
-        const models = Array.isArray(data.models) ? data.models.map((m: any) => m.name) : [];
-        return {
-          connected: true,
-          type: 'ollama',
-          models,
-          currentModel: models[0] || 'Default Model'
-        };
-      }
-    } catch (e) {}
 
     return {
       connected: false,
@@ -204,11 +136,7 @@ export class LLMService {
       ...messages.map(m => ({ role: m.role, content: m.content }))
     ];
 
-    const endpoint = this.baseUrl.endsWith('/v1') 
-      ? `${this.baseUrl}/chat/completions` 
-      : `${this.baseUrl}/v1/chat/completions`;
-
-    const res = await fetch(endpoint, {
+    const res = await fetch('/llama-api/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

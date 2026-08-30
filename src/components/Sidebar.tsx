@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Image, MessageSquare, Images, Database, Settings, Palette, Info } from "lucide-react";
-import { ComfyStatus } from "../services/comfyApi";
-import { LLMStatus } from "../services/llmApi";
 import { ThemeModal, AppThemeId, APP_THEMES } from "./ThemeModal";
 
 export type TabType = "image" | "chat" | "gallery" | "models" | "about" | "settings";
@@ -9,8 +7,6 @@ export type TabType = "image" | "chat" | "gallery" | "models" | "about" | "setti
 interface SidebarProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
-  comfyStatus: ComfyStatus;
-  llmStatus: LLMStatus;
   isEngineRunning?: boolean;
   librariesReady?: boolean;
   missingLibrariesCount?: number;
@@ -24,8 +20,6 @@ function applyTheme(theme: AppThemeId) {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
-  comfyStatus,
-  llmStatus,
   isEngineRunning = false,
   librariesReady = true,
   missingLibrariesCount = 0

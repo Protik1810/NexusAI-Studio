@@ -7,24 +7,14 @@ import { GalleryStudio, GalleryItem } from './components/GalleryStudio';
 import { SettingsStudio } from './components/SettingsStudio';
 import { AboutStudio } from './components/AboutStudio';
 import { ErrorModal, ModalProps } from './components/ErrorModal';
-import { comfyService, ComfyStatus, AvailableModels } from './services/comfyApi';
 import { llmService, LLMStatus } from './services/llmApi';
 import './index.css';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<'image' | 'chat' | 'gallery' | 'models' | 'about' | 'settings'>('image');
 
-  
-  // Backend Statuses
-  const [comfyStatus, setComfyStatus] = useState<ComfyStatus>({ connected: false });
-  const [llmStatus, setLlmStatus] = useState<LLMStatus>({ connected: false, type: 'lmstudio', models: [] });
-  const [availableModels, setAvailableModels] = useState<AvailableModels>({
-    checkpoints: [],
-    unets: [],
-    clips: [],
-    loras: [],
-    vaes: []
-  });
+  // Backend Status
+  const [llmStatus, setLlmStatus] = useState<LLMStatus>({ connected: false, type: 'embedded-llama', models: [] });
 
   // Gallery
   const [gallery, setGallery] = useState<GalleryItem[]>(() => {
@@ -75,32 +65,6 @@ export function App() {
   const refreshBackendStatus = async () => {
     checkLibrariesHealth();
 
-    // 1. Fetch Local Models from disk
-    try {
-      const res = await fetch('/api/local-models');
-      if (res.ok) {
-        const local = await res.json();
-        setAvailableModels(prev => ({
-          ...prev,
-          checkpoints: local.checkpoints || [],
-          unets: local.unets || [],
-          clips: local.clips || [],
-          loras: local.loras || [],
-          vaes: local.vaes || [],
-          controlnets: local.controlnets || []
-        }));
-      }
-    } catch {}
-
-    // 2. Check ComfyUI (optional server)
-    const cStatus = await comfyService.checkStatus();
-    setComfyStatus(cStatus);
-    if (cStatus.connected) {
-      const models = await comfyService.fetchModels();
-      setAvailableModels(models);
-    }
-
-    // 3. Check LLM
     const lStatus = await llmService.detectBackend();
     setLlmStatus(lStatus);
   };
@@ -208,8 +172,6 @@ export function App() {
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        comfyStatus={comfyStatus}
-        llmStatus={llmStatus}
         isEngineRunning={isEngineRunning}
         librariesReady={libraryData.allReady}
         missingLibrariesCount={libraryData.missingCount}
@@ -219,8 +181,6 @@ export function App() {
       <main className="workspace-area">
         {activeTab === 'image' && (
           <ImageStudio
-            comfyStatus={comfyStatus}
-            availableModels={availableModels}
             onImageGenerated={handleImageGenerated}
             onError={triggerError}
             initialPrompt={studioPrompt}
@@ -248,7 +208,6 @@ export function App() {
 
         {activeTab === 'models' && (
           <ModelManager
-            availableModels={availableModels}
             onDownloadModel={handleDownloadModel}
             onNavigateToStudio={() => setActiveTab('image')}
             onNavigateToChat={() => setActiveTab('chat')}
@@ -263,7 +222,6 @@ export function App() {
 
         {activeTab === 'settings' && (
           <SettingsStudio
-            comfyStatus={comfyStatus}
             llmStatus={llmStatus}
             onRefreshStatus={refreshBackendStatus}
             onSuccess={triggerSuccess}

@@ -83,28 +83,12 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
-    proxy: {
-      // /llama-api has no entry here on purpose: apiRoutes.cjs's own
-      // dynamic-port proxy (registered directly in configureServer below,
-      // which runs before Vite's built-in proxy middleware) already
-      // handles it in both dev and production — a hardcoded-port entry
-      // here would be dead code that also can't follow the engine to
-      // whatever port it actually started on.
-      '/comfy-api': {
-        target: 'http://127.0.0.1:8188',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/comfy-api/, ''),
-        ws: true,
-        headers: { Origin: 'http://127.0.0.1:8188', Host: '127.0.0.1:8188' }
-      },
-      '/comfy-ws': {
-        target: 'ws://127.0.0.1:8188',
-        ws: true,
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/comfy-ws/, ''),
-        headers: { Origin: 'http://127.0.0.1:8188', Host: '127.0.0.1:8188' }
-      }
-    }
+    // /llama-api has no proxy entry here on purpose: apiRoutes.cjs's own
+    // dynamic-port proxy (registered directly in configureServer above,
+    // which runs before Vite's built-in proxy middleware) already handles
+    // it in both dev and production — a hardcoded-port entry here would be
+    // dead code that also can't follow the engine to whatever port it
+    // actually started on.
   },
   envPrefix: ['VITE_', 'TAURI_'],
 })
