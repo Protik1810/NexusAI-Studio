@@ -72,6 +72,25 @@ const LIBRARY_DEFINITIONS = [
 ];
 
 /**
+ * Compares two plain "x.y.z" version strings (a leading "v" on either is
+ * tolerated, since GitHub tag names use it but package.json's version never
+ * does). Returns true if `latest` is strictly newer than `current`. No
+ * semver ranges/prerelease handling — every tag this project has actually
+ * cut is a plain three-part version, so a full semver dependency isn't
+ * warranted for this one comparison.
+ */
+function isNewerVersion(current, latest) {
+  const parse = v => String(v).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  const a = parse(current);
+  const b = parse(latest);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const diff = (b[i] || 0) - (a[i] || 0);
+    if (diff !== 0) return diff > 0;
+  }
+  return false;
+}
+
+/**
  * @param {object} ctx
  * @param {string} ctx.rootDir - App root directory
  * @param {string} ctx.resourcesPath - electron-builder resources path (== rootDir in dev)
@@ -112,6 +131,12 @@ function createApiRouter(ctx) {
   let scanProgress = 0;
   let scanTotal = 0;
   let cachedModels = null;
+
+  // { checkedAt, result } — a release doesn't need sub-hour freshness, and
+  // this avoids hammering GitHub's API on every remount/re-render of the
+  // About page during a single session.
+  let updateCheckCache = null;
+  const UPDATE_CHECK_TTL_MS = 60 * 60 * 1000;
 
   function runBackgroundScan() {
     if (scanState === 'scanning') return;
@@ -437,6 +462,37 @@ function createApiRouter(ctx) {
       agentConfig = { ...agentConfig, apiKey: generateApiKey() };
       saveConfig(agentConfig);
       sendJson(res, 200, { success: true, apiKey: agentConfig.apiKey });
+      return true;
+    }
+
+    if (pathname === '/api/check-update') {
+      const currentVersion = require(path.join(rootDir, 'package.json')).version;
+      const now = Date.now();
+      if (updateCheckCache && now - updateCheckCache.checkedAt < UPDATE_CHECK_TTL_MS) {
+        sendJson(res, 200, updateCheckCache.result);
+        return true;
+      }
+      try {
+        const ghRes = await fetch('https://api.github.com/repos/Protik1810/Solframe-Studio/releases/latest', {
+          headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'Solframe-Studio' },
+          signal: AbortSignal.timeout(5000)
+        });
+        if (!ghRes.ok) throw new Error(`GitHub API HTTP ${ghRes.status}`);
+        const release = await ghRes.json();
+        const latestVersion = String(release.tag_name || '').replace(/^v/i, '');
+        const result = {
+          currentVersion,
+          latestVersion,
+          updateAvailable: !!latestVersion && isNewerVersion(currentVersion, latestVersion),
+          releaseUrl: release.html_url || 'https://github.com/Protik1810/Solframe-Studio/releases'
+        };
+        updateCheckCache = { checkedAt: now, result };
+        sendJson(res, 200, result);
+      } catch (e) {
+        // Offline, GitHub down, rate-limited, etc. — never let this break
+        // the About page; just report no update available.
+        sendJson(res, 200, { currentVersion, latestVersion: currentVersion, updateAvailable: false });
+      }
       return true;
     }
 

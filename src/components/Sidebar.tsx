@@ -10,6 +10,7 @@ interface SidebarProps {
   isEngineRunning?: boolean;
   librariesReady?: boolean;
   missingLibrariesCount?: number;
+  updateAvailable?: boolean;
 }
 
 function applyTheme(theme: AppThemeId) {
@@ -22,7 +23,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab,
   isEngineRunning = false,
   librariesReady = true,
-  missingLibrariesCount = 0
+  missingLibrariesCount = 0,
+  updateAvailable = false
 }) => {
   const [currentTheme, setCurrentTheme] = useState<AppThemeId>(() => {
     return (localStorage.getItem("solframe-theme") as AppThemeId) || "cinema";
@@ -142,9 +144,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             className={`sidebar-icon ${activeTab === "about" ? "active" : ""}`}
             onClick={() => setActiveTab("about")}
-            title="About Solframe Studio, Libraries & Creator Protik"
+            title={updateAvailable ? "About Solframe Studio — Update available!" : "About Solframe Studio, Libraries & Creator Protik"}
+            style={{ position: "relative" }}
           >
             <Info size={22} />
+            {updateAvailable && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "6px",
+                  right: "6px",
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  backgroundColor: "var(--accent)",
+                  boxShadow: "0 0 8px var(--accent)",
+                  border: "1px solid rgba(255,255,255,0.4)"
+                }}
+              />
+            )}
           </button>
         </div>
 

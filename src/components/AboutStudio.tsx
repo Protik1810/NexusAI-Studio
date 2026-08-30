@@ -57,7 +57,11 @@ interface LibraryEngine {
   files: LibraryFile[];
 }
 
-export const AboutStudio: React.FC = () => {
+interface AboutStudioProps {
+  updateInfo?: { updateAvailable: boolean; latestVersion: string; releaseUrl: string } | null;
+}
+
+export const AboutStudio: React.FC<AboutStudioProps> = ({ updateInfo }) => {
   const activeThemeMeta = APP_THEMES.find((t) => t.id === (localStorage.getItem('solframe-theme') as AppThemeId)) || APP_THEMES[0];
   const [hwInfo, setHwInfo] = useState<HardwareInfo | null>(null);
   const [modelStats, setModelStats] = useState<{ totalModels: number; scanPathsCount: number }>({
@@ -142,6 +146,27 @@ export const AboutStudio: React.FC = () => {
             <span className="badge-pill" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent)', border: '1px solid rgba(6, 182, 212, 0.3)', fontSize: '11px', padding: '4px 10px' }}>
               v{APP_VERSION} Production Release
             </span>
+            {updateInfo?.updateAvailable && (
+              <a
+                href={updateInfo.releaseUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="badge-pill"
+                style={{
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  color: '#10b981',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  fontSize: '11px',
+                  padding: '4px 10px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                ⚡ Update available: v{updateInfo.latestVersion} — View Release →
+              </a>
+            )}
           </div>
 
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', margin: '0 0 14px 0' }}>

@@ -49,6 +49,9 @@ export function App() {
 
   const [isEngineRunning, setIsEngineRunning] = useState<boolean>(false);
 
+  // Update Availability (checked once per session — see /api/check-update)
+  const [updateInfo, setUpdateInfo] = useState<{ updateAvailable: boolean; latestVersion: string; releaseUrl: string } | null>(null);
+
   const checkLibrariesHealth = () => {
     fetch('/api/libraries-status')
       .then(res => res.json())
@@ -73,6 +76,19 @@ export function App() {
     refreshBackendStatus();
     const interval = setInterval(refreshBackendStatus, 15000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Once per session — the backend itself caches this for an hour, and a
+  // new release doesn't need sub-hour freshness.
+  useEffect(() => {
+    fetch('/api/check-update')
+      .then(res => res.json())
+      .then(data => {
+        if (data.updateAvailable) {
+          setUpdateInfo({ updateAvailable: true, latestVersion: data.latestVersion, releaseUrl: data.releaseUrl });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Download progress is tracked via polling /api/download-progress in ModelManager
@@ -175,6 +191,7 @@ export function App() {
         isEngineRunning={isEngineRunning}
         librariesReady={libraryData.allReady}
         missingLibrariesCount={libraryData.missingCount}
+        updateAvailable={!!updateInfo?.updateAvailable}
       />
 
       {/* Main Studio Viewport */}
@@ -217,7 +234,7 @@ export function App() {
         )}
 
         {activeTab === 'about' && (
-          <AboutStudio />
+          <AboutStudio updateInfo={updateInfo} />
         )}
 
         {activeTab === 'settings' && (
