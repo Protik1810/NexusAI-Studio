@@ -33,10 +33,12 @@
 - **FLUX.2-Klein Architecture Support**: Auto-configured `--prediction flux2_flow` with 32-channel VAEs (`flux2-vae.safetensors` / `ae.safetensors`) and GGUF text encoders.
 - **SDXL Lightning & Turbo**: 4-step ultra-fast photo-realistic generation.
 - **LoRA Dynamic Stacking**: Real-time slider strength control for fine-tuned LoRA weights.
+- **Cancel Generation**: Abort a run mid-flight instead of waiting it out or force-closing the app.
 - **Distraction-Free Canvas**: Pure studio neutral generation viewport for accurate color fidelity.
 
 ### 💬 2. Uncensored Local LLM Chat
 - **Native `llama.cpp` GPU Server**: Stream tokens in real time from quantized GGUF models (DeepSeek, Qwen 2.5, Gemma 4, Llama 3, Dolphin).
+- **LM Studio-Style Load Parameters**: Context Length, GPU Layers, Batch Size, and Flash Attention, set before loading instead of hardcoded.
 - **Custom Personas**: Seamless roleplay switching (Creative Visionary, Technical Prompt Engineer, Uncensored Assistant).
 - **Cross-Studio Pipeline**: Send generated prompts directly to the Image Studio with one click.
 
@@ -48,7 +50,7 @@
 ### 🗄️ 4. Universal Dynamic Model Scanner
 - **Multi-Drive Auto-Discovery**: Dynamically detects mounted drive letters (`C:`, `D:`, `E:`, `Z:`) and indexes standard AI directories (`/models`, `/ComfyUI/models`, `/stable-diffusion-webui/models`, `/LLM`).
 - **Instant Load with Disk Cache**: Persists scan indices to `~/.solframe/scan_cache.json` for sub-millisecond cold starts.
-- **Hugging Face Hub Downloader**: Built-in repository tree explorer with real-time download speed and progress tracking.
+- **Hugging Face Hub Downloader**: Built-in repository tree explorer with real-time download speed and progress tracking, and cancellable mid-transfer. Built on Node's own `fetch` (no external `curl` dependency), so this works on the Linux/macOS build too — not just Windows.
 
 ### 🌌 5. 6 Generative AI Ambient Themes
 - **Visual Theme Gallery Modal**: Card previews of high-resolution AI-generated wallpaper backdrops.
@@ -72,7 +74,7 @@
 | **Image Synthesis Engine** | `stable-diffusion.cpp` (CUDA / Vulkan / CPU C++ kernels) |
 | **Language Dialogue Engine** | `llama.cpp` (`llama-server.exe` CUDA / Vulkan) |
 | **Model Persistence** | Global JSON Cache (`~/.solframe/scan_cache.json`) |
-| **Testing** | Vitest — path resolution, model classification, and local-server security (origin checks, path-traversal guards) |
+| **Testing** | Vitest — path resolution, model classification, local-server security (origin checks, path-traversal guards, POST-only enforcement), and CLI arg construction |
 
 ### Optional Integrations
 - **ComfyUI Bridge** *(optional)*: if you already run [ComfyUI](https://github.com/comfyanonymous/ComfyUI) locally, `src/services/comfyApi.ts` can proxy generation requests to your own `127.0.0.1:8188` instance instead of the bundled `stable-diffusion.cpp` engine. This is an opt-in convenience for existing ComfyUI users — it talks to a process on your own machine, never a remote service, and Solframe Studio's core Image/Chat Studios do not require it.

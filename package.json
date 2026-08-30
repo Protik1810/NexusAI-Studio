@@ -20,10 +20,10 @@
     "build:installer": "node scripts/build-installer.js",
     "electron:dev": "npm run build && electron electron/main.cjs --dev",
     "electron:pack": "npm run build && electron-builder --dir --win --x64",
-    "electron:build": "npm run build && electron-builder --win --x64",
-    "electron:portable": "npm run build && electron-builder --win portable --x64",
-    "electron:build:linux": "npm run build && electron-builder --linux",
-    "electron:build:mac": "npm run build && electron-builder --mac"
+    "electron:build": "npm run build && electron-builder --win --x64 --publish=never",
+    "electron:portable": "npm run build && electron-builder --win portable --x64 --publish=never",
+    "electron:build:linux": "npm run build && electron-builder --linux --publish=never",
+    "electron:build:mac": "npm run build && electron-builder --mac --publish=never"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
