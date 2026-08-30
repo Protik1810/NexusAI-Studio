@@ -62,6 +62,7 @@ const html = `<!DOCTYPE html>
        spec, which is also why every asset on this page is now a real
        sibling file instead of inlined (see the copyAsset comment above). -->
   <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Solframe Studio">
   <meta property="og:url" content="${SITE_BASE_URL}">
   <meta property="og:title" content="Solframe Studio — Sovereign Desktop Generative AI Workstation">
   <meta property="og:description" content="100% private, sovereign desktop AI workstation combining FLUX.2 Klein & SDXL Lightning image synthesis with native llama.cpp GGUF dialogue engines. Designed & engineered by Protik.">
