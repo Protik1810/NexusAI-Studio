@@ -18,6 +18,7 @@ import {
   Palette
 } from 'lucide-react';
 import pkg from '../../package.json';
+import { AppThemeId, APP_THEMES } from './ThemeModal';
 
 const APP_VERSION = pkg.version;
 
@@ -57,6 +58,7 @@ interface LibraryEngine {
 }
 
 export const AboutStudio: React.FC = () => {
+  const activeThemeMeta = APP_THEMES.find((t) => t.id === (localStorage.getItem('solframe-theme') as AppThemeId)) || APP_THEMES[0];
   const [hwInfo, setHwInfo] = useState<HardwareInfo | null>(null);
   const [modelStats, setModelStats] = useState<{ totalModels: number; scanPathsCount: number }>({
     totalModels: 0,
@@ -120,7 +122,16 @@ export const AboutStudio: React.FC = () => {
           border: '2px solid rgba(255, 255, 255, 0.25)',
           flexShrink: 0
         }}>
-          <img src="/logo.png" alt="Solframe Studio Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={activeThemeMeta.emblem}
+            alt="Solframe Studio Logo"
+            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '10px' }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = '/logo.png';
+              (e.currentTarget as HTMLImageElement).style.objectFit = 'cover';
+              (e.currentTarget as HTMLImageElement).style.padding = '0';
+            }}
+          />
         </div>
 
         <div style={{ flex: 1, minWidth: '280px' }}>

@@ -92,11 +92,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <img
-              src="/logo.png"
+              src={activeThemeMeta.emblem}
               alt="Solframe Logo"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              style={{ width: "100%", height: "100%", objectFit: "contain", padding: "5px" }}
               onError={(e) => {
-                (e.currentTarget as HTMLElement).style.display = "none";
+                (e.currentTarget as HTMLImageElement).src = "/logo.png";
+                (e.currentTarget as HTMLImageElement).style.objectFit = "cover";
+                (e.currentTarget as HTMLImageElement).style.padding = "0";
               }}
             />
           </div>

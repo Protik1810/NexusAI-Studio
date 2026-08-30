@@ -9,6 +9,8 @@ export interface ThemeOption {
   category: string;
   description: string;
   wallpaper: string;
+  /** Transparent per-theme brand emblem — same art used on the showcase website. */
+  emblem: string;
   colors: {
     accent: string;
     secondary: string;
@@ -24,6 +26,7 @@ export const APP_THEMES: ThemeOption[] = [
     category: 'Generative AI Cosmic Art',
     description: 'Deep space nebula with swirling purple cosmic dust and glowing cyan neural lattice.',
     wallpaper: '/themes/dark-void.jpg',
+    emblem: '/themes/emblem/dark-void.webp',
     colors: {
       accent: '#8b5cf6',
       secondary: '#06b6d4',
@@ -37,6 +40,7 @@ export const APP_THEMES: ThemeOption[] = [
     category: 'Generative AI Cyberpunk',
     description: 'Rain-slicked Neo-Tokyo streets reflecting glowing cyan billboards and electric pink holograms.',
     wallpaper: '/themes/neon-cyber.jpg',
+    emblem: '/themes/emblem/neon-cyber.webp',
     colors: {
       accent: '#06b6d4',
       secondary: '#ec4899',
@@ -50,6 +54,7 @@ export const APP_THEMES: ThemeOption[] = [
     category: 'Generative AI Film Set',
     description: 'Classic vintage film studio with golden amber spotlights, warm bokeh, and 35mm grain.',
     wallpaper: '/themes/cinema-gold.jpg',
+    emblem: '/themes/emblem/cinema-gold.webp',
     colors: {
       accent: '#f59e0b',
       secondary: '#b45309',
@@ -63,6 +68,7 @@ export const APP_THEMES: ThemeOption[] = [
     category: 'Generative AI Retro 80s',
     description: 'Giant wireframe sun over purple chrome mountains with reflective neon grid highways.',
     wallpaper: '/themes/synthwave.jpg',
+    emblem: '/themes/emblem/synthwave.webp',
     colors: {
       accent: '#ec4899',
       secondary: '#8b5cf6',
@@ -76,6 +82,7 @@ export const APP_THEMES: ThemeOption[] = [
     category: 'Generative AI Anime Scenery',
     description: 'Floating sacred shrine islands surrounded by luminous cherry blossoms under aurora twin moons.',
     wallpaper: '/themes/anime-fantasy.jpg',
+    emblem: '/themes/emblem/anime-fantasy.webp',
     colors: {
       accent: '#f43f5e',
       secondary: '#38bdf8',
@@ -89,6 +96,7 @@ export const APP_THEMES: ThemeOption[] = [
     category: 'Generative AI Tech Mainframe',
     description: 'Bioluminescent emerald circuits and holographic data streams flowing through obsidian mainframe glass.',
     wallpaper: '/themes/emerald-matrix.jpg',
+    emblem: '/themes/emblem/emerald-matrix.webp',
     colors: {
       accent: '#10b981',
       secondary: '#06b6d4',
