@@ -2060,10 +2060,10 @@
               <line x1="68" y1="16" x2="68" y2="42" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="14 10" style="animation: svgDataStream 1.6s linear infinite 0.5s;" />
               <!-- Rotating Geometric Download Crucible -->
               <g style="transform-origin: 50px 65px; animation: svgSpinFast 14s linear infinite;">
-                <polygon points="50,42 74,54 74,76 50,88 26,76 26,54" stroke="var(--primary)" stroke-width="1.5" fill="none" opacity="0.5" />
+                <polygon points="50,42 74,54 74,76 50,88 26,76 26,54" stroke="var(--primary)" stroke-width="1.8" fill="var(--primary)" fill-opacity="0.12" opacity="0.9" />
               </g>
               <g style="transform-origin: 50px 65px; animation: svgSpinSlow 10s linear infinite;">
-                <circle cx="50" cy="65" r="16" stroke="var(--secondary)" stroke-width="1.2" stroke-dasharray="8 6" fill="none" />
+                <circle cx="50" cy="65" r="16" stroke="var(--secondary)" stroke-width="1.5" stroke-dasharray="8 6" fill="none" opacity="0.85" />
               </g>
               <!-- Core Glowing Energy Sphere -->
               <circle cx="50" cy="65" r="7" fill="var(--primary)" style="transform-origin: 50px 65px; animation: svgPulseGlow 2s ease-in-out infinite;" />
@@ -2091,15 +2091,23 @@
               <ellipse cx="50" cy="50" rx="42" ry="16" stroke="var(--primary-light)" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.5" style="transform-origin: 50px 50px; transform: rotate(-25deg);" />
               <!-- Orbit 2 (Counter Ellipse) -->
               <ellipse cx="50" cy="50" rx="42" ry="16" stroke="var(--secondary)" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.5" style="transform-origin: 50px 50px; transform: rotate(45deg);" />
-              <!-- Rotating Satellite Group 1 -->
-              <g style="transform-origin: 50px 50px; animation: svgOrbitPlanets 6s linear infinite;">
-                <circle cx="90" cy="50" r="5" fill="var(--primary-light)" style="filter: drop-shadow(0 0 6px var(--primary));" />
-                <circle cx="10" cy="50" r="3.5" fill="var(--secondary)" />
+              <!-- Rotating Satellite Group 1 (travels the Orbit 1 ellipse rail exactly) -->
+              <g transform="rotate(-25 50 50)">
+                <circle r="5" fill="var(--primary-light)" style="filter: drop-shadow(0 0 6px var(--primary));">
+                  <animateMotion path="M 92,50 A 42,16 0 1 1 8,50 A 42,16 0 1 1 92,50" dur="6s" repeatCount="indefinite" />
+                </circle>
+                <circle r="3.5" fill="var(--secondary)">
+                  <animateMotion path="M 92,50 A 42,16 0 1 1 8,50 A 42,16 0 1 1 92,50" dur="6s" begin="-3s" repeatCount="indefinite" />
+                </circle>
               </g>
-              <!-- Rotating Satellite Group 2 -->
-              <g style="transform-origin: 50px 50px; animation: svgSpinSlow 9s linear infinite;">
-                <circle cx="50" cy="14" r="4.5" fill="var(--secondary-light)" style="filter: drop-shadow(0 0 6px var(--secondary));" />
-                <circle cx="50" cy="86" r="4" fill="var(--primary)" />
+              <!-- Rotating Satellite Group 2 (travels the Orbit 2 ellipse rail exactly, opposite direction) -->
+              <g transform="rotate(45 50 50)">
+                <circle r="4.5" fill="var(--secondary-light)" style="filter: drop-shadow(0 0 6px var(--secondary));">
+                  <animateMotion path="M 92,50 A 42,16 0 1 0 8,50 A 42,16 0 1 0 92,50" dur="9s" repeatCount="indefinite" />
+                </circle>
+                <circle r="4" fill="var(--primary)">
+                  <animateMotion path="M 92,50 A 42,16 0 1 0 8,50 A 42,16 0 1 0 92,50" dur="9s" begin="-4.5s" repeatCount="indefinite" />
+                </circle>
               </g>
             </svg>
           </div>
