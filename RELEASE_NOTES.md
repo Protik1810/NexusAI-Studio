@@ -65,9 +65,9 @@ Dark Void, Neon Cyber, Cinema Gold (default), Synthwave Sunset, Anime Fantasy, a
 | 🪟 Windows | Complete Setup | ~785 MB | [Solframe-Studio-Setup-1.1.0.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/Solframe-Studio-Setup-1.1.0.exe) |
 | 🪟 Windows | Lightweight Setup | ~100 MB | [Solframe-Studio-Setup-1.1.0-Lightweight.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/Solframe-Studio-Setup-1.1.0-Lightweight.exe) |
 | 🪟 Windows | Portable | ~782 MB | [Solframe-Studio-Portable-1.1.0.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/Solframe-Studio-Portable-1.1.0.exe) |
-| 🍎 macOS | Apple Silicon `.zip` | ~199 MB | [Solframe-Studio-1.1.0-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/Solframe-Studio-1.1.0-arm64-mac.zip) |
-| 🍎 macOS | Intel `.zip` | ~204 MB | [Solframe-Studio-1.1.0-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/Solframe-Studio-1.1.0-mac.zip) |
-| 🐧 Linux | AppImage | ~143 MB | [Solframe-Studio-1.1.0.AppImage](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/Solframe-Studio-1.1.0.AppImage) |
+| 🍎 macOS | Apple Silicon `.zip` | ~199 MB | [Solframe.Studio-1.1.0-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/Solframe.Studio-1.1.0-arm64-mac.zip) |
+| 🍎 macOS | Intel `.zip` | ~204 MB | [Solframe.Studio-1.1.0-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/Solframe.Studio-1.1.0-mac.zip) |
+| 🐧 Linux | AppImage | ~143 MB | [Solframe.Studio-1.1.0.AppImage](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/Solframe.Studio-1.1.0.AppImage) |
 | 🐧 Linux | `.deb` | ~93 MB | [solframe-studio_1.1.0_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.0/solframe-studio_1.1.0_amd64.deb) |
 
 **Platform note:** Windows and macOS ship full local inference (CUDA/Vulkan/CPU on Windows, Metal/CPU on macOS). Linux currently runs the UI shell and Model Hub only — a native engine build is planned.

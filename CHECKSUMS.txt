@@ -4,7 +4,7 @@ Verify with: sha256sum -c CHECKSUMS.txt (Linux/macOS) or Get-FileHash (Windows P
 40f0a65d02070a28e6130011e18c2fcd7382677e945526db3df5247afb75a808  Solframe-Studio-Setup-1.1.0.exe
 8144f7e39e7725ec399cefd8526d8b45acf7c63da368c62cfa26c50ec087a7b7  Solframe-Studio-Setup-1.1.0-Lightweight.exe
 177f385f720d73c08c560baebf9961ab422cec90ff4124be3b6638036a694940  Solframe-Studio-Portable-1.1.0.exe
-587a8328e0940a20a49188344093fc8dc0971ae94befb9e902c52d909014f48e  Solframe Studio-1.1.0.AppImage
+587a8328e0940a20a49188344093fc8dc0971ae94befb9e902c52d909014f48e  Solframe.Studio-1.1.0.AppImage
 9a887d84b09d3a2ea61d2bbf2da56d2846582d16efef8710383d887e9ca0c723  solframe-studio_1.1.0_amd64.deb
-63fa0f024adc19dacabf7551a398c0c7bc4f0fa5b1ddf1faa0bab5a56ee0839c  Solframe Studio-1.1.0-mac.zip
-f62be8066bc423ee7624be4be691b19df61073c2857a2477c27f5c0c1e289b7c  Solframe Studio-1.1.0-arm64-mac.zip
+63fa0f024adc19dacabf7551a398c0c7bc4f0fa5b1ddf1faa0bab5a56ee0839c  Solframe.Studio-1.1.0-mac.zip
+f62be8066bc423ee7624be4be691b19df61073c2857a2477c27f5c0c1e289b7c  Solframe.Studio-1.1.0-arm64-mac.zip
