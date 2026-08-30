@@ -38,11 +38,11 @@ export const PERSONA_PRESETS: PersonaPreset[] = [
 
 export interface LocalGgufModel {
   filename: string;
-  path: string;
-  folder: string;
+  fullPath: string;
   sizeBytes: number;
   formattedSize: string;
-  isTextModel: boolean;
+  source: string;
+  isGguf: boolean;
 }
 
 export interface LLMStatus {

@@ -72,7 +72,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
       const models = await llmService.getLocalGgufModels();
       setLocalGgufModels(models);
       if (models.length > 0 && !selectedGgufPath) {
-        setSelectedGgufPath(models[0].path);
+        setSelectedGgufPath(models[0].fullPath);
       }
       const status = await llmService.getEmbeddedLlamaStatus();
       setEmbeddedServerStatus(status);
@@ -446,7 +446,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                   style={{ marginBottom: '10px' }}
                 >
                   {localGgufModels.map((m) => (
-                    <option key={m.path} value={m.path}>
+                    <option key={m.fullPath} value={m.fullPath}>
                       🟢 {m.filename} ({m.formattedSize})
                     </option>
                   ))}
