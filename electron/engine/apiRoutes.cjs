@@ -11,11 +11,12 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const { Readable } = require('stream');
-const { spawn } = require('child_process');
 const { detectHardware } = require('./hardware.cjs');
 const { getAllSystemScanPaths } = require('./pathUtils.cjs');
 const { getFullSystemModels, loadScanCache, saveScanCache } = require('./modelScanner.cjs');
-const { runSdCli, buildSdCliArgs } = require('./sdEngine.cjs');
+const { createEngineCore } = require('./engineCore.cjs');
+const { createAgentApiServer } = require('./agentApiServer.cjs');
+const { loadOrCreateConfig, saveConfig, generateApiKey } = require('./agentAuth.cjs');
 const { isAllowedOrigin, isAllowedHost, safeJoin } = require('./security.cjs');
 
 const LIBRARY_DEFINITIONS = [
@@ -91,10 +92,15 @@ function createApiRouter(ctx) {
     userOutputsDir, cacheFilePaths
   } = ctx;
 
-  let llamaProc = null;
-  let currentLlamaModel = null;
-  let llamaPort = 8080;
-  let activeSdProc = null;
+  const engineCore = createEngineCore({ getSdCliExecutable, getLlamaExecutable, resolveModel, rootDir, userOutputsDir });
+
+  let agentConfig = loadOrCreateConfig();
+  const agentServer = createAgentApiServer({
+    engineCore,
+    getCachedModels: () => cachedModels,
+    userOutputsDir,
+    getApiKey: () => agentConfig.apiKey
+  });
 
   let activeDownload = {
     isDownloading: false, filename: '', repo: '', targetFolder: '',
@@ -136,6 +142,12 @@ function createApiRouter(ctx) {
       console.log('[Solframe] Loaded model cache. Running background rescan...');
     }
     runBackgroundScan();
+
+    if (agentConfig.enabled) {
+      agentServer.start(agentConfig.port).catch(e => {
+        console.error(`[Solframe] Agent API server failed to start on port ${agentConfig.port}: ${e.message}`);
+      });
+    }
   }
 
   function readBody(req) {
@@ -175,6 +187,7 @@ function createApiRouter(ctx) {
         resolve(true);
         return;
       }
+      const llamaPort = engineCore.getLlamaPort();
       const targetPath = (pathname.replace(/^\/llama-api/, '') || '/') + (search || '');
       const proxyReq = http.request({
         host: '127.0.0.1',
@@ -351,7 +364,7 @@ function createApiRouter(ctx) {
     }
 
     if (pathname === '/api/llama/status') {
-      sendJson(res, 200, { running: !!llamaProc && !llamaProc.killed, port: llamaPort, model: currentLlamaModel });
+      sendJson(res, 200, engineCore.getLlamaStatus());
       return true;
     }
 
@@ -361,11 +374,7 @@ function createApiRouter(ctx) {
         res.end('Method Not Allowed');
         return true;
       }
-      if (llamaProc) {
-        try { llamaProc.kill('SIGKILL'); } catch (e) {}
-        llamaProc = null;
-      }
-      currentLlamaModel = null;
+      engineCore.stopLlama();
       sendJson(res, 200, { success: true, message: 'llama-server stopped' });
       return true;
     }
@@ -378,88 +387,56 @@ function createApiRouter(ctx) {
       }
       try {
         const params = JSON.parse(await readBody(req));
-        // Search the same allow-listed scan paths as every other model
-        // lookup — this used to bypass resolveModel and search nothing.
-        const modelFullPath = resolveModel(params.modelPath);
-        if (!modelFullPath || !fs.existsSync(modelFullPath)) {
-          sendJson(res, 404, { success: false, error: `Model file not found: ${params.modelPath}` });
-          return true;
+        const result = await engineCore.startLlama(params);
+        sendJson(res, 200, result);
+      } catch (e) {
+        sendJson(res, e.statusCode || 500, { success: false, error: e.message });
+      }
+      return true;
+    }
+
+    if (pathname === '/api/agent-server/status') {
+      sendJson(res, 200, { enabled: agentConfig.enabled, port: agentConfig.port, running: agentServer.isRunning(), apiKey: agentConfig.apiKey });
+      return true;
+    }
+
+    if (pathname === '/api/agent-server/config') {
+      if (req.method !== 'POST') {
+        res.statusCode = 405;
+        res.end('Method Not Allowed');
+        return true;
+      }
+      try {
+        const { enabled, port } = JSON.parse(await readBody(req));
+        const nextEnabled = typeof enabled === 'boolean' ? enabled : agentConfig.enabled;
+        const nextPort = Number.isInteger(port) && port > 0 && port < 65536 ? port : agentConfig.port;
+        const portChanged = nextPort !== agentConfig.port;
+
+        if (agentServer.isRunning() && (!nextEnabled || portChanged)) {
+          await agentServer.stop();
         }
-        if (llamaProc) {
-          try { llamaProc.kill('SIGKILL'); } catch (e) {}
-          llamaProc = null;
+        agentConfig = { ...agentConfig, enabled: nextEnabled, port: nextPort };
+        saveConfig(agentConfig);
+
+        if (nextEnabled && !agentServer.isRunning()) {
+          await agentServer.start(nextPort);
         }
-        const llamaExe = getLlamaExecutable();
-        const requestedPort = Number(params.port) || 8080;
-        llamaPort = requestedPort;
-        const ctxSize = Number(params.ctxSize) || 4096;
-        const gpuLayers = params.gpuLayers !== undefined ? Number(params.gpuLayers) : 99;
-        const batchSize = Number(params.batchSize) || 2048;
-        const flashAttn = ['auto', 'on', 'off'].includes(params.flashAttn) ? params.flashAttn : 'auto';
-
-        const args = ['-m', modelFullPath, '--port', String(requestedPort), '--host', '127.0.0.1', '-ngl', String(gpuLayers), '-c', String(ctxSize), '-b', String(batchSize), '-fa', flashAttn];
-        console.log(`[llama.cpp] Starting llama-server: ${llamaExe}`);
-        const proc = spawn(llamaExe, args, { cwd: path.dirname(llamaExe), windowsHide: true });
-        llamaProc = proc;
-        currentLlamaModel = path.basename(modelFullPath);
-
-        let stderrTail = '';
-        proc.stderr && proc.stderr.on('data', chunk => {
-          stderrTail = (stderrTail + chunk.toString()).slice(-2000);
-        });
-
-        let spawnError = null;
-        proc.on('error', err => { spawnError = err.message; });
-
-        let exited = false;
-        proc.on('close', () => {
-          exited = true;
-          if (llamaProc === proc) {
-            llamaProc = null;
-            currentLlamaModel = null;
-          }
-        });
-
-        // Poll the server's own /health endpoint instead of guessing a fixed
-        // delay: a bad GPU-layer count or an incompatible/corrupt model file
-        // makes llama-server exit almost immediately, while a large model can
-        // legitimately take well over a second to finish loading into VRAM.
-        // The previous fixed 1.2s timeout reported success unconditionally,
-        // so the UI showed "GPU Active" even when the process had already
-        // died — this is why the engine "detected" models but never actually
-        // became usable.
-        const startTime = Date.now();
-        const timeoutMs = 120000;
-        let ready = false;
-        while (Date.now() - startTime < timeoutMs) {
-          if (spawnError) {
-            sendJson(res, 500, { success: false, error: `Failed to launch llama-server: ${spawnError}` });
-            return true;
-          }
-          if (exited) {
-            const tail = stderrTail.trim().split('\n').slice(-5).join(' | ');
-            sendJson(res, 500, { success: false, error: `llama-server exited before it was ready.${tail ? ' ' + tail : ''}` });
-            return true;
-          }
-          try {
-            const healthRes = await fetch(`http://127.0.0.1:${requestedPort}/health`);
-            if (healthRes.ok) { ready = true; break; }
-          } catch (e) {
-            // Not listening yet — keep polling.
-          }
-          await new Promise(r => setTimeout(r, 400));
-        }
-
-        if (!ready) {
-          try { proc.kill('SIGKILL'); } catch (e) {}
-          sendJson(res, 500, { success: false, error: 'Timed out waiting for llama-server to become ready (model may be too large for available VRAM).' });
-          return true;
-        }
-
-        sendJson(res, 200, { success: true, port: requestedPort, model: currentLlamaModel, message: `llama.cpp server started on port ${requestedPort}` });
+        sendJson(res, 200, { success: true, enabled: agentConfig.enabled, port: agentConfig.port, running: agentServer.isRunning() });
       } catch (e) {
         sendJson(res, 500, { success: false, error: e.message });
       }
+      return true;
+    }
+
+    if (pathname === '/api/agent-server/regenerate-key') {
+      if (req.method !== 'POST') {
+        res.statusCode = 405;
+        res.end('Method Not Allowed');
+        return true;
+      }
+      agentConfig = { ...agentConfig, apiKey: generateApiKey() };
+      saveConfig(agentConfig);
+      sendJson(res, 200, { success: true, apiKey: agentConfig.apiKey });
       return true;
     }
 
@@ -663,33 +640,6 @@ function createApiRouter(ctx) {
       }
       try {
         const params = JSON.parse(await readBody(req));
-        const execPath = getSdCliExecutable();
-        const workingDir = path.dirname(execPath);
-
-        const outFilename = `gen_${Date.now()}.png`;
-        const outFullPath = path.join(userOutputsDir, outFilename);
-
-        const resolvedParams = {
-          ...params,
-          modelPath: resolveModel(params.modelPath),
-          clipPath: resolveModel(params.clipPath),
-          t5Path: resolveModel(params.t5Path),
-          vaePath: resolveModel(params.vaePath),
-          loraPath: params.loraPath ? resolveModel(params.loraPath) : undefined
-        };
-
-        if (!resolvedParams.modelPath || !fs.existsSync(resolvedParams.modelPath)) {
-          sendJson(res, 404, { success: false, error: `Model file not found: ${params.modelPath}` });
-          return true;
-        }
-
-        const args = buildSdCliArgs(resolvedParams, outFullPath);
-        console.log(`[Solframe sd-generate] Spawning: ${execPath}\n  Args: ${args.join(' ')}`);
-
-        const procEnv = {
-          ...process.env,
-          PATH: `${workingDir};${path.join(rootDir, 'backend/win/cuda')};${path.join(rootDir, 'backend/win/vulkan')};${path.join(rootDir, 'backend/win/llama')};${process.env.PATH || ''}`
-        };
 
         // sd-cli prints its sampling progress bar to stdout as it goes, e.g.
         // "|====>   | 2/4 - 6.35it/s" — stream that to the client as SSE
@@ -710,16 +660,10 @@ function createApiRouter(ctx) {
         // aborting its fetch, which tears down this connection and fires
         // 'close' here — at which point there's nothing left to stream a
         // response to anyway, so just kill the still-running process.
-        req.on('close', () => {
-          if (activeSdProc) {
-            try { activeSdProc.kill('SIGKILL'); } catch (e) {}
-          }
-        });
+        req.on('close', () => engineCore.cancelImage());
 
         try {
-          const result = await runSdCli({
-            execPath, args, outFullPath, outFilename, workingDir, env: procEnv,
-            onSpawn: proc => { activeSdProc = proc; },
+          const result = await engineCore.generateImage(params, {
             onStdout: line => {
               const m = line.match(/(\d+)\/(\d+)\s*-\s*([\d.]+)(it\/s|s\/it)/);
               if (!m) return;
@@ -730,8 +674,6 @@ function createApiRouter(ctx) {
           sendEvent({ done: true, success: true, ...result });
         } catch (genErr) {
           sendEvent({ done: true, success: false, error: genErr.message });
-        } finally {
-          activeSdProc = null;
         }
         res.end();
       } catch (e) {
@@ -749,20 +691,14 @@ function createApiRouter(ctx) {
   }
 
   function dispose() {
-    if (llamaProc) {
-      try { llamaProc.kill('SIGKILL'); } catch (e) {}
-      llamaProc = null;
-    }
+    engineCore.dispose();
+    agentServer.stop().catch(() => {});
     if (activeDownload.abortController) {
       try { activeDownload.abortController.abort(); } catch (e) {}
     }
-    if (activeSdProc) {
-      try { activeSdProc.kill('SIGKILL'); } catch (e) {}
-      activeSdProc = null;
-    }
   }
 
-  return { init, handle, dispose };
+  return { init, handle, dispose, engineCore };
 }
 
 module.exports = { createApiRouter };

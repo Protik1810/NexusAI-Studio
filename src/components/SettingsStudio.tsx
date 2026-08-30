@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Settings, 
-  HardDrive, 
-  Activity, 
-  RefreshCw, 
-  CheckCircle, 
+import {
+  Settings,
+  HardDrive,
+  Activity,
+  RefreshCw,
+  CheckCircle,
   AlertTriangle,
   ExternalLink,
   Bot,
@@ -13,10 +13,15 @@ import {
   FolderPlus,
   Trash2,
   FolderCheck,
-  Folder
+  Folder,
+  Copy,
+  Check,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { LLMStatus } from '../services/llmApi';
 import { systemModelsService, SystemScanPath, SystemModelsResult } from '../services/systemModelsApi';
+import { agentServerService, AgentServerStatus } from '../services/agentServerApi';
 
 interface SettingsStudioProps {
   llmStatus: LLMStatus;
@@ -32,6 +37,79 @@ export const SettingsStudio: React.FC<SettingsStudioProps> = ({
   onError
 }) => {
   const [checking, setChecking] = useState<boolean>(false);
+
+  // Agent API Server State
+  const [agentStatus, setAgentStatus] = useState<AgentServerStatus | null>(null);
+  const [agentPortInput, setAgentPortInput] = useState<string>('8765');
+  const [isTogglingAgent, setIsTogglingAgent] = useState<boolean>(false);
+  const [showApiKey, setShowApiKey] = useState<boolean>(false);
+  const [copiedKey, setCopiedKey] = useState<boolean>(false);
+
+  const fetchAgentStatus = async () => {
+    try {
+      const status = await agentServerService.getStatus();
+      setAgentStatus(status);
+      setAgentPortInput(String(status.port));
+    } catch (e) {
+      console.error('Failed to fetch agent server status', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchAgentStatus();
+  }, []);
+
+  const handleToggleAgentServer = async () => {
+    if (!agentStatus) return;
+    setIsTogglingAgent(true);
+    try {
+      const next = await agentServerService.setConfig({ enabled: !agentStatus.enabled });
+      setAgentStatus(next);
+      onSuccess(
+        next.enabled ? 'Agent API Server Started' : 'Agent API Server Stopped',
+        next.enabled ? `Listening on http://127.0.0.1:${next.port}` : 'Other programs can no longer reach your engines.'
+      );
+    } catch (e: any) {
+      onError('Agent API Server Error', e.message);
+    } finally {
+      setIsTogglingAgent(false);
+    }
+  };
+
+  const handleSaveAgentPort = async () => {
+    const port = parseInt(agentPortInput, 10);
+    if (!port || port < 1 || port > 65535) {
+      onError('Invalid Port', 'Enter a port number between 1 and 65535.');
+      return;
+    }
+    setIsTogglingAgent(true);
+    try {
+      const next = await agentServerService.setConfig({ port });
+      setAgentStatus(next);
+      onSuccess('Port Updated', `Agent API Server port set to ${next.port}.`);
+    } catch (e: any) {
+      onError('Failed to Update Port', e.message);
+    } finally {
+      setIsTogglingAgent(false);
+    }
+  };
+
+  const handleRegenerateApiKey = async () => {
+    try {
+      const apiKey = await agentServerService.regenerateKey();
+      setAgentStatus(prev => (prev ? { ...prev, apiKey } : prev));
+      onSuccess('API Key Regenerated', 'The previous key no longer works — update any agents using it.');
+    } catch (e: any) {
+      onError('Failed to Regenerate Key', e.message);
+    }
+  };
+
+  const handleCopyApiKey = () => {
+    if (!agentStatus) return;
+    navigator.clipboard.writeText(agentStatus.apiKey);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
 
   // System Model Scanning State
   const [scanPaths, setScanPaths] = useState<SystemScanPath[]>([]);
@@ -230,6 +308,92 @@ export const SettingsStudio: React.FC<SettingsStudioProps> = ({
           <p>💡 <strong>Native llama.cpp Engine:</strong></p>
           <p>In Chat Studio, select any detected GGUF model and click <strong>'Start Engine (CUDA)'</strong> to run with maximum GPU acceleration. Image generation runs the same way, automatically via <code>sd-cli.exe</code> — no external servers required.</p>
         </div>
+      </div>
+
+      {/* AGENT API SERVER */}
+      <div className="glass-panel" style={{ padding: '20px', marginTop: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Zap size={18} color="#f59e0b" /> Agent API Server
+          </h3>
+          {agentStatus && (
+            <button
+              type="button"
+              onClick={handleToggleAgentServer}
+              disabled={isTogglingAgent}
+              className={agentStatus.enabled ? 'btn-danger' : 'btn-primary'}
+              style={{ fontSize: '12px', padding: '7px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              {agentStatus.running ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}
+              {agentStatus.enabled ? 'Disable' : 'Enable'}
+            </button>
+          )}
+        </div>
+
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5 }}>
+          Let other local programs and agents use your embedded engines for text and image generation over HTTP —
+          an OpenAI-compatible <code>/v1/chat/completions</code> and <code>/v1/images/generations</code> API. Off by default,
+          bound to <code>127.0.0.1</code> only, and gated by the API key below.
+        </p>
+
+        {agentStatus && (
+          <>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: '12px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '0 0 140px' }}>
+                <label className="control-label" style={{ fontSize: '11px' }}>Port</label>
+                <input
+                  type="number"
+                  value={agentPortInput}
+                  onChange={(e) => setAgentPortInput(e.target.value)}
+                  className="styled-input"
+                  style={{ fontSize: '13px' }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveAgentPort}
+                disabled={isTogglingAgent || agentPortInput === String(agentStatus.port)}
+                className="btn-secondary"
+                style={{ fontSize: '12px', padding: '9px 14px', borderRadius: '6px' }}
+              >
+                Save Port
+              </button>
+              <span style={{ fontSize: '12px', color: agentStatus.running ? '#10b981' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px', marginLeft: 'auto' }}>
+                {agentStatus.running ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}
+                {agentStatus.running ? `Listening on 127.0.0.1:${agentStatus.port}` : 'Not running'}
+              </span>
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label className="control-label" style={{ fontSize: '11px' }}>API Key</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={showApiKey ? agentStatus.apiKey : agentStatus.apiKey.replace(/./g, '•').slice(0, 32)}
+                  className="styled-input"
+                  style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', flex: 1 }}
+                />
+                <button type="button" onClick={() => setShowApiKey(v => !v)} className="icon-btn" title={showApiKey ? 'Hide key' : 'Reveal key'}>
+                  {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+                <button type="button" onClick={handleCopyApiKey} className="icon-btn" title="Copy key">
+                  {copiedKey ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                </button>
+                <button type="button" onClick={handleRegenerateApiKey} className="icon-btn" title="Regenerate key (invalidates the old one)">
+                  <RefreshCw size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '8px', fontFamily: 'var(--font-mono)', lineHeight: 1.7, overflowX: 'auto', whiteSpace: 'pre' }}>
+{`curl http://127.0.0.1:${agentStatus.port}/v1/chat/completions \\
+  -H "Authorization: Bearer ${showApiKey ? agentStatus.apiKey : '<your-api-key>'}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"your-model.gguf","messages":[{"role":"user","content":"Hi"}]}'`}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Refresh Button */}

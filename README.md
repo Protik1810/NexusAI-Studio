@@ -62,6 +62,12 @@
   5. 🌸 **Anime Fantasy** (Ethereal Sakura Shrine Twilight)
   6. 🟢 **Emerald Matrix** (Bioluminescent Cyber Mainframe)
 
+### 🔌 6. Agent API Server
+- **OpenAI-Compatible Endpoints**: `/v1/chat/completions` and `/v1/images/generations` — point any OpenAI-SDK-compatible tool or agent at your local engines.
+- **Off by Default, API-Key Gated**: Enable it from Settings → Agent API Server. Bound to `127.0.0.1` only; every request (except `/health`) requires an `Authorization: Bearer <key>` header, checked with a constant-time comparison.
+- **Auto-Starts the Right Model**: A chat request for a model that isn't currently loaded starts `llama-server` for it automatically — no separate "start engine" call needed.
+- **Model Discovery**: `GET /v1/models` lists every GGUF/checkpoint the built-in scanner has already indexed on your system, ready to reference by filename.
+
 ---
 
 ## 🏗️ Architecture & Technology Stack
