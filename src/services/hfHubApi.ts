@@ -49,16 +49,12 @@ export class HfHubService {
   }
 
   async getRepoFiles(repo: string): Promise<HfRepoFile[]> {
-    try {
-      const res = await fetch(`/api/hf-tree?repo=${encodeURIComponent(repo)}`);
-      if (res.ok) {
-        const data = await res.json();
-        return data.files || [];
-      }
-    } catch (e) {
-      console.error(`Failed to get files for repo ${repo}`, e);
+    const res = await fetch(`/api/hf-tree?repo=${encodeURIComponent(repo)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || `Failed to load files for ${repo} (HTTP ${res.status})`);
     }
-    return [];
+    return data.files || [];
   }
 
   async startDownload(repo: string, filename: string, targetFolder: string, customFilename?: string): Promise<{ success: boolean; targetPath?: string; error?: string }> {

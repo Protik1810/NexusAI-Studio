@@ -66,6 +66,7 @@ export const HuggingFaceDownloader: React.FC<HuggingFaceDownloaderProps> = ({
   const handleOpenRepoFiles = async (repoId: string, suggestedCategory?: string) => {
     setSelectedHfRepo(repoId);
     setIsLoadingRepoFiles(true);
+    setRepoFiles([]);
 
     if (suggestedCategory) {
       setFileTargetFolder(suggestedCategory);

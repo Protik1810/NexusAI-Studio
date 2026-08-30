@@ -489,7 +489,12 @@ function createApiRouter(ctx) {
           sendJson(res, 400, { error: 'Missing repo parameter' });
           return true;
         }
-        const hfRes = await fetch(`https://huggingface.co/api/models/${encodeURIComponent(repo)}/tree/main`);
+        // repo is "owner/name" — encoding the whole string turns the "/"
+        // into "%2F", which Hugging Face's API rejects with a 400 (verified
+        // live). Encode each path segment separately so special characters
+        // within owner/name are still safe without breaking the path itself.
+        const encodedRepo = repo.split('/').map(encodeURIComponent).join('/');
+        const hfRes = await fetch(`https://huggingface.co/api/models/${encodedRepo}/tree/main`);
         if (!hfRes.ok) {
           sendJson(res, hfRes.status, { error: `Hugging Face repo error ${hfRes.status}` });
           return true;
