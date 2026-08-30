@@ -23,7 +23,7 @@ if [ -d "$INSTALL_DIR" ]; then
     git pull origin main
 else
     echo "📥 Cloning Solframe Studio into $INSTALL_DIR..."
-    git clone https://github.com/Protik1810/NexusAI-Studio.git "$INSTALL_DIR"
+    git clone https://github.com/Protik1810/Solframe-Studio.git "$INSTALL_DIR"
     cd "$INSTALL_DIR"
 fi
 

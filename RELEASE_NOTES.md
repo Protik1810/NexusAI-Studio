@@ -65,10 +65,10 @@ First real cross-platform installers, built and verified end-to-end (not just co
 | Platform | Format | Size | Notes |
 |---|---|---|---|
 | Linux | AppImage | ~133 MB | Portable, no install — `chmod +x` and run |
-| Linux | `.deb` | ~86 MB | `sudo apt install ./nexusai-studio_1.0.0_amd64.deb` |
+| Linux | `.deb` | ~86 MB | `sudo apt install ./solframe-studio_1.0.0_amd64.deb` |
 | macOS | `.zip` | ~127 MB | Unsigned — right-click → Open on first launch |
 
-These ship the UI shell only — the bundled diffusion/LLM engines are still Windows-only binaries. Get them from [Releases](https://github.com/Protik1810/NexusAI-Studio/releases/latest), or build your own: `npm run electron:build:linux` / `electron:build:mac`.
+These ship the UI shell only — the bundled diffusion/LLM engines are still Windows-only binaries. Get them from [Releases](https://github.com/Protik1810/Solframe-Studio/releases/latest), or build your own: `npm run electron:build:linux` / `electron:build:mac`.
 
 ### 🌐 Showcase Page
 
