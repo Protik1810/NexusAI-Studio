@@ -1293,8 +1293,54 @@
     }
     .btn-download-outline:hover {
       border-color: var(--primary);
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--primary);
+      color: #0a0e14;
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+    .other-platforms-wrap {
+      position: relative;
+      z-index: 2;
+      margin-top: 20px;
+    }
+    .other-platforms-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .other-platforms-toggle:hover {
+      border-color: var(--primary);
       color: var(--primary-light);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .other-platforms-toggle .chevron-icon {
+      transition: transform 0.3s ease;
+      margin-left: auto;
+    }
+    .other-platforms-toggle.expanded .chevron-icon {
+      transform: rotate(180deg);
+    }
+    .other-platforms-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .other-platforms-panel.expanded {
+      max-height: 2000px;
+    }
+    .other-platforms-panel .download-grid {
+      margin-top: 24px;
+      margin-bottom: 0;
     }
 
     /* Terminal Box */
@@ -2200,9 +2246,9 @@
         </p>
       </div>
 
-      <div class="download-grid">
+      <div class="download-grid" id="downloadGridPrimary">
         <!-- Windows Complete -->
-        <div class="download-card" id="card-windows-complete">
+        <div class="download-card" id="card-windows-complete" data-platform="windows">
           <span class="os-badge-chip">Recommended for your OS</span>
           <div>
             <div class="card-top">
@@ -2223,7 +2269,7 @@
         </div>
 
         <!-- Windows Lightweight -->
-        <div class="download-card" id="card-windows-light">
+        <div class="download-card" id="card-windows-light" data-platform="windows">
           <div>
             <div class="card-top">
               <div class="download-icon-box">
@@ -2243,7 +2289,7 @@
         </div>
 
         <!-- Linux AppImage -->
-        <div class="download-card" id="card-linux-appimage">
+        <div class="download-card" id="card-linux-appimage" data-platform="linux">
           <span class="os-badge-chip">Recommended for your OS</span>
           <div>
             <div class="card-top">
@@ -2264,7 +2310,7 @@
         </div>
 
         <!-- Linux .deb -->
-        <div class="download-card" id="card-linux-deb">
+        <div class="download-card" id="card-linux-deb" data-platform="linux">
           <div>
             <div class="card-top">
               <div class="download-icon-box">
@@ -2284,7 +2330,7 @@
         </div>
 
         <!-- macOS App Bundle -->
-        <div class="download-card" id="card-macos-app">
+        <div class="download-card" id="card-macos-app" data-platform="macos">
           <span class="os-badge-chip">Recommended for your OS</span>
           <div>
             <div class="card-top">
@@ -2302,6 +2348,19 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
             Download .zip
           </a>
+        </div>
+      </div>
+
+      <!-- Other Platforms (collapsed by default; populated by JS with every
+           card that doesn't match the detected OS) -->
+      <div class="other-platforms-wrap" id="otherPlatformsWrap" style="display: none;">
+        <button type="button" class="other-platforms-toggle" id="otherPlatformsToggle" aria-expanded="false" aria-controls="otherPlatformsPanel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span id="otherPlatformsToggleLabel">Other Platforms</span>
+          <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="other-platforms-panel" id="otherPlatformsPanel">
+          <div class="download-grid" id="downloadGridOthers"></div>
         </div>
       </div>
 
@@ -2619,13 +2678,67 @@
         }
       }
 
+      organizeDownloadCards(p);
+
       // Update terminal box code
       if (terminalBuildCmd) terminalBuildCmd.textContent = p.buildCmd;
       if (terminalShellLabel) terminalShellLabel.textContent = p.shellLabel;
       if (terminalCaption) terminalCaption.textContent = p.captionText;
     }
 
+    // Sort the download cards into "your platform" (shown, expanded) vs.
+    // "other platforms" (collapsed, one click away) based on detection —
+    // with an "I'm not sure" fallback that keeps everything visible flat,
+    // since a wrong confident guess is worse than no guess at all.
+    const OTHER_PLATFORM_NAMES = { windows: 'Windows', linux: 'Linux', macos: 'macOS' };
+
+    function organizeDownloadCards(p) {
+      const primaryGrid = document.getElementById('downloadGridPrimary');
+      const othersGrid = document.getElementById('downloadGridOthers');
+      const othersWrap = document.getElementById('otherPlatformsWrap');
+      const othersLabel = document.getElementById('otherPlatformsToggleLabel');
+      if (!primaryGrid || !othersGrid || !othersWrap) return;
+
+      const allCards = Array.from(document.querySelectorAll('.download-card[data-platform]'));
+
+      if (p.os === 'generic') {
+        allCards.forEach(card => primaryGrid.appendChild(card));
+        othersWrap.style.display = 'none';
+        return;
+      }
+
+      const remainingPlatforms = new Set();
+      allCards.forEach(card => {
+        if (card.dataset.platform === p.os) {
+          primaryGrid.appendChild(card);
+        } else {
+          othersGrid.appendChild(card);
+          remainingPlatforms.add(card.dataset.platform);
+        }
+      });
+
+      if (remainingPlatforms.size > 0) {
+        othersWrap.style.display = 'block';
+        if (othersLabel) {
+          const names = Array.from(remainingPlatforms).map(k => OTHER_PLATFORM_NAMES[k] || k);
+          othersLabel.textContent = `Other Platforms (${names.join(', ')})`;
+        }
+      } else {
+        othersWrap.style.display = 'none';
+      }
+    }
+
     applyPlatformDetection();
+
+    const otherPlatformsToggle = document.getElementById('otherPlatformsToggle');
+    const otherPlatformsPanel = document.getElementById('otherPlatformsPanel');
+    if (otherPlatformsToggle && otherPlatformsPanel) {
+      otherPlatformsToggle.addEventListener('click', () => {
+        const isExpanded = otherPlatformsPanel.classList.toggle('expanded');
+        otherPlatformsToggle.classList.toggle('expanded', isExpanded);
+        otherPlatformsToggle.setAttribute('aria-expanded', String(isExpanded));
+      });
+    }
 
     // Navbar scroll effect & parallax
     const navbar = document.getElementById('navbar');
