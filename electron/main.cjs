@@ -46,7 +46,8 @@ function createSplashWindow() {
     show: true,
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      sandbox: true
     }
   });
 
@@ -89,6 +90,7 @@ function createMainWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
     },
   });
 

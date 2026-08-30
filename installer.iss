@@ -2,7 +2,13 @@
 ; Designed & Crafted by Protik
 
 #define MyAppName "Solframe Studio"
-#define MyAppVersion "1.0.0"
+; Pass /DMyAppVersion=x.y.z on the ISCC command line to override — the
+; fallback here only applies when this script is compiled standalone,
+; e.g. by double-clicking it in the Inno Setup IDE. build-installer.js
+; always passes the real version from package.json.
+#ifndef MyAppVersion
+  #define MyAppVersion "1.0.0"
+#endif
 #define MyAppPublisher "Protik"
 #define MyAppURL "https://github.com/Protik1810/Solframe-Studio"
 #define MyAppExeName "Solframe Studio.exe"
@@ -19,7 +25,7 @@ DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
 DefaultGroupName={#MyAppName}
 OutputDir={#SourcePath}installer-output
-OutputBaseFilename=Solframe-Studio-Setup-1.0.0
+OutputBaseFilename=Solframe-Studio-Setup-{#MyAppVersion}
 SetupIconFile={#SourcePath}electron\icon.ico
 WizardImageFile={#SourcePath}public\wizard-large.bmp
 WizardSmallImageFile={#SourcePath}public\wizard-small.bmp

@@ -90,7 +90,7 @@
 ### 🪟 Windows Setup (Installer)
 Download the latest installer from [Releases](https://github.com/Protik1810/Solframe-Studio/releases/latest):
 - `Solframe-Studio-Setup-<version>.exe` — full installer (all backends)
-- `Solframe-Studio-Setup-<version>-Lightweight.exe` — smaller installer, downloads engines on first run
+- `Solframe-Studio-Setup-<version>-Lightweight.exe` — smaller download, **UI shell only, no image generation or local LLM chat**. There is currently no in-app way to fetch the missing engines afterward — use the Complete Installer if you need inference.
 
 There is currently no winget package; the links above are the only official builds.
 

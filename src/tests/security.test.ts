@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import path from 'path';
-const { safeJoin, isAllowedOrigin } = require('../../electron/engine/security.cjs');
+const { safeJoin, isAllowedOrigin, isAllowedHost } = require('../../electron/engine/security.cjs');
 
 describe('security - safeJoin', () => {
   const base = path.resolve(process.cwd(), 'models');
@@ -45,5 +45,34 @@ describe('security - isAllowedOrigin', () => {
 
   it('rejects an origin on the wrong port', () => {
     expect(isAllowedOrigin({ headers: { origin: 'http://127.0.0.1:9999' } }, port)).toBe(false);
+  });
+});
+
+describe('security - isAllowedHost (DNS rebinding)', () => {
+  const port = 1420;
+
+  it('allows a matching 127.0.0.1 Host header', () => {
+    expect(isAllowedHost({ headers: { host: '127.0.0.1:1420' } }, port)).toBe(true);
+  });
+
+  it('allows a matching localhost Host header', () => {
+    expect(isAllowedHost({ headers: { host: 'localhost:1420' } }, port)).toBe(true);
+  });
+
+  it('rejects a DNS-rebound Host header even with no Origin header at all', () => {
+    // The exact gap: after a DNS rebind, the browser treats the attacker's
+    // page as same-origin with 127.0.0.1:1420 and omits Origin entirely —
+    // isAllowedOrigin alone would let this through. The Host header still
+    // names the original hostname the browser thinks it's talking to,
+    // since browsers set it from the fetched URL, not the resolved IP.
+    expect(isAllowedHost({ headers: { host: 'evil.example.com:1420' } }, port)).toBe(false);
+  });
+
+  it('rejects a Host header on the wrong port', () => {
+    expect(isAllowedHost({ headers: { host: '127.0.0.1:9999' } }, port)).toBe(false);
+  });
+
+  it('rejects a missing Host header', () => {
+    expect(isAllowedHost({ headers: {} }, port)).toBe(false);
   });
 });

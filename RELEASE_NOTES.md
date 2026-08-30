@@ -64,7 +64,7 @@ f28f9eabcac9e0af3e90c00842b40669fffb79f3be2b0779d1fcbe2a6f583230  Solframe-Studi
 87b30bd8c5d71e63795883e35481b3cb15d609d2d11d9e1f8eef78bd9b68707d  Solframe-Studio-1.0.0-mac.zip
 ```
 
-Also published as [CHECKSUMS.txt](CHECKSUMS.txt). Verify with `sha256sum -c CHECKSUMS.txt` (Linux/macOS) or `Get-FileHash <file> -Algorithm SHA256` (Windows PowerShell).
+Also published as [CHECKSUMS.txt](https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/CHECKSUMS.txt) — a bare relative link 404s from inside a GitHub Release body, unlike from a repo file. Download it, then verify with `sha256sum -c CHECKSUMS.txt` (Linux/macOS) or `Get-FileHash <file> -Algorithm SHA256` (Windows PowerShell).
 
 #### 🪟 Windows
 Download an installer above. There is currently no winget package.

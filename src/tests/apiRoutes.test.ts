@@ -10,7 +10,11 @@ function mockReq(method: string, headers: Record<string, string> = {}, body?: st
   const listeners: Record<string, Listener[]> = {};
   return {
     method,
-    headers,
+    // Real requests to this server always carry a Host header naming where
+    // the browser thinks it's connecting — default to the real one here so
+    // tests aren't all tripped up by the isAllowedHost check; individual
+    // tests override this via the headers param to exercise that check.
+    headers: { host: 'localhost:1420', ...headers },
     on(event: string, cb: Listener) {
       (listeners[event] ||= []).push(cb);
       if (event === 'end') {
@@ -77,6 +81,15 @@ describe('apiRoutes - origin enforcement', () => {
     const res = mockRes();
     const handled = await router.handle(req, res, new URL('http://localhost/index.html'));
     expect(handled).toBe(false);
+  });
+
+  it('rejects a DNS-rebound Host header with no Origin header (the origin-only check would have allowed this)', async () => {
+    const router = createApiRouter(makeCtx());
+    const req = mockReq('GET', { host: 'evil.example.com:1420' });
+    const res = mockRes();
+    const handled = await router.handle(req, res, new URL('http://localhost/api/hardware-info'));
+    expect(handled).toBe(true);
+    expect(res.statusCode).toBe(403);
   });
 });
 

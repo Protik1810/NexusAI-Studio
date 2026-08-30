@@ -20,6 +20,19 @@ function isAllowedOrigin(req, port) {
 }
 
 /**
+ * isAllowedOrigin's "no Origin header = allow" branch has a gap: after a
+ * DNS rebind, an attacker's page becomes same-origin with 127.0.0.1:<port>
+ * from the browser's own perspective and sends no Origin header at all —
+ * so it sails through the origin check untouched. The browser is still
+ * required to send a Host header naming the real destination, though, and
+ * that can't be spoofed the same way. Check it before the origin check.
+ */
+function isAllowedHost(req, port) {
+  const host = req.headers.host;
+  return host === `127.0.0.1:${port}` || host === `localhost:${port}`;
+}
+
+/**
  * Join untrusted path segments onto a trusted base directory, and verify the
  * resolved path did not escape that directory (e.g. via "../../"). Throws if
  * it did. Always use this instead of path.join()/path.resolve() when any
@@ -34,4 +47,4 @@ function safeJoin(baseDir, ...segments) {
   return target;
 }
 
-module.exports = { isAllowedOrigin, safeJoin };
+module.exports = { isAllowedOrigin, isAllowedHost, safeJoin };

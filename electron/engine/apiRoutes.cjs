@@ -16,7 +16,7 @@ const { detectHardware } = require('./hardware.cjs');
 const { getAllSystemScanPaths } = require('./pathUtils.cjs');
 const { getFullSystemModels, loadScanCache, saveScanCache } = require('./modelScanner.cjs');
 const { runSdCli, buildSdCliArgs } = require('./sdEngine.cjs');
-const { isAllowedOrigin, safeJoin } = require('./security.cjs');
+const { isAllowedOrigin, isAllowedHost, safeJoin } = require('./security.cjs');
 
 const LIBRARY_DEFINITIONS = [
   {
@@ -170,7 +170,7 @@ function createApiRouter(ctx) {
    */
   function proxyToLlama(req, res, pathname, search) {
     return new Promise(resolve => {
-      if (!isAllowedOrigin(req, port)) {
+      if (!isAllowedHost(req, port) || !isAllowedOrigin(req, port)) {
         sendJson(res, 403, { success: false, error: 'Forbidden origin' });
         resolve(true);
         return;
@@ -212,6 +212,17 @@ function createApiRouter(ctx) {
     // (CSRF / "localhost drive-by"). Reject anything declaring a foreign
     // Origin before it reaches a handler; same-origin/non-browser requests
     // (no Origin header) are unaffected.
+    //
+    // The Origin check alone has a DNS-rebinding gap: after a rebind, an
+    // attacker's page becomes same-origin with 127.0.0.1:<port> from the
+    // browser's own perspective and sends no Origin header, sailing through
+    // the check above untouched. The browser still can't spoof the Host
+    // header to match the real destination, though — it's set from the
+    // fetched URL, not the resolved IP — so check that first.
+    if (!isAllowedHost(req, port)) {
+      sendJson(res, 403, { success: false, error: 'Forbidden host' });
+      return true;
+    }
     if (!isAllowedOrigin(req, port)) {
       sendJson(res, 403, { success: false, error: 'Forbidden origin' });
       return true;

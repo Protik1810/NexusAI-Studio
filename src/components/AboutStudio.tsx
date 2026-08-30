@@ -17,6 +17,9 @@ import {
   Activity,
   Palette
 } from 'lucide-react';
+import pkg from '../../package.json';
+
+const APP_VERSION = pkg.version;
 
 interface HardwareInfo {
   gpus: Array<{
@@ -64,7 +67,7 @@ export const AboutStudio: React.FC = () => {
     allReady: boolean;
     missingCount: number;
   } | null>(null);
-  const COMPLETE_INSTALLER_URL = 'https://github.com/Protik1810/Solframe-Studio/releases/download/v1.0.0/Solframe-Studio-Setup-1.0.0.exe';
+  const COMPLETE_INSTALLER_URL = `https://github.com/Protik1810/Solframe-Studio/releases/download/v${APP_VERSION}/Solframe-Studio-Setup-${APP_VERSION}.exe`;
 
   const fetchLibrariesStatus = () => {
     fetch('/api/libraries-status')
@@ -126,7 +129,7 @@ export const AboutStudio: React.FC = () => {
               Solframe Studio
             </h1>
             <span className="badge-pill" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent)', border: '1px solid rgba(6, 182, 212, 0.3)', fontSize: '11px', padding: '4px 10px' }}>
-              v1.0.0 Production Release
+              v{APP_VERSION} Production Release
             </span>
           </div>
 

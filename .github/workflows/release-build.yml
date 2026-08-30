@@ -1,14 +1,17 @@
-name: Build Linux/macOS Installers
+name: Build Linux/macOS/Windows Installers
 
-# Builds the Solframe Studio UI shell as a native Linux (AppImage/.deb) and
-# macOS (.dmg/.zip) app package. These platforms have no bundled
-# stable-diffusion.cpp/llama.cpp engines yet (see README "Platform status"),
-# so the packaged app is the interface only — same scope as install.sh today,
-# just as an installable native app instead of `npm run dev`.
+# Builds the Solframe Studio UI shell as a native Linux (AppImage/.deb),
+# macOS (.dmg/.zip), and Windows (Lightweight .exe) package. These are all
+# built from git-tracked source only, so none bundle the
+# stable-diffusion.cpp/llama.cpp acceleration engines (see README
+# "Platform status") — the packaged app is the interface only, same scope
+# as install.sh today, just as an installable native app.
 #
-# The Windows installer is built separately/manually (installer.iss +
-# scripts/build-installer.js) because it bundles large CUDA/Vulkan/llama.cpp
-# binaries that aren't checked into this repo.
+# The Windows *Complete* installer (with the CUDA/Vulkan/llama.cpp engine
+# binaries bundled in) is still built locally, not here — those binaries
+# are large enough that they're deliberately not checked into this repo,
+# so there's nothing for a CI runner to bundle them from. The Lightweight
+# installer built here has no such dependency and is fully reproducible.
 
 on:
   workflow_dispatch:
@@ -56,3 +59,26 @@ jobs:
           path: |
             release/*.dmg
             release/*.zip
+
+  build-windows-lightweight:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run electron:build
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - run: npm run build:installer:lightweight
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: solframe-studio-windows-lightweight
+          path: installer-output/*-Lightweight.exe

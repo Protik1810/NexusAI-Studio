@@ -54,7 +54,9 @@ function createServer(options = {}) {
       const dir = path.dirname(cfgFile);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(cfgFile, JSON.stringify(Array.from(new Set(pathsList)), null, 2));
-    } catch (e) {}
+    } catch (e) {
+      console.warn(`[Solframe] Failed to save custom scan paths to ${cfgFile} — the paths you just added won't persist across restarts: ${e.message}`);
+    }
   };
 
   const userHome = process.env.USERPROFILE || process.env.HOME || '';
