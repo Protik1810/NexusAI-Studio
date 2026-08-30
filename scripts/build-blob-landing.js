@@ -46,6 +46,21 @@ const html = `<!DOCTYPE html>
   <title>Solframe Studio — Sovereign Desktop Generative AI Workstation</title>
   <meta name="description" content="100% private, sovereign desktop AI workstation combining FLUX.2 Klein & SDXL Lightning image synthesis with native llama.cpp GGUF dialogue engines. Designed & engineered by Protik.">
   <link rel="icon" type="image/png" href="${faviconBase64}">
+  <!-- Open Graph / Twitter Card: link-preview crawlers (WhatsApp, Facebook,
+       Slack, Discord, etc.) look for these tags specifically, and og:image
+       must be a real fetchable URL — a data: URI is not valid per the OG
+       spec — hence the separate, non-inlined og-image.png next to this file. -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://protik1810.github.io/Solframe-Studio/">
+  <meta property="og:title" content="Solframe Studio — Sovereign Desktop Generative AI Workstation">
+  <meta property="og:description" content="100% private, sovereign desktop AI workstation combining FLUX.2 Klein & SDXL Lightning image synthesis with native llama.cpp GGUF dialogue engines. Designed & engineered by Protik.">
+  <meta property="og:image" content="https://protik1810.github.io/Solframe-Studio/og-image.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Solframe Studio — Sovereign Desktop Generative AI Workstation">
+  <meta name="twitter:description" content="100% private, sovereign desktop AI workstation combining FLUX.2 Klein & SDXL Lightning image synthesis with native llama.cpp GGUF dialogue engines.">
+  <meta name="twitter:image" content="https://protik1810.github.io/Solframe-Studio/og-image.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -1172,5 +1187,13 @@ const html = `<!DOCTYPE html>
 // doing so silently breaks `npm run build`/`electron:build` (see git history).
 if (!fs.existsSync(path.join(rootDir, 'docs'))) fs.mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
 fs.writeFileSync(path.join(rootDir, 'docs/index.html'), html, 'utf8');
+
+// og:image must be a real fetchable URL, not a data: URI, so this one file
+// is written as an actual asset next to index.html instead of being inlined.
+const logoSourcePath = path.join(rootDir, 'public/logo.png');
+if (fs.existsSync(logoSourcePath)) {
+  fs.copyFileSync(logoSourcePath, path.join(rootDir, 'docs/og-image.png'));
+}
+
 console.log('✅ Generated 100% self-contained docs/index.html with embedded base64 blobs!');
 console.log('   This is a gitignored build artifact — push to main and the Pages workflow regenerates + deploys it automatically.');
