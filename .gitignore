@@ -58,6 +58,9 @@ outputs/
 !public/themes/*.jpg
 !public/avatars/*.jpg
 !public/screenshots/*.webp
+!public/themes/hero/*.webp
+!public/themes/showcase/*.webp
+!public/themes/emblem/*.webp
 !electron/icon.png
 !electron/icon.ico
 

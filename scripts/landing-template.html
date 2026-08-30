@@ -1,0 +1,2800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solframe Studio — The Sovereign Desktop Generative AI Workstation</title>
+  <meta name="description" content="Synthesize photorealistic FLUX.2 Klein & SDXL Lightning artwork and dialogue with uncensored GGUF LLMs — powered by native C++ hardware kernels directly on your GPU." />
+  <link rel="icon" type="image/png" href="{{FAVICON_URL}}" />
+  <!-- Open Graph / Twitter Card: link-preview crawlers (WhatsApp, Facebook,
+       Slack, Discord, etc.) look for these tags specifically, and og:image
+       must be a real fetchable URL — a data: URI is not valid per the OG
+       spec. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Solframe Studio" />
+  <meta property="og:url" content="{{SITE_BASE_URL}}" />
+  <meta property="og:title" content="Solframe Studio — The Sovereign Desktop Generative AI Workstation" />
+  <meta property="og:description" content="Synthesize photorealistic FLUX.2 Klein & SDXL Lightning artwork and dialogue with uncensored GGUF LLMs — powered by native C++ hardware kernels directly on your GPU." />
+  <meta property="og:image" content="{{OG_IMAGE_URL}}" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Solframe Studio — The Sovereign Desktop Generative AI Workstation" />
+  <meta name="twitter:description" content="Synthesize photorealistic FLUX.2 Klein & SDXL Lightning artwork and dialogue with uncensored GGUF LLMs — powered by native C++ hardware kernels directly on your GPU." />
+  <meta name="twitter:image" content="{{OG_IMAGE_URL}}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <style>
+    :root {
+      --bg-default: #0a0e14;
+      --bg-paper: #111827;
+      --bg-card: rgba(17, 24, 39, 0.65);
+      --primary: #10b981;
+      --primary-light: #6ee7b7;
+      --primary-dark: #047857;
+      --primary-glow: rgba(16, 185, 129, 0.4);
+      --secondary: #06b6d4;
+      --secondary-light: #67e8f9;
+      --text-primary: #e8eef5;
+      --text-secondary: #94a3b8;
+      --text-disabled: #64748b;
+      --divider: rgba(16, 185, 129, 0.15);
+      --border-card: rgba(16, 185, 129, 0.12);
+      --border-card-hover: rgba(16, 185, 129, 0.45);
+      --hero-bg-url: url('{{HERO_emerald-matrix}}');
+      --showcase-bg-url: url('{{SHOWCASE_emerald-matrix}}');
+      --emblem-url: url('{{EMBLEM_emerald-matrix}}');
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+    }
+
+    [data-theme="emerald-matrix"] {
+      --primary: #10b981;
+      --primary-light: #6ee7b7;
+      --primary-dark: #047857;
+      --primary-glow: rgba(16, 185, 129, 0.4);
+      --secondary: #06b6d4;
+      --secondary-light: #67e8f9;
+      --divider: rgba(16, 185, 129, 0.15);
+      --border-card: rgba(16, 185, 129, 0.12);
+      --border-card-hover: rgba(16, 185, 129, 0.45);
+      --hero-bg-url: url('{{HERO_emerald-matrix}}');
+      --showcase-bg-url: url('{{SHOWCASE_emerald-matrix}}');
+      --emblem-url: url('{{EMBLEM_emerald-matrix}}');
+    }
+
+    [data-theme="cinema-gold"] {
+      --primary: #fbbf24;
+      --primary-light: #fde68a;
+      --primary-dark: #d97706;
+      --primary-glow: rgba(251, 191, 36, 0.35);
+      --secondary: #f97316;
+      --secondary-light: #fdba74;
+      --divider: rgba(251, 191, 36, 0.15);
+      --border-card: rgba(251, 191, 36, 0.12);
+      --border-card-hover: rgba(251, 191, 36, 0.4);
+      --hero-bg-url: url('{{HERO_cinema-gold}}');
+      --showcase-bg-url: url('{{SHOWCASE_cinema-gold}}');
+      --emblem-url: url('{{EMBLEM_cinema-gold}}');
+    }
+
+    [data-theme="dark-void"] {
+      --primary: #38bdf8;
+      --primary-light: #7dd3fc;
+      --primary-dark: #0284c7;
+      --primary-glow: rgba(56, 189, 248, 0.35);
+      --secondary: #c084fc;
+      --secondary-light: #e9d5ff;
+      --divider: rgba(56, 189, 248, 0.15);
+      --border-card: rgba(56, 189, 248, 0.12);
+      --border-card-hover: rgba(56, 189, 248, 0.4);
+      --hero-bg-url: url('{{HERO_dark-void}}');
+      --showcase-bg-url: url('{{SHOWCASE_dark-void}}');
+      --emblem-url: url('{{EMBLEM_dark-void}}');
+    }
+
+    [data-theme="anime-fantasy"] {
+      --primary: #f472b6;
+      --primary-light: #fbcfe8;
+      --primary-dark: #db2777;
+      --primary-glow: rgba(244, 114, 182, 0.35);
+      --secondary: #38bdf8;
+      --secondary-light: #bae6fd;
+      --divider: rgba(244, 114, 182, 0.15);
+      --border-card: rgba(244, 114, 182, 0.12);
+      --border-card-hover: rgba(244, 114, 182, 0.4);
+      --hero-bg-url: url('{{HERO_anime-fantasy}}');
+      --showcase-bg-url: url('{{SHOWCASE_anime-fantasy}}');
+      --emblem-url: url('{{EMBLEM_anime-fantasy}}');
+    }
+
+    [data-theme="neon-cyber"] {
+      --primary: #00f0ff;
+      --primary-light: #70f7ff;
+      --primary-dark: #00b4cc;
+      --primary-glow: rgba(0, 240, 255, 0.4);
+      --secondary: #ff007f;
+      --secondary-light: #ff66b2;
+      --divider: rgba(0, 240, 255, 0.15);
+      --border-card: rgba(0, 240, 255, 0.12);
+      --border-card-hover: rgba(0, 240, 255, 0.45);
+      --hero-bg-url: url('{{HERO_neon-cyber}}');
+      --showcase-bg-url: url('{{SHOWCASE_neon-cyber}}');
+      --emblem-url: url('{{EMBLEM_neon-cyber}}');
+    }
+
+    [data-theme="synthwave"] {
+      --primary: #ff3399;
+      --primary-light: #ff77bb;
+      --primary-dark: #cc0066;
+      --primary-glow: rgba(255, 51, 153, 0.4);
+      --secondary: #ffaa00;
+      --secondary-light: #ffd480;
+      --divider: rgba(255, 51, 153, 0.15);
+      --border-card: rgba(255, 51, 153, 0.12);
+      --border-card-hover: rgba(255, 51, 153, 0.45);
+      --hero-bg-url: url('{{HERO_synthwave}}');
+      --showcase-bg-url: url('{{SHOWCASE_synthwave}}');
+      --emblem-url: url('{{EMBLEM_synthwave}}');
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--bg-default);
+      color: var(--text-primary);
+    }
+
+    body {
+      font-family: 'Space Grotesk', 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background-color: var(--bg-default);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-default);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 5px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    /* Container Utility */
+    .container {
+      width: 100%;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Reveal Scroll Animations */
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+    .reveal-item.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Smooth Breathing Emblem Keyframes for Hero Floating Centerpiece */
+    @keyframes emblemBreathe {
+      0%, 100% {
+        transform: translateY(0px) scale(0.96);
+        filter: drop-shadow(0 0 22px var(--primary-glow));
+      }
+      50% {
+        transform: translateY(-8px) scale(1.05);
+        filter: drop-shadow(0 0 48px var(--primary-glow));
+      }
+    }
+
+    @keyframes scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
+    }
+
+    /* SVG Loop Keyframe Animations for Sovereign by Design Cards */
+    @keyframes svgSpinFast {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes svgSpinSlow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-360deg); }
+    }
+    @keyframes svgPulseGlow {
+      0%, 100% {
+        opacity: 0.4;
+        transform: scale(0.92);
+        filter: drop-shadow(0 0 4px var(--primary));
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.08);
+        filter: drop-shadow(0 0 16px var(--primary-light));
+      }
+    }
+    @keyframes svgLaserFlow {
+      0% { stroke-dashoffset: 120; opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { stroke-dashoffset: 0; opacity: 0.3; }
+    }
+    @keyframes svgRadarSweep {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes svgSonarRings {
+      0% { r: 6; opacity: 1; stroke-width: 2.5; }
+      100% { r: 42; opacity: 0; stroke-width: 0.5; }
+    }
+    @keyframes svgSynapseBlink {
+      0%, 100% { opacity: 0.25; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.3); filter: drop-shadow(0 0 8px var(--primary-light)); }
+    }
+    @keyframes svgOrbitPlanets {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes svgDataStream {
+      0% { transform: translateY(-16px); opacity: 0; }
+      30% { opacity: 1; }
+      70% { opacity: 1; }
+      100% { transform: translateY(24px); opacity: 0; }
+    }
+
+    /* Navbar */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 16px 0;
+    }
+    .navbar.scrolled {
+      background-color: rgba(10, 14, 20, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--divider);
+      padding: 12px 0;
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+    /* Borderless, Transparent Brand Logo Box in Header & Footer */
+    .brand-icon-box {
+      width: 36px;
+      height: 36px;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      flex-shrink: 0;
+    }
+    /* Fixed, Non-Animating App Logo at the Top */
+    .brand-icon-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      border: none !important;
+      animation: none !important;
+      transform: none !important;
+      filter: drop-shadow(0 0 10px var(--primary-glow));
+    }
+    .brand-title {
+      font-size: 1.18rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand-accent {
+      color: var(--primary);
+      transition: color 0.3s;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      transition: all 0.25s ease;
+    }
+    .nav-link:hover {
+      color: var(--primary);
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    .btn-nav-theme {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-card-hover);
+      border-radius: 9999px;
+      padding: 8px 16px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 12px rgba(0,0,0,0.3);
+    }
+    .btn-nav-theme:hover {
+      background: var(--primary);
+      color: #0a0e14;
+      border-color: var(--primary-light);
+      box-shadow: 0 0 20px var(--primary-glow);
+      transform: translateY(-1px);
+    }
+    .btn-nav-theme:hover .nav-theme-dot {
+      background: #0a0e14;
+      box-shadow: none;
+    }
+    .nav-theme-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+      transition: all 0.3s ease;
+    }
+    .btn-get-started {
+      background-color: var(--primary);
+      color: #0a0e14;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 9px 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      margin-left: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-get-started:hover {
+      background-color: var(--primary-light);
+      box-shadow: 0 0 24px var(--primary-glow);
+      transform: translateY(-2px);
+    }
+    .nav-icon-btn {
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      padding: 8px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      margin-left: 4px;
+    }
+    .nav-icon-btn:hover {
+      color: var(--primary);
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+    .mobile-menu-btn {
+      display: none;
+      color: var(--text-primary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    /* Mobile Drawer */
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      right: -280px;
+      width: 260px;
+      height: 100vh;
+      background: #0d1117;
+      border-left: 1px solid var(--border-card-hover);
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      gap: 16px;
+      transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -8px 0 32px rgba(0,0,0,0.6);
+    }
+    .mobile-drawer.open {
+      right: 0;
+    }
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 140;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .drawer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .drawer-link {
+      color: var(--text-primary);
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .drawer-link:hover {
+      background: rgba(45, 212, 191, 0.1);
+      color: var(--primary-light);
+    }
+
+    /* Hero Section */
+    .hero-section {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      padding: 120px 0 60px 0;
+    }
+    .hero-bg-layer {
+      position: absolute;
+      inset: 0;
+      background-image: var(--hero-bg-url);
+      background-size: cover;
+      background-position: center;
+      opacity: 0.55;
+      will-change: transform;
+      transition: background-image 0.5s ease-in-out;
+    }
+    .hero-radial-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 40%, var(--primary-glow) 0%, transparent 60%);
+      pointer-events: none;
+      transition: background 0.5s ease;
+    }
+    .hero-linear-fade {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(10,14,20,0.4) 0%, rgba(10,14,20,0.75) 60%, #0a0e14 100%);
+      pointer-events: none;
+    }
+    .hero-grid-texture {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+      pointer-events: none;
+    }
+
+    /* Floating Crisp Theme Emblem in Hero */
+    .floating-orb {
+      position: absolute;
+      top: 15%;
+      right: 8%;
+      width: clamp(140px, 20vw, 240px);
+      height: clamp(140px, 20vw, 240px);
+      aspect-ratio: 1 / 1;
+      pointer-events: none;
+      animation: emblemBreathe 5s ease-in-out infinite;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .floating-orb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: opacity 0.3s ease;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 4;
+      max-width: 760px;
+    }
+    .chip-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+    .chip-teal {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-card-hover);
+      color: var(--primary-light);
+    }
+    .chip-amber {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      color: var(--secondary-light);
+    }
+    .chip-platform {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid var(--border-card-hover);
+      color: var(--primary-light);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+    .overline-badge {
+      color: var(--primary);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: block;
+      transition: color 0.3s;
+    }
+    .hero-title {
+      font-size: clamp(2.8rem, 6vw, 4.8rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.06;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #e8eef5 0%, var(--primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: background 0.3s;
+    }
+    .hero-subtitle {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      color: var(--text-secondary);
+      font-weight: 400;
+      line-height: 1.65;
+      margin-bottom: 28px;
+      max-width: 620px;
+    }
+    .hero-subtitle strong {
+      color: var(--primary-light);
+      font-weight: 600;
+    }
+    .hero-subtitle strong.secondary {
+      color: var(--secondary-light);
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .btn-primary {
+      background-color: var(--primary);
+      color: #0a0e14;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 14px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 0 0 var(--primary-glow);
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-light);
+      box-shadow: 0 0 28px var(--primary-glow);
+      transform: translateY(-2px);
+    }
+    .btn-outlined {
+      background-color: transparent;
+      color: var(--text-primary);
+      border: 1px solid rgba(232, 238, 245, 0.2);
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 14px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+    }
+    .btn-outlined:hover {
+      border-color: var(--primary);
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--primary-light);
+      box-shadow: 0 0 16px var(--primary-glow);
+      transform: translateY(-2px);
+    }
+    .platform-detected-caption {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .platform-detected-caption span.highlight {
+      color: var(--primary-light);
+      font-weight: 600;
+    }
+
+    /* Scroll Indicator */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 4;
+      pointer-events: none;
+    }
+    .scroll-text {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+    .scroll-bar-track {
+      width: 2px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+    .scroll-bar-pill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 40%;
+      background: var(--primary);
+      border-radius: 4px;
+      animation: scanline 2s ease-in-out infinite;
+    }
+
+    /* Section Base */
+    .section {
+      padding: 100px 0;
+      position: relative;
+    }
+    .section-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .section-subtitle {
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+      font-size: 1.05rem;
+    }
+
+    /* Showcase Section (Viewport Frame auto-adjusting to window width maintaining aspect ratio) */
+    .showcase-section {
+      position: relative;
+      overflow: hidden;
+    }
+    .showcase-bg-layer {
+      position: absolute;
+      inset: 0;
+      background-image: var(--showcase-bg-url);
+      background-size: cover;
+      background-position: center;
+      opacity: 0.18;
+      transition: background-image 0.5s ease-in-out;
+    }
+    .showcase-vignette {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, #0a0e14 0%, transparent 25%, transparent 75%, #0a0e14 100%);
+      pointer-events: none;
+    }
+
+    /* Viewport Window Frame with Responsive Auto-Adjusting Width */
+    .viewport-frame {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-card-hover);
+      overflow: hidden;
+      box-shadow: 0 0 80px var(--primary-glow), 0 24px 64px rgba(0, 0, 0, 0.7);
+      background: #0d1117;
+      position: relative;
+      z-index: 2;
+    }
+    .window-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: rgba(13, 17, 23, 0.95);
+      border-bottom: 1px solid var(--divider);
+    }
+    .window-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ff5f57; }
+    .dot-yellow { background: #febc2e; }
+    .dot-green { background: #28c840; }
+    .window-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+    .window-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .window-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--divider);
+      color: var(--primary-light);
+    }
+
+    /* 3D Depth Carousel Stage inside Viewport — Responsive Scaling */
+    .viewport-3d-stage {
+      position: relative;
+      width: 100%;
+      min-height: clamp(380px, 48vw, 540px);
+      background: #0a0e14;
+      background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, transparent 50%, rgba(251, 191, 36, 0.02) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: clamp(16px, 3vw, 32px) 16px 20px 16px;
+      perspective: 1200px;
+    }
+    .stage-grid-mask {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+      pointer-events: none;
+    }
+
+    .coverflow-track {
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
+      height: clamp(260px, 34vw, 380px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-style: preserve-3d;
+      user-select: none;
+    }
+
+    /* Individual 3D Slide with Strict Aspect Ratio */
+    .coverflow-slide {
+      position: absolute;
+      width: clamp(280px, 54vw, 580px);
+      aspect-ratio: 16 / 9.5;
+      height: auto;
+      max-height: 350px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                  filter 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                  opacity 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  box-shadow 0.55s ease,
+                  border-color 0.4s ease;
+      will-change: transform, filter, opacity;
+    }
+    .coverflow-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+    .slide-gradient-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,14,20,0.4) 50%, rgba(10,14,20,0.92) 100%);
+      pointer-events: none;
+    }
+    .slide-info-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: clamp(10px, 2vw, 16px) clamp(12px, 2.5vw, 20px);
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .slide-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(0.68rem, 1.1vw, 0.74rem);
+      font-weight: 700;
+      color: var(--primary);
+      background: rgba(10, 14, 20, 0.85);
+      border: 1px solid var(--border-card-hover);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+    .slide-title {
+      font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .slide-desc {
+      font-size: clamp(0.72rem, 1.2vw, 0.82rem);
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 3D Depth Positions Auto-Adjusting by Viewport Width */
+    .coverflow-slide.pos-center {
+      transform: translateX(0) translateZ(80px) scale(1.06) rotateY(0deg);
+      z-index: 10;
+      opacity: 1;
+      filter: blur(0px) brightness(1);
+      border-color: var(--primary);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 36px var(--primary-glow);
+    }
+    .coverflow-slide.pos-left-1 {
+      transform: translateX(clamp(-220px, -24vw, -130px)) translateZ(-40px) scale(0.85) rotateY(22deg);
+      z-index: 6;
+      opacity: 0.65;
+      filter: blur(4px) brightness(0.65);
+    }
+    .coverflow-slide.pos-right-1 {
+      transform: translateX(clamp(130px, 24vw, 220px)) translateZ(-40px) scale(0.85) rotateY(-22deg);
+      z-index: 6;
+      opacity: 0.65;
+      filter: blur(4px) brightness(0.65);
+    }
+    .coverflow-slide.pos-left-2 {
+      transform: translateX(clamp(-380px, -42vw, -230px)) translateZ(-110px) scale(0.7) rotateY(38deg);
+      z-index: 3;
+      opacity: 0.35;
+      filter: blur(8px) brightness(0.45);
+    }
+    .coverflow-slide.pos-right-2 {
+      transform: translateX(clamp(230px, 42vw, 380px)) translateZ(-110px) scale(0.7) rotateY(-38deg);
+      z-index: 3;
+      opacity: 0.35;
+      filter: blur(8px) brightness(0.45);
+    }
+    .coverflow-slide.pos-hidden {
+      transform: translateX(0) translateZ(-200px) scale(0.5);
+      z-index: 1;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Carousel Nav Arrows */
+    .carousel-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(13, 17, 23, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border-card-hover);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      transition: all 0.25s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .carousel-nav-btn:hover {
+      background: var(--primary);
+      color: #0a0e14;
+      box-shadow: 0 0 24px var(--primary-glow);
+      transform: translateY(-50%) scale(1.1);
+    }
+    .carousel-nav-prev { left: 16px; }
+    .carousel-nav-next { right: 16px; }
+
+    /* Carousel Pagination & Indicator Bar */
+    .carousel-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+      z-index: 15;
+    }
+    .carousel-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .carousel-dot:hover {
+      background: var(--primary-light);
+    }
+    .carousel-dot.active {
+      width: 28px;
+      border-radius: 6px;
+      background: var(--primary);
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+
+    .warning-banner {
+      max-width: 760px;
+      margin: 32px auto 0 auto;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: rgba(251, 146, 60, 0.06);
+      border: 1px solid rgba(251, 146, 60, 0.2);
+      border-radius: var(--radius-md);
+      padding: 18px 24px;
+      color: #fdba74;
+      font-size: 0.86rem;
+      line-height: 1.6;
+      position: relative;
+      z-index: 2;
+    }
+    .warning-icon {
+      color: #fb923c;
+      flex-shrink: 0;
+      font-size: 1.25rem;
+      margin-top: 2px;
+    }
+
+    /* Features Grid (Sovereign by Design) */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .feature-card:hover {
+      border-color: var(--border-card-hover);
+      box-shadow: 0 0 32px var(--primary-glow), 0 12px 24px rgba(0, 0, 0, 0.3);
+      transform: translateY(-4px);
+    }
+    .feature-card-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* Hover-Only Animated Vector Artworks with Strict Aspect Ratio */
+    .feature-hover-artwork {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: clamp(86px, 24%, 124px);
+      aspect-ratio: 1 / 1;
+      height: auto;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.82) rotate(-4deg);
+      transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .feature-card:hover .feature-hover-artwork {
+      opacity: 0.95;
+      transform: scale(1) rotate(0deg);
+    }
+    .feature-hover-artwork svg {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: visible;
+    }
+
+    .feature-icon-wrapper {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--divider);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--primary);
+      transition: color 0.3s;
+      flex-shrink: 0;
+    }
+    .feature-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+    .feature-desc {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      line-height: 1.65;
+    }
+
+    /* Download Section with Themed Background Backdrop */
+    .download-section {
+      position: relative;
+      background: rgba(13, 17, 23, 0.7);
+      border-top: 1px solid var(--divider);
+      border-bottom: 1px solid var(--divider);
+      overflow: hidden;
+    }
+    .download-bg-layer {
+      position: absolute;
+      inset: 0;
+      background-image: var(--hero-bg-url);
+      background-size: cover;
+      background-position: center bottom;
+      opacity: 0.12;
+      pointer-events: none;
+      filter: blur(2px);
+      transition: background-image 0.5s ease-in-out;
+    }
+    .download-vignette {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, #0a0e14 0%, transparent 30%, transparent 70%, #0a0e14 100%);
+      pointer-events: none;
+    }
+    .download-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    .download-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .download-card.detected-os {
+      border-color: var(--primary);
+      box-shadow: 0 0 32px var(--primary-glow);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .download-card:hover {
+      border-color: var(--border-card-hover);
+      box-shadow: 0 0 24px var(--primary-glow);
+      transform: translateY(-3px);
+    }
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .os-badge-chip {
+      position: absolute;
+      top: -10px;
+      right: 20px;
+      background: var(--primary);
+      color: #0a0e14;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      box-shadow: 0 0 12px var(--primary-glow);
+      display: none;
+    }
+    .download-card.detected-os .os-badge-chip {
+      display: block;
+    }
+    .download-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--divider);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      flex-shrink: 0;
+      transition: color 0.3s;
+    }
+    .download-card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .download-platform {
+      font-size: 0.78rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--primary-light);
+      display: block;
+    }
+    .download-desc {
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      flex-grow: 1;
+    }
+    .btn-download-card {
+      width: 100%;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+    .btn-download-primary {
+      background: var(--primary);
+      color: #0a0e14;
+      border: none;
+    }
+    .btn-download-primary:hover {
+      background: var(--primary-light);
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+    .btn-download-outline {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid rgba(232, 238, 245, 0.2);
+    }
+    .btn-download-outline:hover {
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--primary-light);
+    }
+
+    /* Terminal Box */
+    .terminal-container {
+      position: relative;
+      z-index: 2;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .terminal-header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .terminal-header-title svg {
+      color: var(--primary);
+    }
+    .terminal-box {
+      background: #0d1117;
+      border: 1px solid var(--border-card-hover);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(13, 17, 23, 0.95);
+      border-bottom: 1px solid var(--divider);
+    }
+    .terminal-dots-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .terminal-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+    .copy-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      color: var(--primary);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .copy-btn.copied {
+      color: var(--primary-light);
+    }
+    .terminal-code {
+      margin: 0;
+      padding: 20px 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.86rem;
+      line-height: 1.8;
+      color: #e8eef5;
+      overflow-x: auto;
+    }
+    .terminal-line {
+      display: block;
+    }
+    .terminal-prompt {
+      color: var(--primary);
+      margin-right: 12px;
+      user-select: none;
+    }
+    .terminal-footer-caption {
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.6;
+    }
+    .terminal-footer-caption code {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--primary-light);
+    }
+
+    /* About Section with Themed Backdrop and Padded Emblem */
+    .about-section {
+      position: relative;
+      overflow: hidden;
+    }
+    .about-card {
+      max-width: 880px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 40px;
+      padding: 48px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-card-hover);
+      background: rgba(17, 24, 39, 0.75);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 32px var(--primary-glow);
+    }
+    .about-card-bg {
+      position: absolute;
+      inset: 0;
+      background-image: var(--showcase-bg-url);
+      background-size: cover;
+      background-position: center;
+      opacity: 0.14;
+      pointer-events: none;
+      filter: blur(1px);
+      transition: background-image 0.5s ease-in-out;
+    }
+    .about-corner-emblem {
+      position: absolute;
+      top: 24px;
+      right: 28px;
+      width: clamp(70px, 12vw, 110px);
+      height: clamp(70px, 12vw, 110px);
+      aspect-ratio: 1 / 1;
+      padding: 12px;
+      opacity: 0.32;
+      pointer-events: none;
+      animation: emblemBreathe 6s ease-in-out infinite;
+      transition: all 0.4s ease;
+      object-fit: contain;
+    }
+    .about-avatar-wrapper {
+      position: relative;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-card-hover);
+      border-radius: 50%;
+      box-shadow: 0 0 32px var(--primary-glow);
+      flex-shrink: 0;
+      z-index: 2;
+    }
+    .about-avatar {
+      width: clamp(90px, 14vw, 116px);
+      height: clamp(90px, 14vw, 116px);
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+    .about-details {
+      flex: 1;
+      position: relative;
+      z-index: 2;
+    }
+    .about-name {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .about-bio {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    .about-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    /* Footer */
+    .footer {
+      position: relative;
+      border-top: 1px solid var(--divider);
+      background: #080b10;
+      padding: 56px 0 32px 0;
+    }
+    .footer-top-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary-glow), transparent);
+    }
+    .footer-main {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .footer-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .footer-link:hover {
+      color: var(--primary);
+    }
+    .footer-disclaimer {
+      font-size: 0.78rem;
+      color: var(--text-disabled);
+      line-height: 1.7;
+      max-width: 680px;
+      margin-bottom: 12px;
+    }
+    .footer-copy {
+      font-size: 0.78rem;
+      color: var(--text-disabled);
+    }
+
+    /* Theme Modal */
+    .theme-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .theme-modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .theme-modal-content {
+      background: #0d1117;
+      border: 1px solid var(--border-card-hover);
+      border-radius: var(--radius-xl);
+      max-width: 820px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 16px 64px rgba(0,0,0,0.8), 0 0 64px var(--primary-glow);
+      padding: 32px;
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+    }
+    .theme-modal-backdrop.open .theme-modal-content {
+      transform: scale(1);
+    }
+    .theme-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .theme-modal-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+    .theme-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+    .theme-close-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .theme-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .theme-select-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .theme-select-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .theme-select-card.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 24px var(--primary-glow);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .theme-card-preview {
+      height: 110px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .theme-card-preview-emblem {
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 12px rgba(0,0,0,0.8));
+    }
+    .theme-card-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(10, 14, 20, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 9999px;
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .theme-card-info {
+      padding: 14px;
+    }
+    .theme-card-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .theme-card-tag {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Theme Switcher Floating Bar */
+    .theme-picker-floater {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99;
+      background: rgba(13, 17, 23, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-card-hover);
+      border-radius: 9999px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .theme-picker-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      padding-right: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .theme-dot-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+      outline: none;
+    }
+    .theme-dot-btn:hover {
+      transform: scale(1.2);
+    }
+    .theme-dot-btn.active {
+      border-color: #ffffff;
+      transform: scale(1.15);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 900px) {
+      .about-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 28px;
+      }
+      .about-actions {
+        justify-content: center;
+      }
+      .footer-main {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .nav-links, .btn-get-started, .nav-icon-btn {
+        display: none;
+      }
+      .mobile-menu-btn {
+        display: flex;
+      }
+      .coverflow-slide {
+        width: 82vw;
+      }
+    }
+  </style>
+</head>
+<body data-theme="emerald-matrix">
+
+  <!-- Mobile Drawer Overlay -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="drawer-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="brand-icon-box" style="width: 28px; height: 28px;">
+          <img src="{{EMBLEM_emerald-matrix}}" id="drawerBrandLogo" class="brand-icon-img" alt="Solframe Emblem" />
+        </div>
+        <span style="font-weight: 700; color: var(--primary);">Solframe Studio</span>
+      </div>
+      <button id="closeDrawer" style="background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 1.2rem;">&times;</button>
+    </div>
+    <a href="#showcase" class="drawer-link" onclick="toggleDrawer()">Showcase</a>
+    <a href="#features" class="drawer-link" onclick="toggleDrawer()">Features</a>
+    <a href="#download" class="drawer-link" onclick="toggleDrawer()">Download</a>
+    <a href="#about" class="drawer-link" onclick="toggleDrawer()">About</a>
+    <button class="btn-nav-theme" style="width: 100%; justify-content: center; margin-top: 8px;" onclick="toggleThemeModal(); toggleDrawer();">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
+      <span>Switch Theme</span>
+      <span class="nav-theme-dot"></span>
+    </button>
+    <a href="https://github.com/Protik1810/Solframe-Studio" target="_blank" rel="noopener noreferrer" class="drawer-link" onclick="toggleDrawer()">GitHub Repo ↗</a>
+  </div>
+
+  <!-- Sticky Glass Navbar -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <a href="#top" class="brand-group">
+        <div class="brand-icon-box">
+          <img src="{{EMBLEM_emerald-matrix}}" class="brand-icon-img" id="navBrandLogo" alt="Solframe Logo" />
+        </div>
+        <span class="brand-title">Solframe<span class="brand-accent"> Studio</span></span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#showcase" class="nav-link">Showcase</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#download" class="nav-link">Download</a>
+        <a href="#about" class="nav-link">About</a>
+        <button class="btn-nav-theme" onclick="toggleThemeModal()" title="Switch Studio Color Theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
+          <span>Themes</span>
+          <span class="nav-theme-dot" id="navThemeDot"></span>
+        </button>
+        <a href="#download" class="btn-get-started" id="navGetStartedBtn">Get Started</a>
+        <a href="https://github.com/Protik1810/Solframe-Studio" target="_blank" rel="noopener noreferrer" class="nav-icon-btn" title="GitHub Repository">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </a>
+      </nav>
+
+      <button class="mobile-menu-btn" id="mobileToggle" aria-label="Toggle Navigation Menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section" id="top">
+    <div class="hero-bg-layer" id="heroBgLayer"></div>
+    <div class="hero-radial-glow"></div>
+    <div class="hero-linear-fade"></div>
+    <div class="hero-grid-texture"></div>
+
+    <!-- Floating Crisp Theme Emblem (Smooth Breathing Animation in Hero) -->
+    <div class="floating-orb" id="floatingOrb">
+      <img src="{{EMBLEM_emerald-matrix}}" id="heroFloatingEmblem" alt="Solframe Sovereign Emblem" />
+    </div>
+
+    <div class="container">
+      <div class="hero-content reveal-item">
+        <div class="chip-stack">
+          <div class="chip chip-teal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.88 0-.33-.75-.31-.78C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.58 11 21 11 21z"/></svg>
+            Zero cloud. Zero subscriptions.
+          </div>
+          <div class="chip chip-amber">
+            Privacy-first
+          </div>
+          <div class="chip chip-platform" id="heroPlatformChip">
+            Detected: Windows 64-bit
+          </div>
+        </div>
+
+        <span class="overline-badge">The Sovereign Desktop</span>
+        <h1 class="hero-title">Generative AI Workstation</h1>
+
+        <p class="hero-subtitle">
+          Synthesize photorealistic <strong>FLUX.2 Klein &amp; SDXL Lightning</strong> artwork and dialogue with uncensored <strong class="secondary">GGUF LLMs</strong> — powered by native C++ hardware kernels directly on your GPU.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#download" class="btn-primary" id="heroMainCta">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" id="heroCtaIcon"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            <span id="heroCtaText">Download for Windows</span>
+          </a>
+          <a href="https://github.com/Protik1810/Solframe-Studio" target="_blank" rel="noopener noreferrer" class="btn-outlined">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            View on GitHub
+          </a>
+        </div>
+
+        <div class="platform-detected-caption" id="heroPlatformCaption">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <span>Detected System: <span class="highlight" id="detectedOsName">Windows (64-bit)</span> • Includes CUDA 12 &amp; Vulkan engines</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="scroll-indicator">
+      <span class="scroll-text">SCROLL</span>
+      <div class="scroll-bar-track">
+        <div class="scroll-bar-pill"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Showcase Section (With Interactive 3D Depth Carousel Viewport) -->
+  <section class="section showcase-section" id="showcase">
+    <div class="showcase-bg-layer" id="showcaseBgLayer"></div>
+    <div class="showcase-vignette"></div>
+
+    <div class="container">
+      <div class="section-header reveal-item">
+        <span class="overline-badge">Product Showcase</span>
+        <h2 class="section-title">The Viewport</h2>
+        <p class="section-subtitle">Interactive 3D preview of Solframe Studio running real local inference on GPU — auto-adjusts with responsive width and aspect ratio.</p>
+      </div>
+
+      <div class="viewport-frame reveal-item">
+        <div class="window-header">
+          <div class="window-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <span class="window-title">solframe-studio — 3d viewport gallery</span>
+          <div class="window-actions">
+            <span class="window-badge" id="slideCounterBadge">1 / 5</span>
+          </div>
+        </div>
+
+        <div class="viewport-3d-stage" id="viewport3DStage">
+          <div class="stage-grid-mask"></div>
+
+          <!-- 3D Depth Coverflow Track -->
+          <div class="coverflow-track" id="coverflowTrack">
+
+            <div class="coverflow-slide" data-index="0" onclick="setSlide(0)">
+              <img src="{{SCREENSHOT_1}}" alt="FLUX.2 Klein Synthesis" />
+              <div class="slide-gradient-overlay"></div>
+              <div class="slide-info-overlay">
+                <span class="slide-badge">Photorealistic 9B Diffusion Rendering</span>
+                <h4 class="slide-title">FLUX.2 Klein Synthesis</h4>
+                <p class="slide-desc">FLUX.2 Klein • 24 Steps • CUDA Hardware Acceleration</p>
+              </div>
+            </div>
+
+            <div class="coverflow-slide" data-index="1" onclick="setSlide(1)">
+              <img src="{{SCREENSHOT_2}}" alt="Studio Image Canvas" />
+              <div class="slide-gradient-overlay"></div>
+              <div class="slide-info-overlay">
+                <span class="slide-badge">Multi-Pass Generation & Seed Control</span>
+                <h4 class="slide-title">Studio Image Canvas</h4>
+                <p class="slide-desc">Interactive Canvas with LoRA blending, Negative Prompting & Latent Upscaling</p>
+              </div>
+            </div>
+
+            <div class="coverflow-slide" data-index="2" onclick="setSlide(2)">
+              <img src="{{SCREENSHOT_3}}" alt="Uncensored GGUF LLM Studio" />
+              <div class="slide-gradient-overlay"></div>
+              <div class="slide-info-overlay">
+                <span class="slide-badge">100% Offline Dialogue Assistant</span>
+                <h4 class="slide-title">Uncensored GGUF LLM Studio</h4>
+                <p class="slide-desc">Native llama.cpp engine • Zero telemetry • Local dialogue inference</p>
+              </div>
+            </div>
+
+            <div class="coverflow-slide" data-index="3" onclick="setSlide(3)">
+              <img src="{{SCREENSHOT_4}}" alt="CUDA Latent Sampling" />
+              <div class="slide-gradient-overlay"></div>
+              <div class="slide-info-overlay">
+                <span class="slide-badge">Real-Time Step-by-Step VRAM Preview</span>
+                <h4 class="slide-title">CUDA Latent Sampling</h4>
+                <p class="slide-desc">Sub-second step visualizer directly decoded from GPU video memory</p>
+              </div>
+            </div>
+
+            <div class="coverflow-slide" data-index="4" onclick="setSlide(4)">
+              <img src="{{SCREENSHOT_5}}" alt="SDXL Lightning Engine" />
+              <div class="slide-gradient-overlay"></div>
+              <div class="slide-info-overlay">
+                <span class="slide-badge">Sub-Second Batch Art Synthesis</span>
+                <h4 class="slide-title">SDXL Lightning Engine</h4>
+                <p class="slide-desc">4-Step & 8-Step distilled high-throughput diffusion models</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Prev / Next Nav Buttons -->
+          <button class="carousel-nav-btn carousel-nav-prev" onclick="prevSlide()" aria-label="Previous image">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <button class="carousel-nav-btn carousel-nav-next" onclick="nextSlide()" aria-label="Next image">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+
+          <!-- Indicator Dots -->
+          <div class="carousel-controls" id="carouselDots">
+            <div class="carousel-dot active" onclick="setSlide(0)" data-dot="0"></div>
+            <div class="carousel-dot" onclick="setSlide(1)" data-dot="1"></div>
+            <div class="carousel-dot" onclick="setSlide(2)" data-dot="2"></div>
+            <div class="carousel-dot" onclick="setSlide(3)" data-dot="3"></div>
+            <div class="carousel-dot" onclick="setSlide(4)" data-dot="4"></div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="warning-banner reveal-item">
+        <div class="warning-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        </div>
+        <div>
+          Uncensored models can produce inaccurate, offensive, or unsafe content. Use uncensored models at your own risk — you are solely responsible for what you generate and how you use it.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid Section (Sovereign by Design with Interactive Animated Vector Loops on Hover) -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header reveal-item">
+        <span class="overline-badge">Why Solframe</span>
+        <h2 class="section-title">Sovereign by Design</h2>
+        <p class="section-subtitle">Complete autonomy over cutting-edge diffusion synthesis and large language models — directly on your personal hardware.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1: Native GPU Acceleration -->
+        <div class="feature-card reveal-item">
+          <!-- Animated Vector Artwork (GPU Chip & Pulsing Circuit Bus) -->
+          <div class="feature-hover-artwork" aria-hidden="true">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer Rotating Ring -->
+              <circle cx="50" cy="50" r="44" stroke="var(--primary)" stroke-width="1.2" stroke-dasharray="8 6" opacity="0.4" style="transform-origin: center; animation: svgSpinFast 12s linear infinite;" />
+              <circle cx="50" cy="50" r="38" stroke="var(--secondary)" stroke-width="1" stroke-dasharray="16 10" opacity="0.3" style="transform-origin: center; animation: svgSpinSlow 18s linear infinite;" />
+              <!-- Circuit Grid Lines with Laser Flow -->
+              <path d="M15 50 H32 M68 50 H85 M50 15 V32 M50 68 V85 M24 24 L36 36 M64 64 L76 76 M76 24 L64 36 M24 76 L36 64" stroke="var(--primary-light)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="20 20" style="animation: svgLaserFlow 2.4s linear infinite;" />
+              <!-- Silicon Chip Base -->
+              <rect x="32" y="32" width="36" height="36" rx="6" fill="var(--bg-paper)" stroke="var(--primary)" stroke-width="1.8" />
+              <!-- Glowing Micro Core Die -->
+              <rect x="40" y="40" width="20" height="20" rx="3" fill="var(--primary)" opacity="0.8" style="transform-origin: center; animation: svgPulseGlow 2.5s ease-in-out infinite;" />
+              <circle cx="50" cy="50" r="3" fill="#ffffff" />
+            </svg>
+          </div>
+          <div class="feature-card-content">
+            <div class="feature-icon-wrapper">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"/></svg>
+            </div>
+            <h3 class="feature-title">Native GPU Acceleration</h3>
+            <p class="feature-desc">Pre-compiled C++ inference engines for NVIDIA CUDA 12, AMD/Intel Vulkan, and AVX2 CPU backends — no driver gymnastics required.</p>
+          </div>
+        </div>
+
+        <!-- Feature 2: Uncensored Local LLMs -->
+        <div class="feature-card reveal-item">
+          <!-- Animated Vector Artwork (Neural Synaptic Waves & Thought Matrix) -->
+          <div class="feature-hover-artwork" aria-hidden="true">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Expanding Synaptic Ripple Rings -->
+              <circle cx="50" cy="50" r="12" stroke="var(--primary)" stroke-width="1.5" style="transform-origin: center; animation: svgSonarRings 3s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;" />
+              <circle cx="50" cy="50" r="12" stroke="var(--secondary)" stroke-width="1.5" style="transform-origin: center; animation: svgSonarRings 3s cubic-bezier(0.1, 0.8, 0.3, 1) infinite 1.5s;" />
+              <!-- Synaptic Neural Network Connections -->
+              <path d="M50 50 L25 30 M50 50 L75 30 M50 50 L80 65 M50 50 L50 82 M50 50 L20 68" stroke="var(--primary-light)" stroke-width="1.4" stroke-dasharray="4 3" opacity="0.6" />
+              <!-- Pulsing Synaptic Nodes -->
+              <circle cx="50" cy="50" r="8" fill="var(--primary)" style="transform-origin: center; animation: svgPulseGlow 2s ease-in-out infinite;" />
+              <circle cx="25" cy="30" r="5" fill="var(--secondary)" style="transform-origin: 25px 30px; animation: svgSynapseBlink 2.2s infinite 0.2s;" />
+              <circle cx="75" cy="30" r="5.5" fill="var(--primary-light)" style="transform-origin: 75px 30px; animation: svgSynapseBlink 2.6s infinite 0.7s;" />
+              <circle cx="80" cy="65" r="4.5" fill="var(--secondary-light)" style="transform-origin: 80px 65px; animation: svgSynapseBlink 2.4s infinite 1.1s;" />
+              <circle cx="50" cy="82" r="5" fill="var(--primary)" style="transform-origin: 50px 82px; animation: svgSynapseBlink 2.1s infinite 0.5s;" />
+              <circle cx="20" cy="68" r="4" fill="var(--secondary)" style="transform-origin: 20px 68px; animation: svgSynapseBlink 2.8s infinite 0.9s;" />
+            </svg>
+          </div>
+          <div class="feature-card-content">
+            <div class="feature-icon-wrapper">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            </div>
+            <h3 class="feature-title">Uncensored Local LLMs</h3>
+            <p class="feature-desc">Run GGUF large language models via llama.cpp with full dialogue capabilities — entirely offline, entirely yours.</p>
+          </div>
+        </div>
+
+        <!-- Feature 3: Zero Telemetry -->
+        <div class="feature-card reveal-item">
+          <!-- Animated Vector Artwork (Sovereign Shield & Rotating Radar Sweep) -->
+          <div class="feature-hover-artwork" aria-hidden="true">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer Radar Grid -->
+              <circle cx="50" cy="50" r="42" stroke="var(--primary)" stroke-width="1" stroke-dasharray="4 4" opacity="0.35" />
+              <circle cx="50" cy="50" r="28" stroke="var(--secondary)" stroke-width="1" stroke-dasharray="6 6" opacity="0.3" />
+              <!-- Rotating Radar Sweep Wedge -->
+              <g style="transform-origin: 50px 50px; animation: svgRadarSweep 4s linear infinite;">
+                <path d="M50 50 L92 50 A42 42 0 0 0 79 21 Z" fill="url(#radarSweepGrad)" opacity="0.6" />
+                <line x1="50" y1="50" x2="92" y2="50" stroke="var(--primary-light)" stroke-width="1.8" />
+              </g>
+              <defs>
+                <radialGradient id="radarSweepGrad" cx="50" cy="50" r="42" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="var(--primary)" stop-opacity="0.5" />
+                  <stop offset="1" stop-color="var(--primary)" stop-opacity="0" />
+                </radialGradient>
+              </defs>
+              <!-- High-Tech Shield Outline -->
+              <path d="M50 20 L72 30 V50 C72 65 50 78 50 78 C50 78 28 65 28 50 V30 Z" stroke="var(--primary)" stroke-width="2" fill="rgba(10,14,20,0.85)" />
+              <!-- Center Keylock / Sovereign Sigil -->
+              <circle cx="50" cy="46" r="4.5" fill="var(--primary-light)" style="transform-origin: 50px 46px; animation: svgPulseGlow 2.4s ease-in-out infinite;" />
+              <path d="M50 50 V58" stroke="var(--primary-light)" stroke-width="2.5" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div class="feature-card-content">
+            <div class="feature-icon-wrapper">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            </div>
+            <h3 class="feature-title">Zero Telemetry</h3>
+            <p class="feature-desc">No cloud calls, no usage tracking, no data mining. Your prompts, your outputs, and your models never leave your machine.</p>
+          </div>
+        </div>
+
+        <!-- Feature 4: One-Click Offline Install -->
+        <div class="feature-card reveal-item">
+          <!-- Animated Vector Artwork (Quantum Funnel & Speed Download Beams) -->
+          <div class="feature-hover-artwork" aria-hidden="true">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Streaming Downward Beacons -->
+              <line x1="32" y1="12" x2="32" y2="40" stroke="var(--secondary)" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="14 10" style="animation: svgDataStream 1.8s linear infinite;" />
+              <line x1="50" y1="8" x2="50" y2="44" stroke="var(--primary-light)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="18 12" style="animation: svgDataStream 1.3s linear infinite 0.2s;" />
+              <line x1="68" y1="16" x2="68" y2="42" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="14 10" style="animation: svgDataStream 1.6s linear infinite 0.5s;" />
+              <!-- Rotating Geometric Download Crucible -->
+              <g style="transform-origin: 50px 65px; animation: svgSpinFast 14s linear infinite;">
+                <polygon points="50,42 74,54 74,76 50,88 26,76 26,54" stroke="var(--primary)" stroke-width="1.5" fill="none" opacity="0.5" />
+              </g>
+              <g style="transform-origin: 50px 65px; animation: svgSpinSlow 10s linear infinite;">
+                <circle cx="50" cy="65" r="16" stroke="var(--secondary)" stroke-width="1.2" stroke-dasharray="8 6" fill="none" />
+              </g>
+              <!-- Core Glowing Energy Sphere -->
+              <circle cx="50" cy="65" r="7" fill="var(--primary)" style="transform-origin: 50px 65px; animation: svgPulseGlow 2s ease-in-out infinite;" />
+              <circle cx="50" cy="65" r="3" fill="#ffffff" />
+            </svg>
+          </div>
+          <div class="feature-card-content">
+            <div class="feature-icon-wrapper">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            </div>
+            <h3 class="feature-title">One-Click Offline Install</h3>
+            <p class="feature-desc">Bundled all-in-one installer ships every engine pre-compiled. Get from download to first generation in minutes.</p>
+          </div>
+        </div>
+
+        <!-- Feature 5: Cross-Platform -->
+        <div class="feature-card reveal-item">
+          <!-- Animated Vector Artwork (Tri-OS Planetary Electron Orbitals) -->
+          <div class="feature-hover-artwork" aria-hidden="true">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Central Master Node -->
+              <circle cx="50" cy="50" r="9" fill="var(--primary)" style="transform-origin: 50px 50px; animation: svgPulseGlow 2.2s ease-in-out infinite;" />
+              <circle cx="50" cy="50" r="4" fill="#ffffff" />
+              <!-- Orbit 1 (Horizontal Ellipse) -->
+              <ellipse cx="50" cy="50" rx="42" ry="16" stroke="var(--primary-light)" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.5" style="transform-origin: 50px 50px; transform: rotate(-25deg);" />
+              <!-- Orbit 2 (Counter Ellipse) -->
+              <ellipse cx="50" cy="50" rx="42" ry="16" stroke="var(--secondary)" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.5" style="transform-origin: 50px 50px; transform: rotate(45deg);" />
+              <!-- Rotating Satellite Group 1 -->
+              <g style="transform-origin: 50px 50px; animation: svgOrbitPlanets 6s linear infinite;">
+                <circle cx="90" cy="50" r="5" fill="var(--primary-light)" style="filter: drop-shadow(0 0 6px var(--primary));" />
+                <circle cx="10" cy="50" r="3.5" fill="var(--secondary)" />
+              </g>
+              <!-- Rotating Satellite Group 2 -->
+              <g style="transform-origin: 50px 50px; animation: svgSpinSlow 9s linear infinite;">
+                <circle cx="50" cy="14" r="4.5" fill="var(--secondary-light)" style="filter: drop-shadow(0 0 6px var(--secondary));" />
+                <circle cx="50" cy="86" r="4" fill="var(--primary)" />
+              </g>
+            </svg>
+          </div>
+          <div class="feature-card-content">
+            <div class="feature-icon-wrapper">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z"/></svg>
+            </div>
+            <h3 class="feature-title">Cross-Platform</h3>
+            <p class="feature-desc">Native installers for Windows, Linux, and macOS. AppImage, .deb, and macOS app bundle all available.</p>
+          </div>
+        </div>
+
+        <!-- Feature 6: Open-Source Core -->
+        <div class="feature-card reveal-item">
+          <!-- Animated Vector Artwork (Algorithmic Fractal Code Brackets & Infinity Flow) -->
+          <div class="feature-hover-artwork" aria-hidden="true">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer Hexagon Matrix -->
+              <g style="transform-origin: 50px 50px; animation: svgSpinSlow 20s linear infinite;">
+                <polygon points="50,12 83,31 83,69 50,88 17,69 17,31" stroke="var(--primary)" stroke-width="1.2" stroke-dasharray="10 6" opacity="0.4" />
+              </g>
+              <g style="transform-origin: 50px 50px; animation: svgSpinFast 15s linear infinite;">
+                <circle cx="50" cy="50" r="32" stroke="var(--secondary)" stroke-width="1" stroke-dasharray="8 8" opacity="0.4" />
+              </g>
+              <!-- Animated Code Brackets < / > -->
+              <path d="M36 38 L24 50 L36 62" stroke="var(--primary-light)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: 30px 50px; animation: svgPulseGlow 2.4s ease-in-out infinite;" />
+              <path d="M46 64 L54 36" stroke="var(--secondary-light)" stroke-width="2.2" stroke-linecap="round" style="animation: svgLaserFlow 2s linear infinite;" />
+              <path d="M64 38 L76 50 L64 62" stroke="var(--primary-light)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: 70px 50px; animation: svgPulseGlow 2.4s ease-in-out infinite 0.4s;" />
+              <!-- Floating Binary Dots -->
+              <circle cx="50" cy="24" r="2" fill="var(--primary)" />
+              <circle cx="50" cy="76" r="2" fill="var(--primary)" />
+              <circle cx="24" cy="50" r="1.5" fill="var(--secondary)" />
+              <circle cx="76" cy="50" r="1.5" fill="var(--secondary)" />
+            </svg>
+          </div>
+          <div class="feature-card-content">
+            <div class="feature-icon-wrapper">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+            </div>
+            <h3 class="feature-title">Open-Source Core</h3>
+            <p class="feature-desc">Built on stable-diffusion.cpp and llama.cpp. Inspect, modify, and extend — the engine is transparent by design.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download Section (with Themed Hero Backdrop WebP & Platform Highlight) -->
+  <section class="section download-section" id="download">
+    <div class="download-bg-layer" id="downloadBgLayer"></div>
+    <div class="download-vignette"></div>
+
+    <div class="container">
+      <div class="section-header reveal-item" style="position: relative; z-index: 2;">
+        <span class="overline-badge">Get Started</span>
+        <h2 class="section-title">Download Solframe Studio</h2>
+        <p class="section-subtitle">Native installers for Windows, Linux, and macOS — hosted on GitHub Releases.</p>
+      </div>
+
+      <div class="download-grid">
+        <!-- Windows Complete -->
+        <div class="download-card" id="card-windows-complete">
+          <span class="os-badge-chip">Recommended for your OS</span>
+          <div>
+            <div class="card-top">
+              <div class="download-icon-box">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+              </div>
+              <div>
+                <h4 class="download-card-title">Complete Installer</h4>
+                <span class="download-platform">Windows · All engines</span>
+              </div>
+            </div>
+            <p class="download-desc">All-in-one offline package. Bundles CUDA 12, Vulkan, AVX2 CPU, and llama-server.</p>
+          </div>
+          <a href="{{DOWNLOAD_WIN_COMPLETE}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            Download .exe
+          </a>
+        </div>
+
+        <!-- Windows Lightweight -->
+        <div class="download-card" id="card-windows-light">
+          <div>
+            <div class="card-top">
+              <div class="download-icon-box">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+              </div>
+              <div>
+                <h4 class="download-card-title">Lightweight Installer</h4>
+                <span class="download-platform">Windows · UI shell</span>
+              </div>
+            </div>
+            <p class="download-desc">Faster download. Ships the interface without bundled GPU libraries.</p>
+          </div>
+          <a href="{{DOWNLOAD_WIN_LIGHT}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            Download Shell
+          </a>
+        </div>
+
+        <!-- Linux AppImage -->
+        <div class="download-card" id="card-linux-appimage">
+          <span class="os-badge-chip">Recommended for your OS</span>
+          <div>
+            <div class="card-top">
+              <div class="download-icon-box">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+              </div>
+              <div>
+                <h4 class="download-card-title">AppImage</h4>
+                <span class="download-platform">Linux · Portable</span>
+              </div>
+            </div>
+            <p class="download-desc">Single-file app. chmod +x then run. Works across modern distributions.</p>
+          </div>
+          <a href="{{DOWNLOAD_LINUX_APPIMAGE}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline" id="btn-linux-appimage">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            Download .AppImage
+          </a>
+        </div>
+
+        <!-- Linux .deb -->
+        <div class="download-card" id="card-linux-deb">
+          <div>
+            <div class="card-top">
+              <div class="download-icon-box">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+              </div>
+              <div>
+                <h4 class="download-card-title">.deb Package</h4>
+                <span class="download-platform">Linux · Debian-based</span>
+              </div>
+            </div>
+            <p class="download-desc">Install with sudo apt install. Clean system integration.</p>
+          </div>
+          <a href="{{DOWNLOAD_LINUX_DEB}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            Download .deb
+          </a>
+        </div>
+
+        <!-- macOS App Bundle -->
+        <div class="download-card" id="card-macos-app">
+          <span class="os-badge-chip">Recommended for your OS</span>
+          <div>
+            <div class="card-top">
+              <div class="download-icon-box">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 0.92-2.85-.9.04-2 0.6-2.65 1.35-.58.66-1.09 1.73-.95 2.76.99.08 2.06-.51 2.68-1.26z"/></svg>
+              </div>
+              <div>
+                <h4 class="download-card-title">App Bundle (.zip)</h4>
+                <span class="download-platform">macOS · Unsigned</span>
+              </div>
+            </div>
+            <p class="download-desc">Unzip and move to Applications. Right-click → Open on first launch.</p>
+          </div>
+          <a href="{{DOWNLOAD_MAC_ZIP}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline" id="btn-macos-app">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            Download .zip
+          </a>
+        </div>
+      </div>
+
+      <!-- Direct Terminal Install -->
+      <div class="terminal-container reveal-item">
+        <div class="terminal-header-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          Direct Installation by Terminal
+        </div>
+
+        <div class="terminal-box">
+          <div class="terminal-bar">
+            <div class="terminal-dots-label">
+              <div class="window-dots">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+              </div>
+              <span class="terminal-label" id="terminalShellLabel">bash</span>
+            </div>
+            <button class="copy-btn" id="copyBtn" aria-label="Copy to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <pre class="terminal-code"><code id="terminalCommands"><span class="terminal-line"><span class="terminal-prompt">$</span>git clone https://github.com/Protik1810/Solframe-Studio.git</span><span class="terminal-line"><span class="terminal-prompt">$</span>cd Solframe-Studio</span><span class="terminal-line"><span class="terminal-prompt">$</span>npm install</span><span class="terminal-line"><span class="terminal-prompt">$</span><span id="terminalBuildCmd">npm run electron:build:win</span></span></code></pre>
+        </div>
+
+        <p class="terminal-footer-caption" id="terminalCaption">
+          Produces a native Windows package. Swap build script for Linux (<code>electron:build:linux</code>) or macOS (<code>electron:build:mac</code>).
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- About / Creator Section (with Themed Backdrop and Padded Emblem) -->
+  <section class="section about-section" id="about">
+    <div class="container">
+      <div class="about-card reveal-item">
+        <div class="about-card-bg" id="aboutCardBg"></div>
+        <img src="{{EMBLEM_emerald-matrix}}" class="about-corner-emblem" id="aboutCornerEmblem" alt="Theme Emblem" />
+        <div class="about-avatar-wrapper">
+          <img src="https://avatars.githubusercontent.com/Protik1810" alt="Lord Protik" class="about-avatar" />
+        </div>
+        <div class="about-details">
+          <span class="overline-badge">Crafted By</span>
+          <h2 class="about-name">Lord Protik</h2>
+          <p class="about-bio">
+            Engineered with a mission for sovereign, privacy-first generative AI. Built to give creators complete autonomy over cutting-edge diffusion synthesis and large language models directly on personal desktop hardware — free from cloud subscriptions, data mining, and platform lock-in.
+          </p>
+          <div class="about-actions">
+            <a href="https://github.com/Protik1810" target="_blank" rel="noopener noreferrer" class="btn-outlined" style="padding: 10px 20px; font-size: 0.9rem;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              @Protik1810
+            </a>
+            <a href="https://github.com/Protik1810/Solframe-Studio" target="_blank" rel="noopener noreferrer" style="color: var(--primary-light); text-decoration: none; font-weight: 500; font-size: 0.95rem;">
+              View the project →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-top-line"></div>
+    <div class="container">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <div class="brand-group">
+            <div class="brand-icon-box" style="width: 32px; height: 32px;">
+              <img src="{{EMBLEM_emerald-matrix}}" id="footerBrandLogo" class="brand-icon-img" alt="Solframe Logo" />
+            </div>
+            <span class="brand-title">Solframe<span class="brand-accent"> Studio</span></span>
+          </div>
+          <span style="font-size: 0.84rem; color: var(--text-secondary);">The Sovereign Desktop Generative AI Workstation</span>
+        </div>
+
+        <div class="footer-links">
+          <a href="#showcase" class="footer-link">Showcase</a>
+          <a href="#features" class="footer-link">Features</a>
+          <a href="#download" class="footer-link">Download</a>
+          <a href="#about" class="footer-link">About</a>
+        </div>
+
+        <div>
+          <a href="https://github.com/Protik1810/Solframe-Studio" target="_blank" rel="noopener noreferrer" class="nav-icon-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-disclaimer">
+        Uncensored models can produce inaccurate, offensive, or unsafe content. You are solely responsible for what you generate and how you use it. Solframe Studio is an independent project and is not affiliated with any model provider.
+      </div>
+      <div class="footer-copy">
+        Built on stable-diffusion.cpp &amp; llama.cpp • Open source under respective licenses • <a href="LICENSE" style="color: var(--primary-light); text-decoration: none;">GNU GPL v3.0</a> • <a href="TERMS.md" style="color: var(--primary-light); text-decoration: none;">Terms &amp; Conditions</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Theme Selector Modal Dialog -->
+  <div class="theme-modal-backdrop" id="themeModalBackdrop">
+    <div class="theme-modal-content">
+      <div class="theme-modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.5rem;">🎨</span>
+          <div>
+            <h3 class="theme-modal-title">Select Studio Theme</h3>
+            <span style="font-size: 0.84rem; color: var(--text-secondary);">Switches wallpapers, transparent emblem, and dynamic ambient lighting</span>
+          </div>
+        </div>
+        <button class="theme-close-btn" onclick="toggleThemeModal()">&times;</button>
+      </div>
+
+      <div class="theme-cards-grid">
+        <!-- 1. Emerald Matrix -->
+        <div class="theme-select-card active" data-theme="emerald-matrix" onclick="selectTheme('emerald-matrix')">
+          <div class="theme-card-preview" style="background-image: url('{{HERO_emerald-matrix}}');">
+            <img src="{{EMBLEM_emerald-matrix}}" class="theme-card-preview-emblem" alt="Emerald Emblem" />
+            <span class="theme-card-badge" style="border-color: #10b981; color: #10b981;">Active</span>
+          </div>
+          <div class="theme-card-info">
+            <h4 class="theme-card-name" style="color: #10b981;">Emerald Matrix</h4>
+            <p class="theme-card-tag">Cybernetic data streams, matrix energy core &amp; green circuit trails.</p>
+          </div>
+        </div>
+
+        <!-- 2. Cinema Gold -->
+        <div class="theme-select-card" data-theme="cinema-gold" onclick="selectTheme('cinema-gold')">
+          <div class="theme-card-preview" style="background-image: url('{{HERO_cinema-gold}}');">
+            <img src="{{EMBLEM_cinema-gold}}" class="theme-card-preview-emblem" alt="Cinema Gold Emblem" />
+            <span class="theme-card-badge" style="border-color: #fbbf24; color: #fbbf24;">Gold</span>
+          </div>
+          <div class="theme-card-info">
+            <h4 class="theme-card-name" style="color: #fbbf24;">Cinema Gold</h4>
+            <p class="theme-card-tag">Warm tungsten film set, vintage soundstage &amp; amber spotlights.</p>
+          </div>
+        </div>
+
+        <!-- 3. Dark Void -->
+        <div class="theme-select-card" data-theme="dark-void" onclick="selectTheme('dark-void')">
+          <div class="theme-card-preview" style="background-image: url('{{HERO_dark-void}}');">
+            <img src="{{EMBLEM_dark-void}}" class="theme-card-preview-emblem" alt="Dark Void Emblem" />
+            <span class="theme-card-badge" style="border-color: #38bdf8; color: #38bdf8;">Cosmic</span>
+          </div>
+          <div class="theme-card-info">
+            <h4 class="theme-card-name" style="color: #38bdf8;">Dark Void</h4>
+            <p class="theme-card-tag">Deep cosmic abyss, interstellar nebula &amp; neural constellation lines.</p>
+          </div>
+        </div>
+
+        <!-- 4. Anime Fantasy -->
+        <div class="theme-select-card" data-theme="anime-fantasy" onclick="selectTheme('anime-fantasy')">
+          <div class="theme-card-preview" style="background-image: url('{{HERO_anime-fantasy}}');">
+            <img src="{{EMBLEM_anime-fantasy}}" class="theme-card-preview-emblem" alt="Anime Fantasy Emblem" />
+            <span class="theme-card-badge" style="border-color: #f472b6; color: #f472b6;">Sakura</span>
+          </div>
+          <div class="theme-card-info">
+            <h4 class="theme-card-name" style="color: #f472b6;">Anime Fantasy</h4>
+            <p class="theme-card-tag">Floating sky islands, blooming sakura, twin moons &amp; aurora sky.</p>
+          </div>
+        </div>
+
+        <!-- 5. Neon Cyber -->
+        <div class="theme-select-card" data-theme="neon-cyber" onclick="selectTheme('neon-cyber')">
+          <div class="theme-card-preview" style="background-image: url('{{HERO_neon-cyber}}');">
+            <img src="{{EMBLEM_neon-cyber}}" class="theme-card-preview-emblem" alt="Neon Cyber Emblem" />
+            <span class="theme-card-badge" style="border-color: #00f0ff; color: #00f0ff;">Cyber</span>
+          </div>
+          <div class="theme-card-info">
+            <h4 class="theme-card-name" style="color: #00f0ff;">Neon Cyber</h4>
+            <p class="theme-card-tag">Rain-slicked cyberpunk street with glowing cyan &amp; magenta signs.</p>
+          </div>
+        </div>
+
+        <!-- 6. Synthwave -->
+        <div class="theme-select-card" data-theme="synthwave" onclick="selectTheme('synthwave')">
+          <div class="theme-card-preview" style="background-image: url('{{HERO_synthwave}}');">
+            <img src="{{EMBLEM_synthwave}}" class="theme-card-preview-emblem" alt="Synthwave Emblem" />
+            <span class="theme-card-badge" style="border-color: #ff3399; color: #ff3399;">80s Outrun</span>
+          </div>
+          <div class="theme-card-info">
+            <h4 class="theme-card-name" style="color: #ff3399;">Synthwave</h4>
+            <p class="theme-card-tag">Retro 80s grid highway, neon geometric sunset &amp; arcade vibes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Theme Switcher Quick Bar -->
+  <div class="theme-picker-floater" id="themePicker">
+    <span class="theme-picker-label">Theme:</span>
+    <button class="theme-dot-btn active" data-theme-name="emerald-matrix" style="background: #10b981;" title="Emerald Matrix"></button>
+    <button class="theme-dot-btn" data-theme-name="cinema-gold" style="background: #fbbf24;" title="Cinema Gold"></button>
+    <button class="theme-dot-btn" data-theme-name="dark-void" style="background: #38bdf8;" title="Dark Void"></button>
+    <button class="theme-dot-btn" data-theme-name="anime-fantasy" style="background: #f472b6;" title="Anime Fantasy"></button>
+    <button class="theme-dot-btn" data-theme-name="neon-cyber" style="background: #00f0ff;" title="Neon Cyber"></button>
+    <button class="theme-dot-btn" data-theme-name="synthwave" style="background: #ff3399;" title="Synthwave"></button>
+  </div>
+
+  <!-- JavaScript Interactivity -->
+  <script>
+    const themeEmblemsData = {
+      'emerald-matrix': '{{EMBLEM_emerald-matrix}}',
+      'cinema-gold': '{{EMBLEM_cinema-gold}}',
+      'dark-void': '{{EMBLEM_dark-void}}',
+      'anime-fantasy': '{{EMBLEM_anime-fantasy}}',
+      'neon-cyber': '{{EMBLEM_neon-cyber}}',
+      'synthwave': '{{EMBLEM_synthwave}}'
+    };
+
+    // -------------------------------------------------------------
+    // Platform & OS Detection
+    // -------------------------------------------------------------
+    let detectedPlatformInfo = null;
+
+    function detectPlatform() {
+      const ua = navigator.userAgent.toLowerCase();
+      const platform = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
+
+      if (platform.includes('win') || ua.includes('windows')) {
+        const is64 = ua.includes('win64') || ua.includes('x64') || ua.includes('wow64') || navigator.userAgentData?.bitness === '64';
+        return {
+          os: 'windows',
+          name: 'Windows',
+          archText: is64 ? '64-bit' : '32-bit',
+          ctaText: 'Download for Windows',
+          ctaSub: is64 ? 'Detected: Windows (x64) • CUDA 12 & Vulkan Bundled' : 'Detected: Windows',
+          cardId: 'card-windows-complete',
+          btnId: null,
+          shellLabel: 'powershell',
+          buildCmd: 'npm run electron:build',
+          captionText: 'Produces a native Windows package. Swap build script for Linux (electron:build:linux) or macOS (electron:build:mac).'
+        };
+      } else if (platform.includes('mac') || ua.includes('macintosh') || ua.includes('mac os')) {
+        const isArm = ua.includes('arm') || ua.includes('apple') || navigator.userAgentData?.architecture === 'arm';
+        return {
+          os: 'macos',
+          name: 'macOS',
+          archText: isArm ? 'Apple Silicon' : 'Universal',
+          ctaText: 'Download for macOS',
+          ctaSub: 'Detected: macOS • Unsigned App Bundle',
+          cardId: 'card-macos-app',
+          btnId: 'btn-macos-app',
+          shellLabel: 'zsh',
+          buildCmd: 'npm run electron:build:mac',
+          captionText: 'Produces an unsigned macOS .zip app bundle. Right-click → Open on initial launch.'
+        };
+      } else if (platform.includes('linux') || ua.includes('linux') || ua.includes('x11')) {
+        return {
+          os: 'linux',
+          name: 'Linux',
+          archText: 'x86_64',
+          ctaText: 'Download for Linux',
+          ctaSub: 'Detected: Linux • AppImage & .deb Available',
+          cardId: 'card-linux-appimage',
+          btnId: 'btn-linux-appimage',
+          shellLabel: 'bash',
+          buildCmd: 'npm run electron:build:linux',
+          captionText: 'Produces an AppImage + .deb on Linux with native Vulkan and AVX2 CPU kernels.'
+        };
+      }
+
+      return {
+        os: 'generic',
+        name: 'Desktop',
+        archText: '',
+        ctaText: 'Download Solframe',
+        ctaSub: 'Available for Windows, Linux & macOS',
+        cardId: 'card-windows-complete',
+        btnId: null,
+        shellLabel: 'bash',
+        buildCmd: 'npm run electron:build:linux',
+        captionText: 'Produces an AppImage + .deb on Linux, .exe on Windows, or .zip on macOS.'
+      };
+    }
+
+    function applyPlatformDetection() {
+      const p = detectPlatform();
+      detectedPlatformInfo = p;
+
+      // Hero elements
+      const heroPlatformChip = document.getElementById('heroPlatformChip');
+      const heroCtaText = document.getElementById('heroCtaText');
+      const detectedOsName = document.getElementById('detectedOsName');
+      const terminalBuildCmd = document.getElementById('terminalBuildCmd');
+      const terminalShellLabel = document.getElementById('terminalShellLabel');
+      const terminalCaption = document.getElementById('terminalCaption');
+
+      if (heroPlatformChip) {
+        heroPlatformChip.textContent = `Detected: ${p.name} ${p.archText}`;
+      }
+      if (heroCtaText) {
+        heroCtaText.textContent = p.ctaText;
+      }
+      if (detectedOsName) {
+        detectedOsName.textContent = `${p.name} (${p.archText || 'Desktop'})`;
+      }
+
+      // Highlight recommended card in download grid
+      document.querySelectorAll('.download-card').forEach(c => c.classList.remove('detected-os'));
+      const targetCard = document.getElementById(p.cardId);
+      if (targetCard) {
+        targetCard.classList.add('detected-os');
+        const primaryBtn = targetCard.querySelector('.btn-download-card');
+        if (primaryBtn) {
+          primaryBtn.classList.remove('btn-download-outline');
+          primaryBtn.classList.add('btn-download-primary');
+        }
+      }
+
+      // Update terminal box code
+      if (terminalBuildCmd) terminalBuildCmd.textContent = p.buildCmd;
+      if (terminalShellLabel) terminalShellLabel.textContent = p.shellLabel;
+      if (terminalCaption) terminalCaption.textContent = p.captionText;
+    }
+
+    applyPlatformDetection();
+
+    // Navbar scroll effect & parallax
+    const navbar = document.getElementById('navbar');
+    const heroBgLayer = document.getElementById('heroBgLayer');
+    const floatingOrb = document.getElementById('floatingOrb');
+
+    window.addEventListener('scroll', () => {
+      const scrollY = window.scrollY;
+      if (scrollY > 40) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+
+      if (heroBgLayer) {
+        heroBgLayer.style.transform = `translateY(${scrollY * 0.35}px) scale(${1 + scrollY * 0.0004})`;
+      }
+      if (floatingOrb) {
+        floatingOrb.style.transform = `translateY(${scrollY * 0.12}px)`;
+      }
+    }, { passive: true });
+
+    // Scroll Reveal (Intersection Observer)
+    const revealItems = document.querySelectorAll('.reveal-item');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    revealItems.forEach(item => observer.observe(item));
+
+    // Terminal copy button
+    const copyBtn = document.getElementById('copyBtn');
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        const cmd = detectedPlatformInfo?.buildCmd || 'npm run electron:build:linux';
+        const fullTerminalText = `git clone https://github.com/Protik1810/Solframe-Studio.git\ncd Solframe-Studio\nnpm install\n${cmd}`;
+        await navigator.clipboard.writeText(fullTerminalText);
+        copyBtn.classList.add('copied');
+        copyBtn.querySelector('span').textContent = 'Copied!';
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.querySelector('span').textContent = 'Copy';
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy: ', err);
+      }
+    });
+
+    // Mobile Drawer
+    const mobileToggle = document.getElementById('mobileToggle');
+    const mobileDrawer = document.getElementById('mobileDrawer');
+    const drawerOverlay = document.getElementById('drawerOverlay');
+    const closeDrawer = document.getElementById('closeDrawer');
+
+    function toggleDrawer() {
+      mobileDrawer.classList.toggle('open');
+      drawerOverlay.classList.toggle('open');
+    }
+
+    if (mobileToggle) mobileToggle.addEventListener('click', toggleDrawer);
+    if (drawerOverlay) drawerOverlay.addEventListener('click', toggleDrawer);
+    if (closeDrawer) closeDrawer.addEventListener('click', toggleDrawer);
+
+    // -------------------------------------------------------------
+    // 3D Depth Coverflow Carousel Logic (Responsive Auto Aspect Ratio)
+    // -------------------------------------------------------------
+    const slides = document.querySelectorAll('.coverflow-slide');
+    const dots = document.querySelectorAll('.carousel-dot');
+    const slideBadge = document.getElementById('slideCounterBadge');
+    const totalSlides = slides.length;
+    let currentIndex = 0;
+    let autoPlayTimer = null;
+
+    function updateCoverflow() {
+      slides.forEach((slide, idx) => {
+        slide.className = 'coverflow-slide';
+        
+        let offset = idx - currentIndex;
+        // Circular wrap
+        if (offset > totalSlides / 2) offset -= totalSlides;
+        if (offset < -totalSlides / 2) offset += totalSlides;
+
+        if (offset === 0) {
+          slide.classList.add('pos-center');
+        } else if (offset === -1) {
+          slide.classList.add('pos-left-1');
+        } else if (offset === 1) {
+          slide.classList.add('pos-right-1');
+        } else if (offset === -2) {
+          slide.classList.add('pos-left-2');
+        } else if (offset === 2) {
+          slide.classList.add('pos-right-2');
+        } else {
+          slide.classList.add('pos-hidden');
+        }
+      });
+
+      // Update dots & badge
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === currentIndex);
+      });
+      if (slideBadge) {
+        slideBadge.textContent = `${currentIndex + 1} / ${totalSlides}`;
+      }
+    }
+
+    function setSlide(idx) {
+      currentIndex = (idx + totalSlides) % totalSlides;
+      updateCoverflow();
+      resetAutoplay();
+    }
+
+    function nextSlide() {
+      setSlide(currentIndex + 1);
+    }
+
+    function prevSlide() {
+      setSlide(currentIndex - 1);
+    }
+
+    // Auto-advance
+    function startAutoplay() {
+      if (autoPlayTimer) clearInterval(autoPlayTimer);
+      autoPlayTimer = setInterval(nextSlide, 4500);
+    }
+
+    function stopAutoplay() {
+      if (autoPlayTimer) clearInterval(autoPlayTimer);
+    }
+
+    function resetAutoplay() {
+      stopAutoplay();
+      startAutoplay();
+    }
+
+    const stage = document.getElementById('viewport3DStage');
+    if (stage) {
+      stage.addEventListener('mouseenter', stopAutoplay);
+      stage.addEventListener('mouseleave', startAutoplay);
+      
+      // Mouse wheel navigation
+      stage.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaX) > 30 || Math.abs(e.deltaY) > 30) {
+          if (e.deltaY > 0 || e.deltaX > 0) nextSlide();
+          else prevSlide();
+        }
+      }, { passive: true });
+    }
+
+    // Hover slide focus behavior
+    slides.forEach((slide, idx) => {
+      slide.addEventListener('mouseenter', () => {
+        if (idx !== currentIndex) {
+          setSlide(idx);
+        }
+      });
+    });
+
+    // Initialize 3D carousel
+    updateCoverflow();
+    startAutoplay();
+
+    // -------------------------------------------------------------
+    // Theme Modal & Switching Logic
+    // -------------------------------------------------------------
+    const themeModal = document.getElementById('themeModalBackdrop');
+    const heroFloatingEmblem = document.getElementById('heroFloatingEmblem');
+    const navBrandLogo = document.getElementById('navBrandLogo');
+    const drawerBrandLogo = document.getElementById('drawerBrandLogo');
+    const footerBrandLogo = document.getElementById('footerBrandLogo');
+    const aboutCornerEmblem = document.getElementById('aboutCornerEmblem');
+    const navThemeDot = document.getElementById('navThemeDot');
+
+    function toggleThemeModal() {
+      themeModal.classList.toggle('open');
+    }
+
+    themeModal.addEventListener('click', (e) => {
+      if (e.target === themeModal) {
+        toggleThemeModal();
+      }
+    });
+
+    function selectTheme(themeName) {
+      document.body.setAttribute('data-theme', themeName);
+      localStorage.setItem('solframe_theme', themeName);
+
+      // Update emblems
+      const emblemSrc = themeEmblemsData[themeName] || themeEmblemsData['emerald-matrix'];
+      if (heroFloatingEmblem) heroFloatingEmblem.src = emblemSrc;
+      if (navBrandLogo) navBrandLogo.src = emblemSrc;
+      if (drawerBrandLogo) drawerBrandLogo.src = emblemSrc;
+      if (footerBrandLogo) footerBrandLogo.src = emblemSrc;
+      if (aboutCornerEmblem) aboutCornerEmblem.src = emblemSrc;
+
+      // Update dots
+      document.querySelectorAll('.theme-dot-btn').forEach(btn => {
+        if (btn.getAttribute('data-theme-name') === themeName) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Update modal cards
+      document.querySelectorAll('.theme-select-card').forEach(card => {
+        const isCurrent = card.getAttribute('data-theme') === themeName;
+        card.classList.toggle('active', isCurrent);
+        const badge = card.querySelector('.theme-card-badge');
+        if (badge) {
+          badge.textContent = isCurrent ? 'Active' : card.getAttribute('data-theme').split('-')[0].toUpperCase();
+        }
+      });
+    }
+
+    document.querySelectorAll('.theme-dot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = btn.getAttribute('data-theme-name');
+        selectTheme(theme);
+      });
+    });
+
+    const savedTheme = localStorage.getItem('solframe_theme');
+    if (savedTheme) {
+      selectTheme(savedTheme);
+    }
+  </script>
+</body>
+</html>
