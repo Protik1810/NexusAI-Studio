@@ -19,6 +19,7 @@ export interface AspectRatioOption {
   width: number;
   height: number;
   icon: string;
+  isCustom?: boolean;
 }
 
 export interface LocalModelItem {
@@ -62,6 +63,10 @@ export interface ImageControlsProps {
   aspectRatios: AspectRatioOption[];
   selectedRatio: number;
   setSelectedRatio: (r: number) => void;
+  customWidth: number;
+  setCustomWidth: (w: number) => void;
+  customHeight: number;
+  setCustomHeight: (h: number) => void;
   showAdvanced: boolean;
   setShowAdvanced: (s: boolean) => void;
   samplingMethod: string;
@@ -109,6 +114,10 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
   aspectRatios,
   selectedRatio,
   setSelectedRatio,
+  customWidth,
+  setCustomWidth,
+  customHeight,
+  setCustomHeight,
   showAdvanced,
   setShowAdvanced,
   samplingMethod,
@@ -410,10 +419,44 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
             >
               <span style={{ fontSize: '14px' }}>{r.icon}</span>
               <span style={{ fontWeight: 600 }}>{r.label}</span>
-              <span style={{ fontSize: '10px', opacity: 0.7 }}>{r.width}x{r.height}</span>
+              <span style={{ fontSize: '10px', opacity: 0.7 }}>
+                {r.isCustom ? `${customWidth}x${customHeight}` : `${r.width}x${r.height}`}
+              </span>
             </button>
           ))}
         </div>
+
+        {aspectRatios[selectedRatio]?.isCustom && (
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '8px' }}>
+            <div style={{ flex: 1 }}>
+              <label className="control-label" style={{ fontSize: '10px' }}>Width (px)</label>
+              <input
+                type="number"
+                min="64"
+                max="4096"
+                step="64"
+                value={customWidth}
+                onChange={(e) => setCustomWidth(Math.max(64, Math.min(4096, parseInt(e.target.value) || 64)))}
+                className="select-input"
+                style={{ padding: '6px 10px', fontSize: '12px' }}
+              />
+            </div>
+            <span style={{ marginTop: '14px', color: 'var(--text-muted)' }}>×</span>
+            <div style={{ flex: 1 }}>
+              <label className="control-label" style={{ fontSize: '10px' }}>Height (px)</label>
+              <input
+                type="number"
+                min="64"
+                max="4096"
+                step="64"
+                value={customHeight}
+                onChange={(e) => setCustomHeight(Math.max(64, Math.min(4096, parseInt(e.target.value) || 64)))}
+                className="select-input"
+                style={{ padding: '6px 10px', fontSize: '12px' }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 7. ADVANCED ACCORDION */}

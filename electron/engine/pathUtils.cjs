@@ -7,6 +7,25 @@ const path = require('path');
 const fs = require('fs');
 const { detectHardware } = require('./hardware.cjs');
 
+/**
+ * The per-user "Solframe Studio" app-data folder, platform-correct:
+ * %APPDATA%\Solframe Studio on Windows, ~/Library/Application Support/Solframe
+ * Studio on macOS, ~/Solframe Studio elsewhere. This is a stable, always-
+ * writable location outside the app's own install/bundle tree — unlike
+ * rootDir/resourcesPath, which in a packaged build can be read-only
+ * (Linux AppImage), root-owned (.deb under /opt), or simply wrong (mac's
+ * "resources/app" doesn't exist; the app ships as an asar file, not a folder).
+ */
+function getUserModelsRoot() {
+  const userHome = process.env.USERPROFILE || process.env.HOME || '';
+  const appDataDir = process.env.APPDATA || (
+    process.platform === 'win32' ? path.join(userHome, 'AppData/Roaming') :
+    process.platform === 'darwin' ? path.join(userHome, 'Library/Application Support') :
+    userHome
+  );
+  return path.join(appDataDir, 'Solframe Studio');
+}
+
 const STANDARD_MODEL_DIRS = [
   'models', 'AI/models', 'AI_Models', 'LLM',
   'Development/LLM', 'Development/Meta Llama', 'Development',
@@ -25,16 +44,27 @@ function getAllSystemScanPaths(rootDir = '', customPaths = []) {
   const exeDir = path.dirname(process.execPath || '');
   const candidates = [];
 
-  // 1. Dynamic drive scanning (Windows: C:, D:, E: … Z:)
-  for (const letter of 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('')) {
-    const driveRoot = `${letter}:/`;
+  // 1. Dynamic drive scanning
+  //    Windows: C:, D:, E: … Z:.  macOS/Linux have no drive letters — the
+  //    closest equivalent is /Volumes/* (macOS mount points for external
+  //    drives; the internal disk's own folders are covered by the user-home
+  //    scan below, same as Windows' C:/Users equivalent already is).
+  const driveRoots = process.platform === 'win32'
+    ? 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(letter => ({ root: `${letter}:/`, label: `${letter}:` }))
+    : (fs.existsSync('/Volumes')
+        ? fs.readdirSync('/Volumes', { withFileTypes: true })
+            .filter(e => e.isDirectory() && e.name !== 'Macintosh HD')
+            .map(e => ({ root: `/Volumes/${e.name}/`, label: e.name }))
+        : []);
+
+  for (const { root: driveRoot, label: driveLabel } of driveRoots) {
     try {
       if (fs.existsSync(driveRoot)) {
         // Direct standard AI directories
         for (const sub of STANDARD_MODEL_DIRS) {
           const full = path.join(driveRoot, sub);
           if (fs.existsSync(full)) {
-            candidates.push({ path: full.replace(/\\/g, '/'), label: `${letter}: ${sub}`, isBuiltIn: true });
+            candidates.push({ path: full.replace(/\\/g, '/'), label: `${driveLabel} ${sub}`, isBuiltIn: true });
           }
         }
 
@@ -47,11 +77,11 @@ function getAllSystemScanPaths(rootDir = '', customPaths = []) {
 
             const subModels = path.join(driveRoot, entry.name, 'models');
             if (fs.existsSync(subModels)) {
-              candidates.push({ path: subModels.replace(/\\/g, '/'), label: `${letter}: ${entry.name}/models`, isBuiltIn: true });
+              candidates.push({ path: subModels.replace(/\\/g, '/'), label: `${driveLabel} ${entry.name}/models`, isBuiltIn: true });
             }
             const subCheckpoints = path.join(driveRoot, entry.name, 'checkpoints');
             if (fs.existsSync(subCheckpoints)) {
-              candidates.push({ path: subCheckpoints.replace(/\\/g, '/'), label: `${letter}: ${entry.name}/checkpoints`, isBuiltIn: true });
+              candidates.push({ path: subCheckpoints.replace(/\\/g, '/'), label: `${driveLabel} ${entry.name}/checkpoints`, isBuiltIn: true });
             }
           }
         } catch (e2) {}
@@ -60,9 +90,8 @@ function getAllSystemScanPaths(rootDir = '', customPaths = []) {
   }
 
   // 2. User home & AppData directories (HuggingFace, LM Studio, Ollama, Solframe, etc.)
-  const appDataDir = process.env.APPDATA || (process.platform === 'win32' ? path.join(userHome, 'AppData/Roaming') : userHome);
   const userDirs = [
-    { path: path.join(appDataDir, 'Solframe Studio/models'), label: 'AppData Solframe Models' },
+    { path: path.join(getUserModelsRoot(), 'models'), label: 'AppData Solframe Models' },
     { path: path.join(userHome, '.solframe/models'), label: 'User Home Solframe Models' },
     { path: path.join(userHome, '.cache/huggingface/hub'), label: 'Hugging Face Cache' },
     { path: path.join(userHome, '.lmstudio/models'), label: 'LM Studio Models' },
@@ -144,6 +173,21 @@ function getSdCliExecutable({ rootDir = '', resourcesPath = '' } = {}) {
   const isCuda = hw.preferredBackend === 'cuda';
   const exeDir = path.dirname(process.execPath || '');
 
+  if (process.platform === 'darwin') {
+    const metalCandidates = [
+      path.join(rootDir, 'backend/mac/metal/sd-cli'),
+      path.join(resourcesPath, 'app/backend/mac/metal/sd-cli'),
+      path.join(resourcesPath, 'backend/mac/metal/sd-cli'),
+      path.join(exeDir, '../Resources/app/backend/mac/metal/sd-cli'),
+      path.join(exeDir, '../Resources/backend/mac/metal/sd-cli'),
+      path.join(__dirname, '../../backend/mac/metal/sd-cli')
+    ];
+    for (const c of metalCandidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    return metalCandidates[0];
+  }
+
   const cudaCandidates = [
     path.join(rootDir, 'backend/win/cuda/sd-cli.exe'),
     path.join(rootDir, 'backend/win/cuda/sd-cuda.exe'),
@@ -186,6 +230,22 @@ function getSdCliExecutable({ rootDir = '', resourcesPath = '' } = {}) {
  */
 function getLlamaExecutable({ rootDir = '', resourcesPath = '' } = {}) {
   const exeDir = path.dirname(process.execPath || '');
+
+  if (process.platform === 'darwin') {
+    const macCandidates = [
+      path.join(rootDir, 'backend/mac/llama/llama-server'),
+      path.join(resourcesPath, 'app/backend/mac/llama/llama-server'),
+      path.join(resourcesPath, 'backend/mac/llama/llama-server'),
+      path.join(exeDir, '../Resources/app/backend/mac/llama/llama-server'),
+      path.join(exeDir, '../Resources/backend/mac/llama/llama-server'),
+      path.join(__dirname, '../../backend/mac/llama/llama-server')
+    ];
+    for (const c of macCandidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    return macCandidates[0];
+  }
+
   const candidates = [
     path.join(rootDir, 'backend/win/llama/llama-server.exe'),
     path.join(resourcesPath, 'app/backend/win/llama/llama-server.exe'),
@@ -200,4 +260,4 @@ function getLlamaExecutable({ rootDir = '', resourcesPath = '' } = {}) {
   return candidates[0];
 }
 
-module.exports = { getAllSystemScanPaths, resolveModelFullPath, getSdCliExecutable, getLlamaExecutable };
+module.exports = { getAllSystemScanPaths, resolveModelFullPath, getSdCliExecutable, getLlamaExecutable, getUserModelsRoot };

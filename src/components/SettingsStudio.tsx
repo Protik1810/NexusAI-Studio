@@ -118,12 +118,15 @@ export const SettingsStudio: React.FC<SettingsStudioProps> = ({
   const [isScanningSystem, setIsScanningSystem] = useState<boolean>(false);
   const [systemModelsData, setSystemModelsData] = useState<SystemModelsResult | null>(null);
 
-  const fetchSystemPathsAndModels = async () => {
+  const fetchSystemPathsAndModels = async (forceRescan = false) => {
     setIsScanningSystem(true);
     try {
       const [pathsData, modelsData] = await Promise.all([
         systemModelsService.getCustomPaths(),
-        systemModelsService.fetchSystemModels()
+        // "Rescan All Drives" needs an actual fresh scan, not the cached
+        // result fetchSystemModels() alone would return — see
+        // systemModelsApi.ts's triggerRescan() doc comment.
+        forceRescan ? systemModelsService.triggerRescan() : systemModelsService.fetchSystemModels()
       ]);
       setScanPaths(pathsData.scanPaths || []);
       setCustomPaths(pathsData.customPaths || []);
@@ -212,7 +215,7 @@ export const SettingsStudio: React.FC<SettingsStudioProps> = ({
 
           <button
             type="button"
-            onClick={fetchSystemPathsAndModels}
+            onClick={() => fetchSystemPathsAndModels(true)}
             disabled={isScanningSystem}
             className="btn-primary"
             style={{ fontSize: '12px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}

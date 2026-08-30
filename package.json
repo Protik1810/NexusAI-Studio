@@ -112,6 +112,15 @@
       "maintainer": "Protik <protik@solframe.local>"
     },
     "mac": {
+      "extraResources": [
+        {
+          "from": "backend/mac",
+          "to": "backend/mac",
+          "filter": [
+            "**/*"
+          ]
+        }
+      ],
       "target": [
         { "target": "dmg", "arch": ["x64", "arm64"] },
         { "target": "zip", "arch": ["x64", "arm64"] }

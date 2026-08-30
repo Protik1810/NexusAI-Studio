@@ -12,14 +12,14 @@ const fs = require('fs');
 const http = require('http');
 const { Readable } = require('stream');
 const { detectHardware } = require('./hardware.cjs');
-const { getAllSystemScanPaths } = require('./pathUtils.cjs');
+const { getAllSystemScanPaths, getUserModelsRoot } = require('./pathUtils.cjs');
 const { getFullSystemModels, loadScanCache, saveScanCache } = require('./modelScanner.cjs');
 const { createEngineCore } = require('./engineCore.cjs');
 const { createAgentApiServer } = require('./agentApiServer.cjs');
 const { loadOrCreateConfig, saveConfig, generateApiKey } = require('./agentAuth.cjs');
 const { isAllowedOrigin, isAllowedHost, safeJoin } = require('./security.cjs');
 
-const LIBRARY_DEFINITIONS = [
+const WIN_LIBRARY_DEFINITIONS = [
   {
     id: 'vulkan-sd',
     name: 'Vulkan Diffusion Engine',
@@ -70,6 +70,35 @@ const LIBRARY_DEFINITIONS = [
     ]
   }
 ];
+
+const MAC_LIBRARY_DEFINITIONS = [
+  {
+    id: 'metal-sd',
+    name: 'Metal Diffusion Engine',
+    category: 'Apple Metal GPU Acceleration',
+    description: 'Metal-accelerated diffusion kernel for FLUX.2 & SDXL on Apple Silicon/Intel GPUs',
+    requiredFor: 'Apple Silicon Image Synthesis',
+    files: [
+      { path: 'backend/mac/metal/sd-cli', name: 'sd-cli', required: true },
+      { path: 'backend/mac/metal/libstable-diffusion.dylib', name: 'libstable-diffusion.dylib (Metal)', required: true }
+    ]
+  },
+  {
+    id: 'llama-engine',
+    name: 'llama.cpp Server Runtime',
+    category: 'Local LLM Dialogue Engine',
+    description: 'Real-time GGUF token streaming engine with Metal GPU offload',
+    requiredFor: 'Uncensored LLM Chat',
+    files: [
+      { path: 'backend/mac/llama/llama-server', name: 'llama-server', required: true },
+      { path: 'backend/mac/llama/libllama.dylib', name: 'libllama.dylib', required: true },
+      { path: 'backend/mac/llama/libggml-metal.dylib', name: 'libggml-metal.dylib (Metal)', required: true },
+      { path: 'backend/mac/llama/libggml-cpu.dylib', name: 'libggml-cpu.dylib', required: true }
+    ]
+  }
+];
+
+const LIBRARY_DEFINITIONS = process.platform === 'darwin' ? MAC_LIBRARY_DEFINITIONS : WIN_LIBRARY_DEFINITIONS;
 
 /**
  * Compares two plain "x.y.z" version strings (a leading "v" on either is
@@ -616,9 +645,20 @@ function createApiRouter(ctx) {
         const finalFilename = path.basename(customFilename || filename);
         let destDir, targetPath;
         try {
+          // Downloads land in the per-user Solframe Studio app-data folder,
+          // not rootDir/resourcesPath — the latter is inside the app's own
+          // install/bundle tree, which is read-only on Linux AppImage,
+          // root-owned on .deb (/opt), and isn't even a real folder in a
+          // packaged mac build (the app ships as an asar file). This is the
+          // same location pathUtils.cjs's scanner already checks first via
+          // getUserModelsRoot(), so a downloaded file is guaranteed
+          // discoverable, survives app updates/reinstalls, and needs no
+          // elevated permissions on any of the three platforms.
+          //
           // targetFolder/customFilename come straight from the request body —
-          // without this check "../../.." would write outside the app dir.
-          destDir = safeJoin(rootDir, targetFolder);
+          // without safeJoin's traversal check, "../../.." would write
+          // outside this directory.
+          destDir = safeJoin(getUserModelsRoot(), targetFolder);
           targetPath = safeJoin(destDir, finalFilename);
         } catch (e) {
           sendJson(res, 400, { success: false, error: 'Invalid target path' });
@@ -676,8 +716,12 @@ function createApiRouter(ctx) {
             } else {
               activeDownload.status = 'error';
               activeDownload.error = `Download failed: ${err.message}`;
-              try { fs.unlinkSync(targetPath); } catch (e) {}
             }
+            // Either way this is a partial file, not a usable model — if it
+            // happens to already be past the scanner's 5MB minimum size, a
+            // left-behind partial would otherwise get picked up by the next
+            // scan and shown as "Installed" even though it's truncated/corrupt.
+            try { fs.unlinkSync(targetPath); } catch (e) {}
           }
         })();
 

@@ -11,6 +11,8 @@ interface SidebarProps {
   librariesReady?: boolean;
   missingLibrariesCount?: number;
   updateAvailable?: boolean;
+  generationProgress?: { step: number; total: number } | null;
+  imageReady?: boolean;
 }
 
 function applyTheme(theme: AppThemeId) {
@@ -24,7 +26,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isEngineRunning = false,
   librariesReady = true,
   missingLibrariesCount = 0,
-  updateAvailable = false
+  updateAvailable = false,
+  generationProgress = null,
+  imageReady = false
 }) => {
   const [currentTheme, setCurrentTheme] = useState<AppThemeId>(() => {
     return (localStorage.getItem("solframe-theme") as AppThemeId) || "cinema";
@@ -41,6 +45,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const activeThemeMeta = APP_THEMES.find((t) => t.id === currentTheme) || APP_THEMES[0];
+
+  const genPercent = generationProgress && generationProgress.total > 0
+    ? Math.min(100, Math.max(0, (generationProgress.step / generationProgress.total) * 100))
+    : 0;
+  const genRadius = 17;
+  const genCircumference = 2 * Math.PI * genRadius;
+  const genDashOffset = genCircumference * (1 - genPercent / 100);
 
   const hasMissingLibraries = !librariesReady || missingLibrariesCount > 0;
   const indicatorClass = hasMissingLibraries
@@ -111,9 +122,63 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             className={`sidebar-icon ${activeTab === "image" ? "active" : ""}`}
             onClick={() => setActiveTab("image")}
-            title="Image Studio (FLUX.2 & SDXL Lightning)"
+            title={
+              isEngineRunning
+                ? `Generating artwork — step ${generationProgress?.step ?? 0}/${generationProgress?.total ?? 0}`
+                : imageReady
+                ? "Your artwork is ready to view!"
+                : "Image Studio (FLUX.2 & SDXL Lightning)"
+            }
+            style={{ position: "relative" }}
           >
+            {(isEngineRunning || imageReady) && (
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 40 40"
+                style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-90deg)", pointerEvents: "none" }}
+              >
+                <circle
+                  cx="20"
+                  cy="20"
+                  r={genRadius}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeWidth="2.5"
+                />
+                <circle
+                  cx="20"
+                  cy="20"
+                  r={genRadius}
+                  fill="none"
+                  stroke={imageReady ? "#10b981" : "var(--accent)"}
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray={genCircumference}
+                  strokeDashoffset={imageReady ? 0 : genDashOffset}
+                  style={{
+                    transition: "stroke-dashoffset 0.3s ease",
+                    filter: imageReady ? "drop-shadow(0 0 4px #10b981)" : "drop-shadow(0 0 3px var(--accent-glow))"
+                  }}
+                />
+              </svg>
+            )}
             <Image size={22} />
+            {imageReady && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "4px",
+                  right: "4px",
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  backgroundColor: "#10b981",
+                  boxShadow: "0 0 8px #10b981",
+                  border: "1px solid rgba(255,255,255,0.4)"
+                }}
+              />
+            )}
           </button>
 
           <button

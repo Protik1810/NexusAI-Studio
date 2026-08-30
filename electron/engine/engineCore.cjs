@@ -70,7 +70,11 @@ function createEngineCore(ctx) {
 
     const args = ['-m', modelFullPath, '--port', String(requestedPort), '--host', '127.0.0.1', '-ngl', String(gpuLayers), '-c', String(ctxSize), '-b', String(batchSize), '-fa', flashAttn, '-ctk', cacheTypeK, '-ctv', cacheTypeV];
     console.log(`[llama.cpp] Starting llama-server: ${llamaExe}`);
-    const proc = spawn(llamaExe, args, { cwd: path.dirname(llamaExe), windowsHide: true });
+    const llamaDir = path.dirname(llamaExe);
+    const llamaEnv = process.platform === 'darwin'
+      ? { ...process.env, DYLD_LIBRARY_PATH: [llamaDir, process.env.DYLD_LIBRARY_PATH || ''].filter(Boolean).join(path.delimiter) }
+      : process.env;
+    const proc = spawn(llamaExe, args, { cwd: llamaDir, env: llamaEnv, windowsHide: true });
     llamaProc = proc;
     currentLlamaModel = path.basename(modelFullPath);
 
@@ -183,10 +187,20 @@ function createEngineCore(ctx) {
     const args = buildSdCliArgs(resolvedParams, outFullPath);
     console.log(`[Solframe engineCore] Spawning: ${execPath}\n  Args: ${args.join(' ')}`);
 
-    const procEnv = {
-      ...process.env,
-      PATH: `${workingDir};${path.join(rootDir, 'backend/win/cuda')};${path.join(rootDir, 'backend/win/vulkan')};${path.join(rootDir, 'backend/win/llama')};${process.env.PATH || ''}`
-    };
+    // Windows needs its DLL search dirs (CUDA/Vulkan/llama) on PATH; macOS
+    // resolves .dylib deps via DYLD_LIBRARY_PATH (or the binary's own
+    // @rpath) instead — PATH there is just the normal shell PATH. Using
+    // path.delimiter instead of a hardcoded ';' matters here: a literal ';'
+    // is not a POSIX path separator, so the old unconditional version
+    // silently corrupted PATH into one unparseable entry on any non-Windows
+    // platform.
+    const procEnv = { ...process.env };
+    if (process.platform === 'win32') {
+      const winDirs = [workingDir, path.join(rootDir, 'backend/win/cuda'), path.join(rootDir, 'backend/win/vulkan'), path.join(rootDir, 'backend/win/llama')];
+      procEnv.PATH = [...winDirs, process.env.PATH || ''].join(path.delimiter);
+    } else if (process.platform === 'darwin') {
+      procEnv.DYLD_LIBRARY_PATH = [workingDir, process.env.DYLD_LIBRARY_PATH || ''].filter(Boolean).join(path.delimiter);
+    }
 
     return runSdCli({
       execPath, args, outFullPath, outFilename, workingDir, env: procEnv,

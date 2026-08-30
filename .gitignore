@@ -18,6 +18,11 @@ docs/
 *.dll
 *.node
 *.asar
+*.dylib
+# macOS engine binaries (llama-server, sd-cli + dylibs) — same as backend/win/,
+# these are large local build inputs fetched from upstream releases, not
+# committed to git.
+backend/mac/
 
 # Generated showcase page (canonical source: docs/index.html, see
 # scripts/build-blob-landing.js) — regenerate locally, don't commit a copy.

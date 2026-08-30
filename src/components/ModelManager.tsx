@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Download, 
   Database, 
@@ -54,6 +54,11 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
     status: 'idle'
   });
 
+  // Tracks isDownloading across polls (not React state — this only needs to
+  // be read/written inside the interval closure, and using a ref sidesteps
+  // that closure capturing a stale value from the effect's first run).
+  const wasDownloadingRef = useRef<boolean>(false);
+
   const [systemModels, setSystemModels] = useState<SystemModelsResult>({
     checkpoints: [],
     unets: [],
@@ -66,12 +71,21 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
   });
 
   const fetchLocalModels = async () => {
-    setIsScanning(true);
     try {
       const data = await systemModelsService.fetchSystemModels();
       setSystemModels(data);
     } catch (e) {
       console.error('Failed to scan system models', e);
+    }
+  };
+
+  const handleRescan = async () => {
+    setIsScanning(true);
+    try {
+      const data = await systemModelsService.triggerRescan();
+      setSystemModels(data);
+    } catch (e) {
+      console.error('Failed to rescan system models', e);
     } finally {
       setIsScanning(false);
     }
@@ -98,9 +112,18 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
 
     const timer = setInterval(async () => {
       const prog = await hfHubService.getDownloadProgress();
+      const wasDownloading = wasDownloadingRef.current;
+      wasDownloadingRef.current = prog.isDownloading;
       setActiveDownloadState(prog);
       if (prog.status === 'completed') {
-        fetchLocalModels();
+        handleRescan();
+      } else if (prog.status === 'error' && wasDownloading) {
+        // The initial POST /api/download-model response always reports
+        // success immediately (it just means "started"), since the actual
+        // fetch/write happens after the response is sent — this poll is the
+        // only place a real failure (404, gated repo, disk full, etc.) is
+        // ever visible, so it's the only place that can surface it.
+        onError('Download Failed', prog.error || `Could not download ${prog.filename || 'the model'}.`);
       }
     }, 1000);
 
@@ -141,7 +164,10 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
       onSuccess('Download Initialized', `Started downloading ${fname} to ${customTargetFolder}`);
       setCustomUrl('');
       setCustomFilename('');
-      setTimeout(fetchLocalModels, 2000);
+      // The 1s progress poll above already calls handleRescan() once the
+      // backend reports status:'completed' — no need for a second, fixed-
+      // delay refresh here that would fire well before a multi-GB download
+      // actually finishes.
     } catch (e: any) {
       onError('Download Failed', e.message || 'Could not start download');
     } finally {
@@ -167,7 +193,7 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
             <button
               type="button"
               className="icon-btn"
-              onClick={fetchLocalModels}
+              onClick={handleRescan}
               disabled={isScanning}
               title="Rescan models directory on disk"
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', fontSize: '13px' }}
@@ -191,6 +217,9 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 800 }}>
+                  {activeDownloadState.percent.toFixed(0)}%
+                </span>
                 <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 700 }}>
                   {activeDownloadState.speedMBs} MB/s
                 </span>

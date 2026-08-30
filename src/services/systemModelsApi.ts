@@ -49,6 +49,26 @@ export class SystemModelsService {
     };
   }
 
+  /**
+   * Starts a fresh background scan (clears the cache first) and polls
+   * /api/system-models until scanStatus flips away from 'scanning', then
+   * returns the fresh result. fetchSystemModels() alone only ever reads the
+   * cache, so a just-downloaded model wouldn't show up without this.
+   */
+  async triggerRescan(): Promise<SystemModelsResult> {
+    try {
+      await fetch('/api/rescan', { method: 'POST' });
+    } catch (e) {
+      console.error('Failed to start rescan', e);
+    }
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 1000));
+      const result = await this.fetchSystemModels() as SystemModelsResult & { scanStatus?: string };
+      if (result.scanStatus !== 'scanning') return result;
+    }
+    return this.fetchSystemModels();
+  }
+
   async getCustomPaths(): Promise<{ customPaths: string[]; scanPaths: SystemScanPath[] }> {
     try {
       const res = await fetch('/api/custom-scan-paths');

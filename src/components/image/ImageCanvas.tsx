@@ -1,5 +1,5 @@
-import React from 'react';
-import { Download, Maximize2, Image as ImageIcon, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, Maximize2, Image as ImageIcon, X, RotateCcw, Repeat, Check } from 'lucide-react';
 
 export interface ImageCanvasProps {
   activeGpu: string;
@@ -9,10 +9,13 @@ export interface ImageCanvasProps {
   useLora: boolean;
   lastSeed: number | null;
   currentImage: string | null;
+  lastPrompt?: string | null;
   generating: boolean;
   progress: { step: number; total: number; node?: string };
   onDownloadImage: () => void;
   onCancelGenerate?: () => void;
+  onResetImage?: () => void;
+  onReusePrompt?: () => void;
 }
 
 export const ImageCanvas: React.FC<ImageCanvasProps> = ({
@@ -23,11 +26,21 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   useLora,
   lastSeed,
   currentImage,
+  lastPrompt,
   generating,
   progress,
   onDownloadImage,
-  onCancelGenerate
+  onCancelGenerate,
+  onResetImage,
+  onReusePrompt
 }) => {
+  const [promptReused, setPromptReused] = useState(false);
+
+  const handleReuseClick = () => {
+    onReusePrompt?.();
+    setPromptReused(true);
+    setTimeout(() => setPromptReused(false), 1500);
+  };
   return (
     <div className="studio-canvas glass-panel">
       <div className="canvas-header">
@@ -59,6 +72,11 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             <button className="icon-btn" onClick={() => window.open(currentImage, '_blank')} title="View Fullscreen">
               <Maximize2 size={16} />
             </button>
+            {onResetImage && (
+              <button className="icon-btn" onClick={onResetImage} title="Clear canvas (image stays in Gallery)">
+                <RotateCcw size={16} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -94,11 +112,73 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             )}
           </div>
         ) : currentImage ? (
-          <img 
-            src={currentImage} 
-            alt="Generated Art" 
-            className="rendered-image"
-          />
+          <>
+            <img
+              src={currentImage}
+              alt="Generated Art"
+              className="rendered-image"
+            />
+            {lastPrompt && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  right: '12px',
+                  bottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  background: 'rgba(10, 12, 20, 0.45)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}
+              >
+                <p
+                  title={lastPrompt}
+                  style={{
+                    flex: 1,
+                    margin: 0,
+                    fontSize: '12px',
+                    lineHeight: 1.4,
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {lastPrompt}
+                </p>
+                {onReusePrompt && (
+                  <button
+                    type="button"
+                    onClick={handleReuseClick}
+                    title="Use this prompt again"
+                    style={{
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: promptReused ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: promptReused ? '#34d399' : 'var(--text-primary)',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      padding: '5px 9px',
+                      borderRadius: '7px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {promptReused ? <Check size={12} /> : <Repeat size={12} />}
+                    {promptReused ? 'Loaded' : 'Use Again'}
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         ) : (
           <div className="empty-canvas-state">
             <div className="empty-icon-circle">

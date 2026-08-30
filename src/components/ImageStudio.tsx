@@ -22,6 +22,7 @@ interface ImageStudioProps {
   initialPrompt?: string;
   onGenerateStart?: () => void;
   onGenerateEnd?: () => void;
+  onGenerateProgress?: (progress: { step: number; total: number }) => void;
 }
 
 const ASPECT_RATIOS: AspectRatioOption[] = [
@@ -30,7 +31,18 @@ const ASPECT_RATIOS: AspectRatioOption[] = [
   { label: '16:9', name: 'Landscape (Cinematic)', width: 768, height: 512, icon: '▬' },
   { label: '4:3', name: 'Standard Photo', width: 768, height: 576, icon: '▰' },
   { label: '3:2', name: 'Classic 35mm', width: 768, height: 512, icon: '▭' },
-  { label: '21:9', name: 'Ultrawide Banner', width: 896, height: 384, icon: '━' }
+  { label: '21:9', name: 'Ultrawide Banner', width: 896, height: 384, icon: '━' },
+  // Fixed high-resolution presets. Note: these are well above what SDXL/FLUX
+  // were trained at (~1024px) — stable-diffusion.cpp has no built-in
+  // tiling/hires-fix pass, so direct single-pass generation at these sizes
+  // trades off quality (duplicated subjects, artifacts) and needs
+  // considerably more VRAM/time as size increases. 4K is the practical
+  // ceiling this UI offers, not a quality guarantee.
+  { label: '1080p', name: 'Full HD', width: 1920, height: 1080, icon: '🖥' },
+  { label: '1440p', name: 'Quad HD', width: 2560, height: 1440, icon: '🖥' },
+  { label: '2K', name: 'DCI 2K', width: 2048, height: 1080, icon: '🎬' },
+  { label: '4K', name: 'Ultra HD (Max)', width: 3840, height: 2160, icon: '🎬' },
+  { label: 'Custom', name: 'Custom Resolution', width: 0, height: 0, icon: '⚙', isCustom: true }
 ];
 
 const PROMPT_TAGS = [
@@ -49,7 +61,8 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
   onError,
   initialPrompt,
   onGenerateStart,
-  onGenerateEnd
+  onGenerateEnd,
+  onGenerateProgress
 }) => {
   const [localModels, setLocalModels] = useState<LocalModelsState>({
     checkpoints: [
@@ -74,10 +87,15 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
   const [loraStrength, setLoraStrength] = useState<number>(0.85);
   const [useLora, setUseLora] = useState<boolean>(false);
 
-  // Generation Parameters
-  const [prompt, setPrompt] = useState<string>(initialPrompt || 'Sensual photorealistic portrait of an alluring woman, intricate realistic skin texture, soft dramatic studio lighting, 8k resolution, raw photo, natural eyes');
+  // Generation Parameters — prompt box always starts empty; it's only ever
+  // filled by an explicit user action (typing, or a "send to Image Studio"
+  // transfer from Chat/Gallery via initialPrompt) and is cleared again after
+  // every successful generation so the next prompt starts fresh.
+  const [prompt, setPrompt] = useState<string>(initialPrompt || '');
   const [negativePrompt, setNegativePrompt] = useState<string>('ugly, distorted, blurry, deformed hands, extra limbs, bad anatomy, cartoon, watermark, signature');
   const [selectedRatio, setSelectedRatio] = useState<number>(1);
+  const [customWidth, setCustomWidth] = useState<number>(1024);
+  const [customHeight, setCustomHeight] = useState<number>(1024);
   const [steps, setSteps] = useState<number>(4);
   const [cfg, setCfg] = useState<number>(1.8);
   const [seed, setSeed] = useState<number>(-1);
@@ -88,6 +106,10 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
   const [progress, setProgress] = useState<{ step: number; total: number; node?: string }>({ step: 0, total: 4 });
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [lastSeed, setLastSeed] = useState<number | null>(null);
+  // The prompt that produced currentImage — kept separately from the (now
+  // always-cleared) `prompt` input state so the canvas can still show/reuse
+  // it after the input box resets.
+  const [lastGeneratedPrompt, setLastGeneratedPrompt] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [isReloadingModels, setIsReloadingModels] = useState<boolean>(false);
@@ -252,6 +274,9 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
     setProgress({ step: 0, total: steps, node: 'stable-diffusion.cpp: Preparing GPU VRAM...' });
 
     const activeRatio = ASPECT_RATIOS[selectedRatio];
+    const targetWidth = activeRatio.isCustom ? customWidth : activeRatio.width;
+    const targetHeight = activeRatio.isCustom ? customHeight : activeRatio.height;
+    const generatedPrompt = prompt;
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
@@ -265,28 +290,31 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         loraStrength: useLora ? loraStrength : undefined,
         prompt,
         negativePrompt: pipeline === 'standard' ? negativePrompt : undefined,
-        width: activeRatio.width,
-        height: activeRatio.height,
+        width: targetWidth,
+        height: targetHeight,
         steps,
         cfgScale: cfg,
         seed,
         samplingMethod
       }, (step, total, node) => {
         setProgress({ step, total, node });
+        onGenerateProgress?.({ step, total });
       }, controller.signal);
 
       setCurrentImage(result.imageUrl);
       setLastSeed(result.seedUsed);
+      setLastGeneratedPrompt(generatedPrompt);
+      setPrompt('');
 
       onImageGenerated({
         id: 'img_' + Date.now(),
         url: result.imageUrl,
-        prompt,
+        prompt: generatedPrompt,
         negativePrompt,
         model: pipeline === 'flux' ? unetModel : checkpointModel,
         pipeline,
-        width: activeRatio.width,
-        height: activeRatio.height,
+        width: targetWidth,
+        height: targetHeight,
         steps,
         cfg,
         seed: result.seedUsed,
@@ -321,6 +349,16 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
     a.click();
   };
 
+  const handleResetImage = () => {
+    setCurrentImage(null);
+    setLastSeed(null);
+    setLastGeneratedPrompt(null);
+  };
+
+  const handleReusePrompt = () => {
+    if (lastGeneratedPrompt) setPrompt(lastGeneratedPrompt);
+  };
+
   return (
     <div className="studio-layout">
       <ImageCanvas
@@ -331,10 +369,13 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         useLora={useLora}
         lastSeed={lastSeed}
         currentImage={currentImage}
+        lastPrompt={lastGeneratedPrompt}
         generating={generating}
         progress={progress}
         onDownloadImage={handleDownloadImage}
         onCancelGenerate={handleCancelGenerate}
+        onResetImage={handleResetImage}
+        onReusePrompt={handleReusePrompt}
       />
 
       <ImageControls
@@ -364,6 +405,10 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         aspectRatios={ASPECT_RATIOS}
         selectedRatio={selectedRatio}
         setSelectedRatio={setSelectedRatio}
+        customWidth={customWidth}
+        setCustomWidth={setCustomWidth}
+        customHeight={customHeight}
+        setCustomHeight={setCustomHeight}
         showAdvanced={showAdvanced}
         setShowAdvanced={setShowAdvanced}
         samplingMethod={samplingMethod}

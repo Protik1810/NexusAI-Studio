@@ -48,6 +48,11 @@ export function App() {
   });
 
   const [isEngineRunning, setIsEngineRunning] = useState<boolean>(false);
+  const [generationProgress, setGenerationProgress] = useState<{ step: number; total: number } | null>(null);
+  // True once a generation finishes while the user was on a different tab —
+  // drives the sidebar's "ready to view" badge, cleared as soon as they
+  // actually look at the Image Studio tab.
+  const [imageReady, setImageReady] = useState<boolean>(false);
 
   // Update Availability (checked once per session — see /api/check-update)
   const [updateInfo, setUpdateInfo] = useState<{ updateAvailable: boolean; latestVersion: string; releaseUrl: string } | null>(null);
@@ -98,18 +103,32 @@ export function App() {
     localStorage.setItem('solframe_gallery', JSON.stringify(gallery));
   }, [gallery]);
 
+  useEffect(() => {
+    if (activeTab === 'image') setImageReady(false);
+  }, [activeTab]);
+
   const handleImageGenerated = (image: GalleryItem) => {
     setIsEngineRunning(false);
     setGallery(prev => [image, ...prev]);
+    // Only flag "ready to view" if they're not already looking at the
+    // canvas — otherwise the sidebar dial would flash a badge for a result
+    // the user is staring at that very moment.
+    setImageReady(activeTab !== 'image');
     triggerSuccess('Artwork Generated', `Saved to gallery: ${image.prompt.slice(0, 30)}...`);
   };
 
   const handleGenerateStart = () => {
     setIsEngineRunning(true);
+    setImageReady(false);
+    setGenerationProgress(null);
   };
 
   const handleGenerateEnd = () => {
     setIsEngineRunning(false);
+  };
+
+  const handleGenerateProgress = (progress: { step: number; total: number }) => {
+    setGenerationProgress(progress);
   };
 
   const handleDeleteImage = (id: string) => {
@@ -192,19 +211,26 @@ export function App() {
         librariesReady={libraryData.allReady}
         missingLibrariesCount={libraryData.missingCount}
         updateAvailable={!!updateInfo?.updateAvailable}
+        generationProgress={generationProgress}
+        imageReady={imageReady}
       />
 
       {/* Main Studio Viewport */}
       <main className="workspace-area">
-        {activeTab === 'image' && (
+        {/* Kept mounted (not conditionally rendered) so the generated image,
+            in-flight generation, and form state survive switching tabs —
+            only its visibility toggles, matching the request that a result
+            stays until the user explicitly clears it. */}
+        <div style={{ display: activeTab === 'image' ? 'contents' : 'none' }}>
           <ImageStudio
             onImageGenerated={handleImageGenerated}
             onError={triggerError}
             initialPrompt={studioPrompt}
             onGenerateStart={handleGenerateStart}
             onGenerateEnd={handleGenerateEnd}
+            onGenerateProgress={handleGenerateProgress}
           />
-        )}
+        </div>
 
         {activeTab === 'chat' && (
           <ChatStudio

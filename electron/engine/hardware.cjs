@@ -35,6 +35,29 @@ function detectHardware() {
     }
   } catch (e) {}
 
+  if (process.platform === 'darwin') {
+    try {
+      const chipName = execSync('sysctl -n machdep.cpu.brand_string', {
+        encoding: 'utf8', timeout: 2000
+      }).trim() || (process.arch === 'arm64' ? 'Apple Silicon' : 'Intel Mac');
+      // Apple Silicon (and modern Intel Macs) don't expose a discrete VRAM
+      // pool — Metal shares the system's unified memory, so total RAM is the
+      // honest number to show instead of a made-up VRAM figure.
+      const os = require('os');
+      const totalRamGB = os.totalmem() / (1024 ** 3);
+      gpus.push({
+        name: chipName,
+        vendor: 'Apple',
+        vram: `${totalRamGB.toFixed(0)} GB unified`,
+        vramMB: Math.round(totalRamGB * 1024),
+        driver: '',
+        isNvidia: false,
+        isApple: true,
+        backend: 'metal'
+      });
+    } catch (e) {}
+  }
+
   if (process.platform === 'win32') {
     try {
       const psOut = execSync(
@@ -66,6 +89,7 @@ function detectHardware() {
 
   const hasNvidia = gpus.some(g => g.isNvidia);
   const hasAmdOrIntel = gpus.some(g => g.vendor === 'AMD' || g.vendor === 'Intel');
+  const hasApple = gpus.some(g => g.isApple);
   if (hasNvidia) {
     preferredBackend = 'cuda';
     if (!primaryGpu || primaryGpu === 'Auto-Detect GPU') {
@@ -76,6 +100,16 @@ function detectHardware() {
     preferredBackend = 'vulkan';
     const g = gpus.find(g => g.vendor === 'AMD' || g.vendor === 'Intel');
     primaryGpu = `${g.name} (${g.vram} - Vulkan)`;
+  } else if (hasApple) {
+    preferredBackend = 'metal';
+    const g = gpus.find(g => g.isApple);
+    primaryGpu = `${g.name} (${g.vram} - Metal)`;
+  } else if (process.platform === 'darwin') {
+    // sysctl failed for some reason — still darwin, so CPU fallback here
+    // means "run the universal Mac binary without GPU offload", not the
+    // Windows AVX2 CPU kernel.
+    preferredBackend = 'metal';
+    primaryGpu = 'CPU Fallback (Apple Silicon/Intel)';
   } else {
     preferredBackend = 'cpu';
     primaryGpu = 'CPU Fallback (AVX2)';
