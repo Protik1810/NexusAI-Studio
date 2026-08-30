@@ -139,10 +139,28 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
             });
           }
 
-          const bestClip = data.clips?.find((c: any) =>
-            c.name.toLowerCase().includes('text-encoder') || c.name.toLowerCase().includes('q8_0')
-          ) || data.clips?.[0];
-          if (bestClip) setClipModel(bestClip.fullPath);
+          // Only auto-select a text encoder we're actually confident is
+          // one — "q8_0" alone matches almost any quantized GGUF file
+          // regardless of what it actually is, and silently falling back
+          // to data.clips[0] risks handing sd-cli a completely incompatible
+          // file (wrong tensor layout), surfacing as a cryptic native
+          // "tensor not in model metadata" error deep in generation
+          // instead of a clear "please pick one" message here.
+          const bestClip = data.clips?.find((c: any) => c.name.toLowerCase().includes('text-encoder'));
+          if (bestClip) {
+            setClipModel(prev => {
+              const prevStillValid = data.clips.some((c: any) => c.fullPath === prev);
+              return prevStillValid ? prev : bestClip.fullPath;
+            });
+          } else if (!data.clips?.some((c: any) => c.fullPath === clipModel)) {
+            setClipModel('');
+            if (pipeline === 'flux') {
+              onError(
+                'No Text Encoder Found',
+                'FLUX generation needs a text encoder (a file with "text-encoder" in its name, e.g. flux2-klein-9b-uncensored-text-encoder-q8_0.gguf). None was found automatically — select one manually in Studio Controls, or switch to the Standalone Checkpoint pipeline.'
+              );
+            }
+          }
 
           const bestVae = data.vaes?.find((v: any) =>
             v.name.toLowerCase().includes('flux2-vae') || v.name.toLowerCase().includes('ae.')

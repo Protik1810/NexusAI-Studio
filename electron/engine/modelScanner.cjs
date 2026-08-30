@@ -52,6 +52,15 @@ function classifyModelFile(fullPath, sourceLabel, rootDir = '') {
   const isGguf = filename.toLowerCase().endsWith('.gguf');
 
   if (isGguf && filename.startsWith('ggml-vocab-')) return null;
+  // mmproj-* files are llama.cpp vision-LLM multimodal projectors — nothing
+  // in this app wires up --mmproj support, so surfacing them was actively
+  // harmful: they were classified as "clips" alongside real FLUX text
+  // encoders (same 'mmproj' substring match below used to catch both), and
+  // could get silently auto-selected as a text encoder for image
+  // generation — producing a cryptic "tensor not in model metadata" error
+  // from sd-cli instead of a real one, since their tensor layout has
+  // nothing in common with an actual text encoder.
+  if (isGguf && lower.includes('mmproj')) return null;
 
   // Always assigned below — the chain ends in an unconditional else.
   let category;
@@ -65,7 +74,7 @@ function classifyModelFile(fullPath, sourceLabel, rootDir = '') {
     lower.includes('/clip/') || lower.includes('\\clip\\') ||
     lower.includes('text_encoder') || lower.includes('t5xxl') ||
     lower.includes('clip_l') || lower.includes('clip_g') ||
-    (isGguf && (lower.includes('text-encoder') || lower.includes('mmproj')))
+    (isGguf && lower.includes('text-encoder'))
   ) {
     category = 'clips';
   } else if (
