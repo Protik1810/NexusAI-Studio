@@ -58,6 +58,23 @@ const themes = {
   emeraldMatrix: copyAsset('public/themes/emerald-matrix.jpg', 'themes/emerald-matrix.jpg')
 };
 
+// Optional, per-theme atmospheric backdrops for the Hero and Showcase
+// sections only (a circuit/schematic-style image tinted to that theme's
+// accent, mirroring the Bolt reference design's hero-bg.webp/showcase-bg.webp).
+// These are entirely optional — copyAsset returns '' when a file doesn't
+// exist yet, and the CSS below falls back to `none` for that layer, so the
+// page renders exactly as before (just the ambient wallpaper) until someone
+// drops matching webp files into these two folders.
+const THEME_KEYS = ['dark-void', 'neon-cyber', 'cinema-gold', 'synthwave', 'anime-fantasy', 'emerald-matrix'];
+const heroBgs = {};
+const showcaseBgs = {};
+for (const key of THEME_KEYS) {
+  heroBgs[key] = copyAsset(`public/themes/hero/${key}.webp`, `themes/hero/${key}.webp`);
+  showcaseBgs[key] = copyAsset(`public/themes/showcase/${key}.webp`, `themes/showcase/${key}.webp`);
+}
+const heroBgCss = (key) => heroBgs[key] ? `url('${heroBgs[key]}')` : 'none';
+const showcaseBgCss = (key) => showcaseBgs[key] ? `url('${showcaseBgs[key]}')` : 'none';
+
 console.log('✅ All assets copied successfully!');
 
 const html = `<!DOCTYPE html>
@@ -102,6 +119,8 @@ const html = `<!DOCTYPE html>
       --border-color: rgba(255, 255, 255, 0.1);
       --card-bg: rgba(255, 255, 255, 0.04);
       --wallpaper: url('${themes.cinemaGold}');
+      --hero-bg: ${heroBgCss('cinema-gold')};
+      --showcase-bg: ${showcaseBgCss('cinema-gold')};
     }
 
     [data-theme="dark-void"] {
@@ -109,6 +128,8 @@ const html = `<!DOCTYPE html>
       --accent-secondary: #8b5cf6;
       --accent-glow: rgba(6, 182, 212, 0.45);
       --wallpaper: url('${themes.darkVoid}');
+      --hero-bg: ${heroBgCss('dark-void')};
+      --showcase-bg: ${showcaseBgCss('dark-void')};
     }
 
     [data-theme="neon-cyber"] {
@@ -116,6 +137,8 @@ const html = `<!DOCTYPE html>
       --accent-secondary: #06b6d4;
       --accent-glow: rgba(236, 72, 153, 0.45);
       --wallpaper: url('${themes.neonCyber}');
+      --hero-bg: ${heroBgCss('neon-cyber')};
+      --showcase-bg: ${showcaseBgCss('neon-cyber')};
     }
 
     [data-theme="cinema-gold"] {
@@ -123,6 +146,8 @@ const html = `<!DOCTYPE html>
       --accent-secondary: #f97316;
       --accent-glow: rgba(234, 179, 8, 0.45);
       --wallpaper: url('${themes.cinemaGold}');
+      --hero-bg: ${heroBgCss('cinema-gold')};
+      --showcase-bg: ${showcaseBgCss('cinema-gold')};
     }
 
     [data-theme="synthwave"] {
@@ -130,6 +155,8 @@ const html = `<!DOCTYPE html>
       --accent-secondary: #8b5cf6;
       --accent-glow: rgba(244, 63, 94, 0.45);
       --wallpaper: url('${themes.synthwave}');
+      --hero-bg: ${heroBgCss('synthwave')};
+      --showcase-bg: ${showcaseBgCss('synthwave')};
     }
 
     [data-theme="anime-fantasy"] {
@@ -137,6 +164,8 @@ const html = `<!DOCTYPE html>
       --accent-secondary: #ec4899;
       --accent-glow: rgba(168, 85, 247, 0.45);
       --wallpaper: url('${themes.animeFantasy}');
+      --hero-bg: ${heroBgCss('anime-fantasy')};
+      --showcase-bg: ${showcaseBgCss('anime-fantasy')};
     }
 
     [data-theme="emerald-matrix"] {
@@ -144,6 +173,8 @@ const html = `<!DOCTYPE html>
       --accent-secondary: #06b6d4;
       --accent-glow: rgba(16, 185, 129, 0.45);
       --wallpaper: url('${themes.emeraldMatrix}');
+      --hero-bg: ${heroBgCss('emerald-matrix')};
+      --showcase-bg: ${showcaseBgCss('emerald-matrix')};
     }
 
     * {
@@ -299,6 +330,12 @@ const html = `<!DOCTYPE html>
       text-align: center;
       position: relative;
       overflow: hidden;
+      /* Falls back to fully transparent (revealing the body's own ambient
+         wallpaper) until a matching hero/<theme>.webp exists — see the
+         heroBgs comment in build-blob-landing.js. */
+      background-image: linear-gradient(180deg, rgba(3, 5, 12, 0.35) 0%, rgba(3, 5, 12, 0.8) 100%), var(--hero-bg, none);
+      background-size: cover;
+      background-position: center;
     }
 
     /* Grid texture, faded radially — mirrors the app's own diffusion-canvas
@@ -607,6 +644,11 @@ const html = `<!DOCTYPE html>
     /* Interactive Showcase Gallery */
     .showcase-section {
       margin: 0 0 80px;
+      position: relative;
+      /* Same optional-backdrop fallback pattern as .hero, above. */
+      background-image: linear-gradient(180deg, var(--bg-color) 0%, transparent 25%, transparent 75%, var(--bg-color) 100%), var(--showcase-bg, none);
+      background-size: cover;
+      background-position: center;
     }
 
     .showcase-nav {
