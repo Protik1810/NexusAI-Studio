@@ -12,6 +12,13 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const { runSdCli, buildSdCliArgs } = require('./sdEngine.cjs');
 
+// llama.cpp's allowed KV cache quantization types (from llama-server.exe's
+// own --help). Quantized V-cache (anything but f32/f16) requires Flash
+// Attention — that constraint is enforced in the UI (ChatStudio.tsx), not
+// here; this is just the last line of defense against a bad value reaching
+// spawn() at all, e.g. from the Agent API's arbitrary request body.
+const ALLOWED_CACHE_TYPES = ['f32', 'f16', 'bf16', 'q8_0', 'q4_0', 'q4_1', 'iq4_nl', 'q5_0', 'q5_1'];
+
 /**
  * @param {object} ctx
  * @param {() => string} ctx.getSdCliExecutable
@@ -37,7 +44,7 @@ function createEngineCore(ctx) {
   }
 
   /**
-   * @param {{modelPath:string, port?:number, ctxSize?:number, gpuLayers?:number, batchSize?:number, flashAttn?:string}} params
+   * @param {{modelPath:string, port?:number, ctxSize?:number, gpuLayers?:number, batchSize?:number, flashAttn?:string, cacheTypeK?:string, cacheTypeV?:string}} params
    * @returns {Promise<{success:true, port:number, model:string, message:string}>}
    */
   async function startLlama(params) {
@@ -58,8 +65,10 @@ function createEngineCore(ctx) {
     const gpuLayers = params.gpuLayers !== undefined ? Number(params.gpuLayers) : 99;
     const batchSize = Number(params.batchSize) || 2048;
     const flashAttn = ['auto', 'on', 'off'].includes(params.flashAttn) ? params.flashAttn : 'auto';
+    const cacheTypeK = ALLOWED_CACHE_TYPES.includes(params.cacheTypeK) ? params.cacheTypeK : 'f16';
+    const cacheTypeV = ALLOWED_CACHE_TYPES.includes(params.cacheTypeV) ? params.cacheTypeV : 'f16';
 
-    const args = ['-m', modelFullPath, '--port', String(requestedPort), '--host', '127.0.0.1', '-ngl', String(gpuLayers), '-c', String(ctxSize), '-b', String(batchSize), '-fa', flashAttn];
+    const args = ['-m', modelFullPath, '--port', String(requestedPort), '--host', '127.0.0.1', '-ngl', String(gpuLayers), '-c', String(ctxSize), '-b', String(batchSize), '-fa', flashAttn, '-ctk', cacheTypeK, '-ctv', cacheTypeV];
     console.log(`[llama.cpp] Starting llama-server: ${llamaExe}`);
     const proc = spawn(llamaExe, args, { cwd: path.dirname(llamaExe), windowsHide: true });
     llamaProc = proc;

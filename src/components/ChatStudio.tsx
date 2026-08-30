@@ -27,6 +27,35 @@ interface ChatStudioProps {
   onNavigateToHub?: () => void;
 }
 
+// llama.cpp's allowed KV cache quantization types (verified against the
+// bundled llama-server.exe's own --help). Quantized V-cache (anything but
+// f32/f16) additionally requires Flash Attention to be on/auto.
+const KV_CACHE_TYPES = ['f32', 'f16', 'bf16', 'q8_0', 'q4_0', 'q4_1', 'iq4_nl', 'q5_0', 'q5_1'];
+
+// Label-left / control-right row layout for the GGUF load-parameters panel,
+// matching LM Studio's own "Load" tab.
+const loadParamRowStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '7px 0',
+  borderBottom: '1px solid rgba(255,255,255,0.06)',
+  gap: '10px'
+};
+const loadParamLabelStyle: React.CSSProperties = {
+  fontSize: '11px',
+  color: 'var(--text-secondary)',
+  display: 'flex',
+  alignItems: 'center',
+  flexShrink: 0
+};
+const loadParamControlStyle: React.CSSProperties = {
+  padding: '5px 8px',
+  fontSize: '12px',
+  width: '120px',
+  flexShrink: 0
+};
+
 export const ChatStudio: React.FC<ChatStudioProps> = ({
   llmStatus,
   onSendToImageStudio,
@@ -48,12 +77,16 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   const [selectedGgufPath, setSelectedGgufPath] = useState<string>('');
   const [isStartingServer, setIsStartingServer] = useState<boolean>(false);
   const [embeddedServerStatus, setEmbeddedServerStatus] = useState<{ running: boolean; port: number; model: string | null }>({ running: false, port: 8080, model: null });
-  const [loadParams, setLoadParams] = useState<{ ctxSize: number; gpuLayers: number; batchSize: number; flashAttn: 'auto' | 'on' | 'off' }>(() => {
+  const [loadParams, setLoadParams] = useState<{
+    ctxSize: number; gpuLayers: number; batchSize: number; flashAttn: 'auto' | 'on' | 'off';
+    cacheTypeK: string; cacheTypeV: string; cacheTypeKEnabled: boolean; cacheTypeVEnabled: boolean;
+  }>(() => {
+    const defaults = { ctxSize: 4096, gpuLayers: 99, batchSize: 2048, flashAttn: 'auto' as const, cacheTypeK: 'f16', cacheTypeV: 'f16', cacheTypeKEnabled: false, cacheTypeVEnabled: false };
     try {
       const saved = localStorage.getItem('solframe_llm_load_params');
-      if (saved) return JSON.parse(saved);
+      if (saved) return { ...defaults, ...JSON.parse(saved) };
     } catch {}
-    return { ctxSize: 4096, gpuLayers: 99, batchSize: 2048, flashAttn: 'auto' };
+    return defaults;
   });
   const [temperature, setTemperature] = useState<number>(0.7);
   const [streaming, setStreaming] = useState<boolean>(false);
@@ -101,7 +134,11 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
     setIsStartingServer(true);
     try {
-      const res = await llmService.startEmbeddedLlama(selectedGgufPath, loadParams.gpuLayers, loadParams.ctxSize, loadParams.batchSize, loadParams.flashAttn);
+      const res = await llmService.startEmbeddedLlama(
+        selectedGgufPath, loadParams.gpuLayers, loadParams.ctxSize, loadParams.batchSize, loadParams.flashAttn,
+        loadParams.cacheTypeKEnabled ? loadParams.cacheTypeK : 'f16',
+        loadParams.cacheTypeVEnabled ? loadParams.cacheTypeV : 'f16'
+      );
       setEmbeddedServerStatus({ running: true, port: res.port, model: res.model });
     } catch (err: any) {
       onError('llama.cpp Startup Error', err.message || 'Failed to initialize CUDA llama-server on GPU.');
@@ -406,10 +443,10 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                   ))}
                 </select>
 
-                {/* GGUF Load Parameters */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px', opacity: embeddedServerStatus.running ? 0.5 : 1 }}>
-                  <div>
-                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>Context Length</label>
+                {/* GGUF Load Parameters — label-left/control-right rows, matching LM Studio's Load panel layout */}
+                <div style={{ marginBottom: '10px', opacity: embeddedServerStatus.running ? 0.5 : 1 }}>
+                  <div style={loadParamRowStyle}>
+                    <label style={loadParamLabelStyle}>Context Length</label>
                     <input
                       type="number"
                       min={512}
@@ -419,11 +456,11 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                       disabled={embeddedServerStatus.running}
                       onChange={(e) => setLoadParams({ ...loadParams, ctxSize: parseInt(e.target.value, 10) || loadParams.ctxSize })}
                       className="select-input"
-                      style={{ padding: '6px 8px', fontSize: '12px' }}
+                      style={loadParamControlStyle}
                     />
                   </div>
-                  <div>
-                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>GPU Layers (99 = Max)</label>
+                  <div style={loadParamRowStyle}>
+                    <label style={loadParamLabelStyle}>GPU Layers (99 = Max)</label>
                     <input
                       type="number"
                       min={0}
@@ -432,11 +469,11 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                       disabled={embeddedServerStatus.running}
                       onChange={(e) => setLoadParams({ ...loadParams, gpuLayers: parseInt(e.target.value, 10) || 0 })}
                       className="select-input"
-                      style={{ padding: '6px 8px', fontSize: '12px' }}
+                      style={loadParamControlStyle}
                     />
                   </div>
-                  <div>
-                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>Batch Size</label>
+                  <div style={loadParamRowStyle}>
+                    <label style={loadParamLabelStyle}>Batch Size</label>
                     <input
                       type="number"
                       min={32}
@@ -446,21 +483,76 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                       disabled={embeddedServerStatus.running}
                       onChange={(e) => setLoadParams({ ...loadParams, batchSize: parseInt(e.target.value, 10) || loadParams.batchSize })}
                       className="select-input"
-                      style={{ padding: '6px 8px', fontSize: '12px' }}
+                      style={loadParamControlStyle}
                     />
                   </div>
-                  <div>
-                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>Flash Attention</label>
+                  <div style={loadParamRowStyle}>
+                    <label style={loadParamLabelStyle}>Flash Attention</label>
                     <select
                       value={loadParams.flashAttn}
                       disabled={embeddedServerStatus.running}
-                      onChange={(e) => setLoadParams({ ...loadParams, flashAttn: e.target.value as 'auto' | 'on' | 'off' })}
+                      onChange={(e) => {
+                        const flashAttn = e.target.value as 'auto' | 'on' | 'off';
+                        // Quantized V-cache requires Flash Attention — drop back
+                        // to f16 rather than let an invalid combo get saved.
+                        const vStillValid = flashAttn !== 'off';
+                        setLoadParams({ ...loadParams, flashAttn, cacheTypeVEnabled: vStillValid ? loadParams.cacheTypeVEnabled : false });
+                      }}
                       className="select-input"
-                      style={{ padding: '6px 8px', fontSize: '12px' }}
+                      style={loadParamControlStyle}
                     >
                       <option value="auto">Auto</option>
                       <option value="on">On</option>
                       <option value="off">Off</option>
+                    </select>
+                  </div>
+                  <div style={{ ...loadParamRowStyle, borderBottom: 'none' }}>
+                    <label style={loadParamLabelStyle}>
+                      K Cache Quantization
+                      <input
+                        type="checkbox"
+                        checked={loadParams.cacheTypeKEnabled}
+                        disabled={embeddedServerStatus.running}
+                        onChange={(e) => setLoadParams({ ...loadParams, cacheTypeKEnabled: e.target.checked })}
+                        style={{ marginLeft: '6px', verticalAlign: 'middle', accentColor: 'var(--accent)' }}
+                        title="Override the K cache's data type (defaults to f16)"
+                      />
+                    </label>
+                    <select
+                      value={loadParams.cacheTypeK}
+                      disabled={embeddedServerStatus.running || !loadParams.cacheTypeKEnabled}
+                      onChange={(e) => setLoadParams({ ...loadParams, cacheTypeK: e.target.value })}
+                      className="select-input"
+                      style={loadParamControlStyle}
+                    >
+                      {KV_CACHE_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ ...loadParamRowStyle, borderBottom: 'none' }}>
+                    <label style={loadParamLabelStyle}>
+                      V Cache Quantization
+                      <input
+                        type="checkbox"
+                        checked={loadParams.cacheTypeVEnabled}
+                        disabled={embeddedServerStatus.running || loadParams.flashAttn === 'off'}
+                        onChange={(e) => setLoadParams({ ...loadParams, cacheTypeVEnabled: e.target.checked })}
+                        style={{ marginLeft: '6px', verticalAlign: 'middle', accentColor: 'var(--accent)' }}
+                        title={loadParams.flashAttn === 'off' ? 'Requires Flash Attention (On or Auto) to use a quantized V-cache' : "Override the V cache's data type (defaults to f16)"}
+                      />
+                    </label>
+                    <select
+                      value={loadParams.cacheTypeV}
+                      disabled={embeddedServerStatus.running || !loadParams.cacheTypeVEnabled || loadParams.flashAttn === 'off'}
+                      onChange={(e) => setLoadParams({ ...loadParams, cacheTypeV: e.target.value })}
+                      className="select-input"
+                      style={loadParamControlStyle}
+                      title={loadParams.flashAttn === 'off' ? 'Requires Flash Attention (On or Auto) to use a quantized V-cache' : undefined}
+                    >
+                      {KV_CACHE_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
                     </select>
                   </div>
                 </div>

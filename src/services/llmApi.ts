@@ -73,12 +73,14 @@ export class LLMService {
     gpuLayers: number = 99,
     ctxSize: number = 4096,
     batchSize: number = 2048,
-    flashAttn: 'auto' | 'on' | 'off' = 'auto'
+    flashAttn: 'auto' | 'on' | 'off' = 'auto',
+    cacheTypeK: string = 'f16',
+    cacheTypeV: string = 'f16'
   ): Promise<{ success: boolean; port: number; model: string; message: string }> {
     const res = await fetch('/api/llama/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modelPath, gpuLayers, ctxSize, batchSize, flashAttn })
+      body: JSON.stringify({ modelPath, gpuLayers, ctxSize, batchSize, flashAttn, cacheTypeK, cacheTypeV })
     });
 
     const data = await res.json();

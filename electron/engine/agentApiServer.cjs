@@ -92,7 +92,10 @@ function createAgentApiServer(ctx) {
 
     try {
       if (payload.model) {
-        await engineCore.ensureLlamaRunning(resolveModelId(payload.model, ['llms', 'clips']));
+        await engineCore.ensureLlamaRunning(resolveModelId(payload.model, ['llms', 'clips']), {
+          cacheTypeK: payload.cache_type_k,
+          cacheTypeV: payload.cache_type_v
+        });
       } else if (!engineCore.getLlamaStatus().running) {
         return sendError(res, 409, 'No model is loaded and no "model" was specified to auto-start one. Pass a GGUF filename as "model".');
       }
