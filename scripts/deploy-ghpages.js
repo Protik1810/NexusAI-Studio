@@ -50,7 +50,7 @@ execSync('git config user.email "protik@solframe.local"', { cwd: deployDir, stdi
 execSync('git checkout -b gh-pages', { cwd: deployDir, stdio: 'inherit' });
 execSync('git add .', { cwd: deployDir, stdio: 'inherit' });
 execSync('git commit -m "deploy: GitHub Pages release with .nojekyll"', { cwd: deployDir, stdio: 'inherit' });
-execSync('git remote add origin https://github.com/Protik1810/NexusAI-Studio.git', { cwd: deployDir, stdio: 'inherit' });
+execSync('git remote add origin https://github.com/Protik1810/Solframe-Studio.git', { cwd: deployDir, stdio: 'inherit' });
 execSync('git push -f origin gh-pages', { cwd: deployDir, stdio: 'inherit' });
 
 fs.rmSync(deployDir, { recursive: true, force: true });

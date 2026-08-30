@@ -57,7 +57,7 @@ outputs/
 !public/favicon.png
 !public/themes/*.jpg
 !public/avatars/*.jpg
-!public/screenshots/*.png
+!public/screenshots/*.webp
 !electron/icon.png
 !electron/icon.ico
 

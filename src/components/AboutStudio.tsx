@@ -64,9 +64,7 @@ export const AboutStudio: React.FC = () => {
     allReady: boolean;
     missingCount: number;
   } | null>(null);
-  const [isDownloadingLib, setIsDownloadingLib] = useState<string | null>(null);
-  const [downloadProgress, setDownloadProgress] = useState<number>(0);
-  const [downloadSuccessMsg, setDownloadSuccessMsg] = useState<string | null>(null);
+  const COMPLETE_INSTALLER_URL = 'https://github.com/Protik1810/Solframe-Studio/releases/download/v1.0.0/Solframe-Studio-Setup-1.0.0.exe';
 
   const fetchLibrariesStatus = () => {
     fetch('/api/libraries-status')
@@ -97,34 +95,6 @@ export const AboutStudio: React.FC = () => {
       })
       .catch(() => {});
   }, []);
-
-  const handleDownloadLibrary = (libId: string, libName: string) => {
-    setIsDownloadingLib(libId);
-    setDownloadProgress(10);
-
-    const timer = setInterval(() => {
-      setDownloadProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(timer);
-          return 90;
-        }
-        return prev + 15;
-      });
-    }, 400);
-
-    setTimeout(() => {
-      clearInterval(timer);
-      setDownloadProgress(100);
-      setTimeout(() => {
-        setIsDownloadingLib(null);
-        setDownloadProgress(0);
-        setDownloadSuccessMsg(`Successfully verified and updated ${libName}!`);
-        fetchLibrariesStatus();
-        setTimeout(() => setDownloadSuccessMsg(null), 4000);
-      }, 500);
-    }, 2500);
-  };
-
 
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '40px' }}>
@@ -310,7 +280,7 @@ export const AboutStudio: React.FC = () => {
               <Layers size={18} color="var(--accent)" /> Engine Acceleration Libraries & Health
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              Device-level status of CUDA, Vulkan, and llama.cpp native binaries. Missing libraries can be downloaded on-demand with 1 click.
+              Device-level status of CUDA, Vulkan, and llama.cpp native binaries.
             </p>
           </div>
 
@@ -320,34 +290,25 @@ export const AboutStudio: React.FC = () => {
                 🟢 All Libraries Installed & Ready
               </span>
             ) : (
-              <button
-                type="button"
+              <a
+                href={COMPLETE_INSTALLER_URL}
                 className="btn-primary"
-                onClick={() => handleDownloadLibrary('all', 'All Required GPU Libraries')}
-                disabled={isDownloadingLib !== null}
-                style={{ fontSize: '12px', padding: '6px 14px' }}
+                style={{ fontSize: '12px', padding: '6px 14px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                {isDownloadingLib ? 'Downloading Libraries...' : '⚡ 1-Click Download Missing Libraries'}
-              </button>
+                ⬇️ Get Complete Installer (Bundles All Engines)
+              </a>
             )}
           </div>
         </div>
 
-        {downloadSuccessMsg && (
-          <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle2 size={15} /> {downloadSuccessMsg}
-          </div>
-        )}
-
-        {isDownloadingLib && (
-          <div style={{ background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.25)', padding: '14px', borderRadius: '10px', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: 600 }}>
-              <span style={{ color: 'var(--accent)' }}>Configuring acceleration engine on your device...</span>
-              <span style={{ color: '#fff' }}>{downloadProgress}%</span>
-            </div>
-            <div className="progress-bar-track">
-              <div className="progress-bar-fill" style={{ width: `${downloadProgress}%` }} />
-            </div>
+        {!libraryData?.allReady && (
+          <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', color: '#eab308', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', marginBottom: '14px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <span>⚠️</span>
+            <span>
+              This build is missing one or more acceleration libraries below. There's no in-app downloader for individual libraries — the
+              {' '}<a href={COMPLETE_INSTALLER_URL} style={{ color: 'inherit', textDecoration: 'underline' }}>Complete Installer</a>{' '}
+              bundles everything and is the fastest way to get full GPU acceleration working.
+            </span>
           </div>
         )}
 
@@ -402,15 +363,13 @@ export const AboutStudio: React.FC = () => {
               </div>
 
               {!lib.installed && (
-                <button
-                  type="button"
+                <a
+                  href={COMPLETE_INSTALLER_URL}
                   className="btn-secondary"
-                  onClick={() => handleDownloadLibrary(lib.id, lib.name)}
-                  disabled={isDownloadingLib !== null}
-                  style={{ fontSize: '11px', padding: '6px 12px', alignSelf: 'flex-start', marginTop: '4px' }}
+                  style={{ fontSize: '11px', padding: '6px 12px', alignSelf: 'flex-start', marginTop: '4px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                  📥 Download {lib.name}
-                </button>
+                  ⬇️ Get via Complete Installer
+                </a>
               )}
             </div>
           ))}

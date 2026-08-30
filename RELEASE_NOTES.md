@@ -54,6 +54,18 @@ Dark Void, Neon Cyber, Cinema Gold (default), Synthwave Sunset, Anime Fantasy, a
 
 **Platform note:** Windows ships full local inference (CUDA / Vulkan / CPU). Linux and macOS currently run the UI shell and Model Hub only — the bundled diffusion/LLM engines are Windows-only binaries; native builds for those platforms are planned.
 
+#### 🔐 Verify Your Download (SHA-256)
+
+```
+4fd1774f1b3f9b61b07868b209a586f17476a0f828b9e1245b113345acc74fa5  Solframe-Studio-Setup-1.0.0.exe
+f28f9eabcac9e0af3e90c00842b40669fffb79f3be2b0779d1fcbe2a6f583230  Solframe-Studio-Setup-1.0.0-Lightweight.exe
+80e85f7855857486ab88333c29f87c0da2e2e20575a740e90e494f0fa7d3e9c0  Solframe-Studio-1.0.0-x86_64.AppImage
+3610df496b8181b75454bef239d4d9c8831cd5a2a25d9f5db717c478fcd1d042  solframe-studio_1.0.0_amd64.deb
+87b30bd8c5d71e63795883e35481b3cb15d609d2d11d9e1f8eef78bd9b68707d  Solframe-Studio-1.0.0-mac.zip
+```
+
+Also published as [CHECKSUMS.txt](CHECKSUMS.txt). Verify with `sha256sum -c CHECKSUMS.txt` (Linux/macOS) or `Get-FileHash <file> -Algorithm SHA256` (Windows PowerShell).
+
 #### 🪟 Windows
 Download an installer above. There is currently no winget package.
 

@@ -54,7 +54,7 @@ execSync('git config user.email "protik@solframe.local"', { cwd: outDir, stdio: 
 execSync('git checkout -b gh-pages', { cwd: outDir, stdio: 'inherit' });
 execSync('git add .', { cwd: outDir, stdio: 'inherit' });
 execSync('git commit -m "feat: deploy Solframe Studio showcase webpage to GitHub Pages"', { cwd: outDir, stdio: 'inherit' });
-execSync('git remote add origin https://github.com/Protik1810/NexusAI-Studio.git', { cwd: outDir, stdio: 'inherit' });
+execSync('git remote add origin https://github.com/Protik1810/Solframe-Studio.git', { cwd: outDir, stdio: 'inherit' });
 execSync('git push -f origin gh-pages', { cwd: outDir, stdio: 'inherit' });
 
 fs.rmSync(outDir, { recursive: true, force: true });

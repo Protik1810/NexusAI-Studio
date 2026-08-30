@@ -7,6 +7,11 @@ const rootDir = path.resolve(__dirname, '..');
 const docsDir = path.join(rootDir, 'docs');
 const SITE_BASE_URL = 'https://protik1810.github.io/Solframe-Studio/';
 
+// Wipe docs/ before regenerating — otherwise a renamed/removed source asset
+// (e.g. the screenshots switching from .png to .webp) leaves its old file
+// behind forever, since copyAsset only ever adds files, never removes them.
+fs.rmSync(docsDir, { recursive: true, force: true });
+
 // Base64-inlining every asset used to make this a genuinely single-file
 // page, but it also made the page ~15MB — well past the size cap most
 // link-preview crawlers (confirmed: opengraph.xyz's 5MB limit, and very
@@ -26,15 +31,19 @@ const copyAsset = (relPath, destSubpath) => {
 const logoUrl = copyAsset('public/logo.png', 'logo.png');
 const faviconUrl = copyAsset('public/favicon.png', 'favicon.png');
 const creatorAvatarUrl = copyAsset('public/avatars/protik-github.jpg', 'avatars/protik-github.jpg');
+// The footer links to these by relative path — without copying them here,
+// they 404 on the live site since docs/ never had them.
+copyAsset('LICENSE', 'LICENSE');
+copyAsset('TERMS.md', 'TERMS.md');
 const CREATOR_GITHUB_URL = 'https://github.com/Protik1810';
 const CREATOR_NAME = 'Lord Protik';
 
 const screenshots = {
-  lion: copyAsset('public/screenshots/showcase-lion-artwork.png', 'screenshots/showcase-lion-artwork.png'),
-  canvas: copyAsset('public/screenshots/studio-image-canvas.png', 'screenshots/studio-image-canvas.png'),
-  step16: copyAsset('public/screenshots/sampling-progress-step16.png', 'screenshots/sampling-progress-step16.png'),
-  step44: copyAsset('public/screenshots/sampling-progress-step44.png', 'screenshots/sampling-progress-step44.png'),
-  llm: copyAsset('public/screenshots/llm-chat-studio.png', 'screenshots/llm-chat-studio.png')
+  lion: copyAsset('public/screenshots/showcase-lion-artwork.webp', 'screenshots/showcase-lion-artwork.webp'),
+  canvas: copyAsset('public/screenshots/studio-image-canvas.webp', 'screenshots/studio-image-canvas.webp'),
+  step16: copyAsset('public/screenshots/sampling-progress-step16.webp', 'screenshots/sampling-progress-step16.webp'),
+  step44: copyAsset('public/screenshots/sampling-progress-step44.webp', 'screenshots/sampling-progress-step44.webp'),
+  llm: copyAsset('public/screenshots/llm-chat-studio.webp', 'screenshots/llm-chat-studio.webp')
 };
 
 const themes = {
@@ -867,7 +876,7 @@ const html = `<!DOCTYPE html>
           <div class="window-title">Solframe Studio — Hardware GPU Canvas</div>
           <div style="font-size: 11px; color: #06b6d4; font-weight: 700;">GPU Accelerated &bull; Local Inference</div>
         </div>
-        <img id="active-screenshot" src="${screenshots.lion}" alt="Solframe Studio Screenshot" class="showcase-img">
+        <img id="active-screenshot" src="${screenshots.lion}" alt="Solframe Studio Screenshot" class="showcase-img" loading="lazy">
       </div>
 
       <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 16px; max-width: 720px; margin-left: auto; margin-right: auto;">
@@ -907,9 +916,9 @@ const html = `<!DOCTYPE html>
             <div>
               <div class="download-icon">🪶</div>
               <h3 class="download-title">Lightweight Installer</h3>
-              <div class="download-size">Size: ~120 MB &bull; Fast Download</div>
+              <div class="download-size">Size: ~97 MB &bull; Fast Download</div>
               <p class="download-desc">
-                Lightweight distribution. Lets you download your specific GPU backend libraries on demand via the in-app <strong>About / Settings</strong> tab.
+                Faster initial download — ships the UI shell without bundled GPU acceleration libraries. If you need image generation or local LLM chat, use the <strong>Complete Installer</strong> instead.
               </p>
             </div>
             <a href="https://github.com/Protik1810/Solframe-Studio/releases/download/v1.0.0/Solframe-Studio-Setup-1.0.0-Lightweight.exe" class="btn-secondary" style="justify-content: center;">
@@ -1035,7 +1044,7 @@ const html = `<!DOCTYPE html>
     <!-- Creator Spotlight -->
     <section class="creator-card reveal-scale">
       <a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener">
-        <img class="creator-avatar" src="${creatorAvatarUrl}" alt="${CREATOR_NAME} on GitHub">
+        <img class="creator-avatar" src="${creatorAvatarUrl}" alt="${CREATOR_NAME} on GitHub" loading="lazy">
       </a>
       <div style="flex: 1; min-width: 280px;">
         <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #a78bfa; margin-bottom: 4px;">
@@ -1061,7 +1070,7 @@ const html = `<!DOCTYPE html>
     <div class="container">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <img src="${logoUrl}" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px;">
+          <img src="${logoUrl}" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px;" loading="lazy">
           <strong>Solframe Studio</strong> &bull; Created by <strong><a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="color: inherit;">${CREATOR_NAME}</a></strong>
         </div>
         <div>
@@ -1200,5 +1209,5 @@ const html = `<!DOCTYPE html>
 if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
 fs.writeFileSync(path.join(docsDir, 'index.html'), html, 'utf8');
 
-console.log('✅ Generated docs/index.html + copied assets (themes/, screenshots/, avatars/, logo.png, favicon.png)!');
+console.log('✅ Generated docs/index.html + copied assets (themes/, screenshots/, avatars/, logo.png, favicon.png, LICENSE, TERMS.md)!');
 console.log('   This is a gitignored build output — push to main and the Pages workflow regenerates + deploys it automatically.');
