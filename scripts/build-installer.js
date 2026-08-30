@@ -30,7 +30,11 @@ function resolveIscc() {
   }
   const standardLocations = [
     'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe',
-    'C:\\Program Files\\Inno Setup 6\\ISCC.exe'
+    'C:\\Program Files\\Inno Setup 6\\ISCC.exe',
+    // winget's default (non-elevated) install location — confirmed this is
+    // where `winget install JRSoftware.InnoSetup` actually puts it when run
+    // without admin rights, which the two Program Files paths above miss.
+    path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Inno Setup 6', 'ISCC.exe')
   ];
   return standardLocations.find(p => fs.existsSync(p)) || null;
 }
