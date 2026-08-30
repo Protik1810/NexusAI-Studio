@@ -62,8 +62,8 @@
     "win": {
       "extraResources": [
         {
-          "from": "backend",
-          "to": "backend",
+          "from": "backend/win",
+          "to": "backend/win",
           "filter": [
             "**/*"
           ]
