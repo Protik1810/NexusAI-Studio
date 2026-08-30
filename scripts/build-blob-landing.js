@@ -1,42 +1,52 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('🔄 Encoding all assets into Base64 for 100% Self-Contained Webpage...');
+console.log('🔄 Copying assets alongside the showcase page...');
 
 const rootDir = path.resolve(__dirname, '..');
-const toBase64 = (relPath, mimeType) => {
-  const p = path.join(rootDir, relPath);
-  if (fs.existsSync(p)) {
-    const data = fs.readFileSync(p).toString('base64');
-    return `data:${mimeType};base64,${data}`;
-  }
-  return '';
+const docsDir = path.join(rootDir, 'docs');
+const SITE_BASE_URL = 'https://protik1810.github.io/Solframe-Studio/';
+
+// Base64-inlining every asset used to make this a genuinely single-file
+// page, but it also made the page ~15MB — well past the size cap most
+// link-preview crawlers (confirmed: opengraph.xyz's 5MB limit, and very
+// likely WhatsApp/Facebook's) enforce before they'll even attempt to read
+// og:* tags, regardless of how early those tags appear in the document.
+// Copying assets as real sibling files keeps this a single generated
+// output directory while letting the actual index.html stay small.
+const copyAsset = (relPath, destSubpath) => {
+  const src = path.join(rootDir, relPath);
+  if (!fs.existsSync(src)) return '';
+  const dest = path.join(docsDir, destSubpath);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.copyFileSync(src, dest);
+  return destSubpath.replace(/\\/g, '/');
 };
 
-const logoBase64 = toBase64('public/logo.png', 'image/png');
-const faviconBase64 = toBase64('public/favicon.png', 'image/png');
-const creatorAvatarBase64 = toBase64('public/avatars/protik-github.jpg', 'image/jpeg');
+const logoUrl = copyAsset('public/logo.png', 'logo.png');
+const faviconUrl = copyAsset('public/favicon.png', 'favicon.png');
+const creatorAvatarUrl = copyAsset('public/avatars/protik-github.jpg', 'avatars/protik-github.jpg');
 const CREATOR_GITHUB_URL = 'https://github.com/Protik1810';
 const CREATOR_NAME = 'Lord Protik';
 
 const screenshots = {
-  lion: toBase64('public/screenshots/showcase-lion-artwork.png', 'image/png'),
-  canvas: toBase64('public/screenshots/studio-image-canvas.png', 'image/png'),
-  step16: toBase64('public/screenshots/sampling-progress-step16.png', 'image/png'),
-  step44: toBase64('public/screenshots/sampling-progress-step44.png', 'image/png'),
-  llm: toBase64('public/screenshots/llm-chat-studio.png', 'image/png')
+  lion: copyAsset('public/screenshots/showcase-lion-artwork.png', 'screenshots/showcase-lion-artwork.png'),
+  canvas: copyAsset('public/screenshots/studio-image-canvas.png', 'screenshots/studio-image-canvas.png'),
+  step16: copyAsset('public/screenshots/sampling-progress-step16.png', 'screenshots/sampling-progress-step16.png'),
+  step44: copyAsset('public/screenshots/sampling-progress-step44.png', 'screenshots/sampling-progress-step44.png'),
+  llm: copyAsset('public/screenshots/llm-chat-studio.png', 'screenshots/llm-chat-studio.png')
 };
 
 const themes = {
-  darkVoid: toBase64('public/themes/dark-void.jpg', 'image/jpeg'),
-  neonCyber: toBase64('public/themes/neon-cyber.jpg', 'image/jpeg'),
-  cinemaGold: toBase64('public/themes/cinema-gold.jpg', 'image/jpeg'),
-  synthwave: toBase64('public/themes/synthwave.jpg', 'image/jpeg'),
-  animeFantasy: toBase64('public/themes/anime-fantasy.jpg', 'image/jpeg'),
-  emeraldMatrix: toBase64('public/themes/emerald-matrix.jpg', 'image/jpeg')
+  darkVoid: copyAsset('public/themes/dark-void.jpg', 'themes/dark-void.jpg'),
+  neonCyber: copyAsset('public/themes/neon-cyber.jpg', 'themes/neon-cyber.jpg'),
+  cinemaGold: copyAsset('public/themes/cinema-gold.jpg', 'themes/cinema-gold.jpg'),
+  synthwave: copyAsset('public/themes/synthwave.jpg', 'themes/synthwave.jpg'),
+  animeFantasy: copyAsset('public/themes/anime-fantasy.jpg', 'themes/anime-fantasy.jpg'),
+  emeraldMatrix: copyAsset('public/themes/emerald-matrix.jpg', 'themes/emerald-matrix.jpg')
 };
 
-console.log('✅ All assets encoded to base64 successfully!');
+console.log('✅ All assets copied successfully!');
 
 const html = `<!DOCTYPE html>
 <html lang="en">
@@ -45,22 +55,23 @@ const html = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Solframe Studio — Sovereign Desktop Generative AI Workstation</title>
   <meta name="description" content="100% private, sovereign desktop AI workstation combining FLUX.2 Klein & SDXL Lightning image synthesis with native llama.cpp GGUF dialogue engines. Designed & engineered by Protik.">
-  <link rel="icon" type="image/png" href="${faviconBase64}">
+  <link rel="icon" type="image/png" href="${faviconUrl}">
   <!-- Open Graph / Twitter Card: link-preview crawlers (WhatsApp, Facebook,
        Slack, Discord, etc.) look for these tags specifically, and og:image
        must be a real fetchable URL — a data: URI is not valid per the OG
-       spec — hence the separate, non-inlined og-image.png next to this file. -->
+       spec, which is also why every asset on this page is now a real
+       sibling file instead of inlined (see the copyAsset comment above). -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://protik1810.github.io/Solframe-Studio/">
+  <meta property="og:url" content="${SITE_BASE_URL}">
   <meta property="og:title" content="Solframe Studio — Sovereign Desktop Generative AI Workstation">
   <meta property="og:description" content="100% private, sovereign desktop AI workstation combining FLUX.2 Klein & SDXL Lightning image synthesis with native llama.cpp GGUF dialogue engines. Designed & engineered by Protik.">
-  <meta property="og:image" content="https://protik1810.github.io/Solframe-Studio/og-image.png">
+  <meta property="og:image" content="${SITE_BASE_URL}${logoUrl}">
   <meta property="og:image:width" content="512">
   <meta property="og:image:height" content="512">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Solframe Studio — Sovereign Desktop Generative AI Workstation">
   <meta name="twitter:description" content="100% private, sovereign desktop AI workstation combining FLUX.2 Klein & SDXL Lightning image synthesis with native llama.cpp GGUF dialogue engines.">
-  <meta name="twitter:image" content="https://protik1810.github.io/Solframe-Studio/og-image.png">
+  <meta name="twitter:image" content="${SITE_BASE_URL}${logoUrl}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -753,7 +764,7 @@ const html = `<!DOCTYPE html>
   <nav class="navbar">
     <div class="nav-container">
       <a href="#" class="brand">
-        <img src="${logoBase64}" alt="Solframe Studio Logo" class="brand-logo">
+        <img src="${logoUrl}" alt="Solframe Studio Logo" class="brand-logo">
         <span class="brand-title">Solframe Studio</span>
       </a>
       <div class="nav-links">
@@ -777,7 +788,7 @@ const html = `<!DOCTYPE html>
         <span>⚡</span> v1.1.0 Production Release &bull; 100% Sovereign & Offline
       </div>
       <div id="platform-banner" class="platform-banner" style="display:none;"></div>
-      <img src="${logoBase64}" alt="Solframe Studio Logo" class="hero-logo">
+      <img src="${logoUrl}" alt="Solframe Studio Logo" class="hero-logo">
       <h1 class="hero-title">
         The Sovereign Desktop<br>
         <span class="hero-gradient">Generative AI Workstation</span>
@@ -1023,7 +1034,7 @@ const html = `<!DOCTYPE html>
     <!-- Creator Spotlight -->
     <section class="creator-card reveal-scale">
       <a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener">
-        <img class="creator-avatar" src="${creatorAvatarBase64}" alt="${CREATOR_NAME} on GitHub">
+        <img class="creator-avatar" src="${creatorAvatarUrl}" alt="${CREATOR_NAME} on GitHub">
       </a>
       <div style="flex: 1; min-width: 280px;">
         <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #a78bfa; margin-bottom: 4px;">
@@ -1049,7 +1060,7 @@ const html = `<!DOCTYPE html>
     <div class="container">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <img src="${logoBase64}" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px;">
+          <img src="${logoUrl}" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px;">
           <strong>Solframe Studio</strong> &bull; Created by <strong><a href="${CREATOR_GITHUB_URL}" target="_blank" rel="noopener" style="color: inherit;">${CREATOR_NAME}</a></strong>
         </div>
         <div>
@@ -1185,15 +1196,8 @@ const html = `<!DOCTYPE html>
 // Root index.html is the separate Vite/Electron app entry point (loads
 // src/main.tsx) and must never be overwritten with this marketing page again —
 // doing so silently breaks `npm run build`/`electron:build` (see git history).
-if (!fs.existsSync(path.join(rootDir, 'docs'))) fs.mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
-fs.writeFileSync(path.join(rootDir, 'docs/index.html'), html, 'utf8');
+if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
+fs.writeFileSync(path.join(docsDir, 'index.html'), html, 'utf8');
 
-// og:image must be a real fetchable URL, not a data: URI, so this one file
-// is written as an actual asset next to index.html instead of being inlined.
-const logoSourcePath = path.join(rootDir, 'public/logo.png');
-if (fs.existsSync(logoSourcePath)) {
-  fs.copyFileSync(logoSourcePath, path.join(rootDir, 'docs/og-image.png'));
-}
-
-console.log('✅ Generated 100% self-contained docs/index.html with embedded base64 blobs!');
-console.log('   This is a gitignored build artifact — push to main and the Pages workflow regenerates + deploys it automatically.');
+console.log('✅ Generated docs/index.html + copied assets (themes/, screenshots/, avatars/, logo.png, favicon.png)!');
+console.log('   This is a gitignored build output — push to main and the Pages workflow regenerates + deploys it automatically.');
