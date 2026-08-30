@@ -105,12 +105,37 @@ function createMainWindow() {
     mainWindow.focus();
   });
 
+  // Substring checks like url.includes("localhost") are trivially spoofed
+  // (e.g. https://evil.com/?x=127.0.0.1, https://localhost.evil.com/) and
+  // would let a malicious page open a new BrowserWindow pointed at itself
+  // instead of routing to the OS's default browser. Compare the parsed
+  // origin instead.
+  function isOwnOrigin(url) {
+    try {
+      const { protocol, hostname, port } = new URL(url);
+      return protocol === "http:" && (hostname === "127.0.0.1" || hostname === "localhost") && port === String(PORT);
+    } catch (e) {
+      return false;
+    }
+  }
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("http") && !url.includes("127.0.0.1") && !url.includes("localhost")) {
+    if (url.startsWith("http") && !isOwnOrigin(url)) {
       shell.openExternal(url);
       return { action: "deny" };
     }
     return { action: "allow" };
+  });
+
+  // Electron security checklist #13: without this, anything that gets the
+  // main window itself to navigate (a compromised remote page, a malicious
+  // deep link) would load arbitrary content in the app's own window instead
+  // of being routed out to the default browser.
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (!isOwnOrigin(url)) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
   });
 
   mainWindow.on("closed", () => {

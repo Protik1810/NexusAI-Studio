@@ -40,45 +40,67 @@ export class StableDiffusionCppService {
     const seedUsed = req.seed === -1 ? Math.floor(Math.random() * 1000000) : req.seed;
     const finalParams = { ...req, seed: seedUsed };
 
-    onProgress(1, req.steps, 'stable-diffusion.cpp: Initializing GPU Tensor Pipeline...');
-    let simulatedStep = 1;
-    const progressInterval = setInterval(() => {
-      if (simulatedStep < req.steps) {
-        simulatedStep++;
-        onProgress(simulatedStep, req.steps, `stable-diffusion.cpp GPU: Sampling Step ${simulatedStep}/${req.steps}...`);
-      }
-    }, 600);
+    onProgress(0, req.steps, 'stable-diffusion.cpp: Initializing GPU Tensor Pipeline...');
 
+    let res: Response;
     try {
-      const res = await fetch('/api/sd-generate', {
+      res = await fetch('/api/sd-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(finalParams)
       });
-
-      clearInterval(progressInterval);
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({ error: `HTTP ${res.status} Server Error` }));
-        throw new Error(errData.error || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to generate image on GPU');
-      }
-
-      onProgress(req.steps, req.steps, 'stable-diffusion.cpp: VAE Decode complete!');
-
-      return {
-        imageUrl: data.imageUrl,
-        seedUsed,
-        outputPath: data.outputPath
-      };
     } catch (err: any) {
-      clearInterval(progressInterval);
       throw new Error(`GPU Inference Error:\n\n${err.message}`, { cause: err });
     }
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: `HTTP ${res.status} Server Error` }));
+      throw new Error(errData.error || `HTTP ${res.status}`);
+    }
+    if (!res.body) {
+      throw new Error('Server did not return a progress stream.');
+    }
+
+    // The server streams real sd-cli progress as Server-Sent Events (one
+    // "data: {...}\n\n" per sampling step) instead of a single blocking JSON
+    // response, so the progress bar reflects what the GPU is actually doing.
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let boundary;
+        while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+          const rawEvent = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          const dataLine = rawEvent.split('\n').find(l => l.startsWith('data: '));
+          if (!dataLine) continue;
+          const payload = JSON.parse(dataLine.slice(6));
+
+          if (payload.done) {
+            if (!payload.success) {
+              throw new Error(payload.error || 'Failed to generate image on GPU');
+            }
+            onProgress(req.steps, req.steps, 'stable-diffusion.cpp: VAE Decode complete!');
+            return {
+              imageUrl: payload.imageUrl,
+              seedUsed,
+              outputPath: payload.outputPath
+            };
+          }
+          onProgress(payload.step, payload.total, payload.message);
+        }
+      }
+    } catch (err: any) {
+      throw new Error(`GPU Inference Error:\n\n${err.message}`, { cause: err });
+    }
+
+    throw new Error('GPU Inference Error:\n\nConnection closed before generation finished.');
   }
 }
 

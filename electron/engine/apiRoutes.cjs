@@ -266,6 +266,11 @@ function createApiRouter(ctx) {
     }
 
     if (pathname === '/api/rescan') {
+      if (req.method !== 'POST') {
+        res.statusCode = 405;
+        res.end('Method Not Allowed');
+        return true;
+      }
       if (scanState !== 'scanning') {
         cachedModels = null;
         runBackgroundScan();
@@ -338,6 +343,11 @@ function createApiRouter(ctx) {
     }
 
     if (pathname === '/api/llama/stop') {
+      if (req.method !== 'POST') {
+        res.statusCode = 405;
+        res.end('Method Not Allowed');
+        return true;
+      }
       if (llamaProc) {
         try { llamaProc.kill('SIGKILL'); } catch (e) {}
         llamaProc = null;
@@ -504,11 +514,20 @@ function createApiRouter(ctx) {
     }
 
     if (pathname === '/api/download-progress') {
-      sendJson(res, 200, activeDownload);
+      // childProc is a raw Node ChildProcess (circular internal refs via its
+      // stdio streams) — never send it, only serve the plain status fields.
+      const downloadStatus = { ...activeDownload };
+      delete downloadStatus.childProc;
+      sendJson(res, 200, downloadStatus);
       return true;
     }
 
     if (pathname === '/api/cancel-download') {
+      if (req.method !== 'POST') {
+        res.statusCode = 405;
+        res.end('Method Not Allowed');
+        return true;
+      }
       if (activeDownload.childProc) {
         try { activeDownload.childProc.kill('SIGKILL'); } catch (e) {}
       }
@@ -636,14 +655,39 @@ function createApiRouter(ctx) {
           PATH: `${workingDir};${path.join(rootDir, 'backend/win/cuda')};${path.join(rootDir, 'backend/win/vulkan')};${path.join(rootDir, 'backend/win/llama')};${process.env.PATH || ''}`
         };
 
+        // sd-cli prints its sampling progress bar to stdout as it goes, e.g.
+        // "|====>   | 2/4 - 6.35it/s" — stream that to the client as SSE
+        // instead of guessing progress with a client-side timer that has no
+        // relationship to what the GPU is actually doing.
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive'
+        });
+        const sendEvent = payload => res.write(`data: ${JSON.stringify(payload)}\n\n`);
+
         try {
-          const result = await runSdCli({ execPath, args, outFullPath, outFilename, workingDir, env: procEnv, onStdout: line => console.log('[sd-cli]', line) });
-          sendJson(res, 200, result);
+          const result = await runSdCli({
+            execPath, args, outFullPath, outFilename, workingDir, env: procEnv,
+            onStdout: line => {
+              const m = line.match(/(\d+)\/(\d+)\s*-\s*([\d.]+)(it\/s|s\/it)/);
+              if (!m) return;
+              const [, step, total, rate, unit] = m;
+              sendEvent({ step: Number(step), total: Number(total), message: `stable-diffusion.cpp GPU: Sampling Step ${step}/${total}... (${rate}${unit})` });
+            }
+          });
+          sendEvent({ done: true, success: true, ...result });
         } catch (genErr) {
-          sendJson(res, 500, { success: false, error: genErr.message });
+          sendEvent({ done: true, success: false, error: genErr.message });
         }
+        res.end();
       } catch (e) {
-        sendJson(res, 500, { success: false, error: e.message });
+        if (res.headersSent) {
+          res.write(`data: ${JSON.stringify({ done: true, success: false, error: e.message })}\n\n`);
+          res.end();
+        } else {
+          sendJson(res, 500, { success: false, error: e.message });
+        }
       }
       return true;
     }

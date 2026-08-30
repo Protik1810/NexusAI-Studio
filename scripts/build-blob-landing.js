@@ -1163,12 +1163,14 @@ const html = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// docs/index.html is the single canonical copy of the showcase page — it's
-// what .github/workflows/pages.yml actually deploys, and scripts/build-product-page.js
-// reads it too. Root index.html is the Vite/Electron app entry point (loads
+// docs/index.html is a build artifact, not a committed file — it's gitignored,
+// and .github/workflows/pages.yml runs this exact script during deploy so the
+// live site is always built fresh from source. Run it locally only to preview
+// (see scripts/build-product-page.js) or to eyeball a change before pushing.
+// Root index.html is the separate Vite/Electron app entry point (loads
 // src/main.tsx) and must never be overwritten with this marketing page again —
 // doing so silently breaks `npm run build`/`electron:build` (see git history).
 if (!fs.existsSync(path.join(rootDir, 'docs'))) fs.mkdirSync(path.join(rootDir, 'docs'), { recursive: true });
 fs.writeFileSync(path.join(rootDir, 'docs/index.html'), html, 'utf8');
 console.log('✅ Generated 100% self-contained docs/index.html with embedded base64 blobs!');
-console.log('   Commit and push it — .github/workflows/pages.yml deploys docs/ to GitHub Pages automatically.');
+console.log('   This is a gitignored build artifact — push to main and the Pages workflow regenerates + deploys it automatically.');

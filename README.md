@@ -4,12 +4,12 @@
 
 **Autonomous, Sovereign & Zero-Cloud Local Generative AI Workstation**
 
-[![Platform](https://img.shields.io/badge/Platform-Windows%20(full)%20%7C%20Linux%2FmacOS%20(UI%20preview)-blue?style=for-the-badge&logo=windows)](https://github.com/Protik1810/NexusAI-Studio)
-[![Hardware](https://img.shields.io/badge/Hardware-NVIDIA%20CUDA%20%7C%20AMD%2FIntel%20Vulkan-success?style=for-the-badge&logo=nvidia)](https://github.com/Protik1810/NexusAI-Studio)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20(full)%20%7C%20Linux%2FmacOS%20(UI%20preview)-blue?style=for-the-badge&logo=windows)](https://github.com/Protik1810/Solframe-Studio)
+[![Hardware](https://img.shields.io/badge/Hardware-NVIDIA%20CUDA%20%7C%20AMD%2FIntel%20Vulkan-success?style=for-the-badge&logo=nvidia)](https://github.com/Protik1810/Solframe-Studio)
 [![Engine](https://img.shields.io/badge/Diffusion%20Engine-stable--diffusion.cpp-orange?style=for-the-badge)](https://github.com/leejet/stable-diffusion.cpp)
 [![LLM](https://img.shields.io/badge/Dialogue%20Engine-llama.cpp%20GGUF-purple?style=for-the-badge)](https://github.com/ggerganov/llama.cpp)
 [![License](https://img.shields.io/badge/License-GNU%20GPL%20v3.0-blue?style=for-the-badge)](LICENSE)
-[![CI](https://github.com/Protik1810/NexusAI-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Protik1810/NexusAI-Studio/actions/workflows/ci.yml)
+[![CI](https://github.com/Protik1810/Solframe-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Protik1810/Solframe-Studio/actions/workflows/ci.yml)
 
 <br/>
 
@@ -86,25 +86,25 @@
 - Node.js (v18+) & npm
 
 ### 🪟 Windows Setup (Installer)
-Download the latest installer from [Releases](https://github.com/Protik1810/NexusAI-Studio/releases/latest):
-- `NexusAI-Studio-Setup-<version>.exe` — full installer (all backends)
-- `NexusAI-Studio-Setup-<version>-Lightweight.exe` — smaller installer, downloads engines on first run
+Download the latest installer from [Releases](https://github.com/Protik1810/Solframe-Studio/releases/latest):
+- `Solframe-Studio-Setup-<version>.exe` — full installer (all backends)
+- `Solframe-Studio-Setup-<version>-Lightweight.exe` — smaller installer, downloads engines on first run
 
 There is currently no winget package; the links above are the only official builds.
 
 ### 🐧 Linux & 🍎 macOS (UI Preview — 1-Line Terminal Install)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Protik1810/NexusAI-Studio/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/install.sh | bash
 ```
 This clones the repo and runs `npm run dev`, which brings up the Solframe Studio interface. The bundled diffusion/LLM engines under `backend/win/` are Windows-only binaries, so **image generation and local LLM chat will not run** until native Linux/macOS engine builds ship — this path is useful today for UI development and preview, not for production inference.
 
-Prefer an installable app over the terminal preview? `npm run electron:build:linux` (AppImage + .deb) and `npm run electron:build:mac` (.dmg + .zip) package the same UI-only build as a native app — run them on the target OS, or grab the artifacts from the [Build Linux/macOS Installers](https://github.com/Protik1810/NexusAI-Studio/actions/workflows/release-build.yml) GitHub Actions workflow.
+Prefer an installable app over the terminal preview? `npm run electron:build:linux` (AppImage + .deb) and `npm run electron:build:mac` (.dmg + .zip) package the same UI-only build as a native app — run them on the target OS, or grab the artifacts from the [Build Linux/macOS Installers](https://github.com/Protik1810/Solframe-Studio/actions/workflows/release-build.yml) GitHub Actions workflow.
 
 ### Running in Development Mode
 ```bash
 # 1. Clone repository
-git clone https://github.com/Protik1810/NexusAI-Studio.git
-cd NexusAI-Studio
+git clone https://github.com/Protik1810/Solframe-Studio.git
+cd Solframe-Studio
 
 # 2. Install dependencies
 npm install

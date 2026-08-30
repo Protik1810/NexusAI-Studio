@@ -4,7 +4,7 @@
 #define MyAppName "Solframe Studio"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Protik"
-#define MyAppURL "https://github.com/Protik1810/NexusAI-Studio"
+#define MyAppURL "https://github.com/Protik1810/Solframe-Studio"
 #define MyAppExeName "Solframe Studio.exe"
 
 [Setup]

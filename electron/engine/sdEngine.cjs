@@ -29,8 +29,11 @@ function runSdCli({ execPath, args, outFullPath, outFilename, workingDir, env, o
 
     child.stderr?.on('data', d => { stderrLog += d.toString(); });
     child.stdout?.on('data', d => {
-      const line = d.toString().trim();
-      if (onStdout) onStdout(line);
+      if (!onStdout) return;
+      // sd-cli redraws its progress bar in place with '\r', not '\n' — a
+      // single 'data' chunk can contain many progress ticks. Split on both
+      // so each tick reaches the caller instead of one giant blended line.
+      d.toString().split(/[\r\n]+/).map(s => s.trim()).filter(Boolean).forEach(onStdout);
     });
 
     child.on('close', code => {
