@@ -131,6 +131,28 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
       .catch(() => {});
   }, []);
 
+  // Auto-enable RAM offload once resolution crosses a safe single-pass
+  // budget. Verified directly: the 4B Klein pair's static weights alone
+  // (12.4GB) already sit at this card's 12GB capacity, so any compute
+  // buffer beyond ~512x512 pushes generation into CUDA's silent VMM paging
+  // — measured 40x slower (396s vs 10s at 1024x1024) for the *identical*
+  // image. --offload-to-cpu's own docs claim no speed loss once weights
+  // already fit, so enabling it a bit earlier than the bare minimum is
+  // close to free. offloadTextEncoder is deliberately left out of the dep
+  // array: this only ever flips it ON, so a user who manually turns it back
+  // off for a resolution they've confirmed works isn't fought until they
+  // change the resolution again.
+  useEffect(() => {
+    if (pipeline !== 'flux' || offloadTextEncoder) return;
+    const activeRatio = ASPECT_RATIOS[selectedRatio];
+    const targetWidth = activeRatio.isCustom ? customWidth : activeRatio.width;
+    const targetHeight = activeRatio.isCustom ? customHeight : activeRatio.height;
+    if (targetWidth * targetHeight > 512 * 512) {
+      setOffloadTextEncoder(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pipeline, selectedRatio, customWidth, customHeight]);
+
   const reloadLocalModels = async () => {
     setIsReloadingModels(true);
     try {
@@ -234,16 +256,43 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
     }
   }, [initialPrompt]);
 
+  // FLUX.2 Klein ships two variants per size: the distilled model (e.g.
+  // "flux-2-klein-9b...") wants few steps at cfg~1, while the "base"
+  // variant (e.g. "flux-2-klein-base-9b...") is the un-distilled model and
+  // needs a real step count and cfg — using distilled settings on a base
+  // model doesn't error, it just silently renders malformed output (verified:
+  // cfg 1/6 steps produced a warped, non-apple blob from the base 9B model;
+  // cfg 4/20 steps from the same file produced a correct, sharp apple).
+  const isBaseFluxVariant = (modelPath: string) => /(^|[-_])base([-_]|$)/i.test(
+    modelPath.split('/').pop()?.split('\\').pop() || modelPath
+  );
+
   const handlePipelineSwitch = (newPipeline: 'flux' | 'standard') => {
     setPipeline(newPipeline);
     if (newPipeline === 'flux') {
-      setSteps(6);
-      setCfg(1.0);
+      if (isBaseFluxVariant(unetModel)) {
+        setSteps(20);
+        setCfg(4.0);
+      } else {
+        setSteps(6);
+        setCfg(1.0);
+      }
       setSamplingMethod('euler');
     } else {
       setSteps(4);
       setCfg(1.8);
       setSamplingMethod('euler_a');
+    }
+  };
+
+  const handleUnetModelChange = (modelFullPath: string) => {
+    setUnetModel(modelFullPath);
+    if (isBaseFluxVariant(modelFullPath)) {
+      setSteps(20);
+      setCfg(4.0);
+    } else {
+      setSteps(6);
+      setCfg(1.0);
     }
   };
 
@@ -391,7 +440,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         checkpointModel={checkpointModel}
         onModelChange={handleModelChange}
         unetModel={unetModel}
-        setUnetModel={setUnetModel}
+        setUnetModel={handleUnetModelChange}
         clipModel={clipModel}
         setClipModel={setClipModel}
         vaeModel={vaeModel}

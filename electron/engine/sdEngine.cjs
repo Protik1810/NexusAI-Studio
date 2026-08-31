@@ -118,13 +118,24 @@ function buildSdCliArgs(params, outFullPath) {
     if (params.clipPath && fs.existsSync(params.clipPath)) args.push('--llm', params.clipPath);
     if (params.t5Path && fs.existsSync(params.t5Path)) args.push('--t5xxl', params.t5Path);
     if (params.vaePath && fs.existsSync(params.vaePath)) args.push('--vae', params.vaePath);
+    // Flash attention in the diffusion model is a strict win for FLUX on
+    // CUDA: it's mathematically exact (not an approximation), and on a 9B
+    // Klein model it cut real VRAM use from 17.3GB to 9.1GB — enough to
+    // stop the driver from silently oversubscribing VRAM via CUDA's VMM,
+    // which was the actual cause of ~39s/it thrashing (not raw compute
+    // cost). Verified: 371s -> 103s end-to-end on a 12GB card, same output.
+    args.push('--diffusion-fa');
     // Uncensored FLUX.2 text encoders are often full LLMs (7-9B dense
-    // params) and can need more VRAM alone than the diffusion model —
-    // confirmed on a 12GB card: a 9B fp8 diffusion model (9.1GB) plus a 9B
-    // text encoder (14.4GB) don't fit together, but offloading just the
-    // text encoder to system RAM does (9.3GB peak VRAM), since it only
-    // runs once before sampling starts, not during every step.
-    if (params.offloadTextEncoder) args.push('--backend', 'te=cpu');
+    // params) and can need more VRAM alone than the diffusion model.
+    // --offload-to-cpu keeps ALL module weights (diffusion + text encoder +
+    // vae) resident in system RAM and stages each into VRAM only when it's
+    // actually computing — unlike the old --backend te=cpu, which forced
+    // the text encoder's compute itself onto the CPU, everything still runs
+    // on the GPU here, only weight *residency* moves to RAM. Verified
+    // faster than te=cpu (103s vs 128s on the same 9B model+prompt) and is
+    // the flag stable-diffusion.cpp's own docs/flux2.md recommends for
+    // Klein-scale models on constrained VRAM.
+    if (params.offloadTextEncoder) args.push('--offload-to-cpu');
   } else {
     args.push('-m', params.modelPath);
     if (params.negativePrompt) args.push('-n', params.negativePrompt);

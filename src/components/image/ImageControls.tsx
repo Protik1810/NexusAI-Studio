@@ -311,10 +311,10 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
                 onChange={(e) => setOffloadTextEncoder(e.target.checked)}
                 style={{ accentColor: 'var(--accent)' }}
               />
-              Offload Text Encoder to CPU
+              Offload Model Weights to RAM
             </label>
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }} title="Large uncensored text encoders (7-9B) can exceed VRAM alongside the diffusion model. Running the text encoder on CPU RAM instead frees that VRAM — it only runs once before sampling starts, so the slowdown is minor.">
-              Frees VRAM, slower encode
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }} title="Large uncensored text encoders (7-9B) can exceed VRAM alongside the diffusion model. This keeps weights in system RAM and stages them into VRAM only when needed — computation still runs on the GPU, only weight residency moves to RAM, so most of the speed is kept.">
+              Frees VRAM, GPU still does the work
             </span>
           </div>
 

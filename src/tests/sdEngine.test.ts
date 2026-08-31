@@ -81,20 +81,36 @@ describe('buildSdCliArgs - FLUX pipeline', () => {
     expect(args).not.toContain('--prediction');
   });
 
-  it('adds --backend te=cpu when offloadTextEncoder is set', () => {
+  it('adds --offload-to-cpu when offloadTextEncoder is set', () => {
+    // --offload-to-cpu (not the old --backend te=cpu) — it stages ALL module
+    // weights from system RAM into VRAM on demand while still computing on
+    // the GPU, whereas te=cpu forced the text encoder's compute itself onto
+    // the CPU. Verified faster end-to-end on a 9B Klein model (103s vs 128s).
     const args = buildSdCliArgs(
       { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat', offloadTextEncoder: true },
       'out.png'
     );
-    expect(args).toContain('--backend');
-    expect(args[args.indexOf('--backend') + 1]).toBe('te=cpu');
+    expect(args).toContain('--offload-to-cpu');
+    expect(args).not.toContain('--backend');
   });
 
-  it('omits --backend te=cpu by default', () => {
+  it('omits --offload-to-cpu by default', () => {
     const args = buildSdCliArgs(
       { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat' },
       'out.png'
     );
-    expect(args).not.toContain('--backend');
+    expect(args).not.toContain('--offload-to-cpu');
+  });
+
+  it('always passes --diffusion-fa for the flux pipeline', () => {
+    // Flash attention in the diffusion model is mathematically exact (not
+    // an approximation) and was the actual fix for a 9B Klein model
+    // overflowing VRAM (17.3GB -> 9.1GB), not just a speed nicety — so it's
+    // unconditional, not gated behind a checkbox like offloadTextEncoder.
+    const args = buildSdCliArgs(
+      { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat' },
+      'out.png'
+    );
+    expect(args).toContain('--diffusion-fa');
   });
 });
