@@ -87,6 +87,11 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
   const [loraStrength, setLoraStrength] = useState<number>(0.85);
   const [useLora, setUseLora] = useState<boolean>(false);
 
+  // Uncensored FLUX.2 text encoders are often full 7-9B LLMs — on a 12GB
+  // card that plus even an fp8 diffusion model can exceed VRAM. Off by
+  // default (fastest) since not every card/model combo needs it.
+  const [offloadTextEncoder, setOffloadTextEncoder] = useState<boolean>(false);
+
   // Generation Parameters — prompt box always starts empty; it's only ever
   // filled by an explicit user action (typing, or a "send to Image Studio"
   // transfer from Chat/Gallery via initialPrompt) and is cleared again after
@@ -288,6 +293,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         vaePath: pipeline === 'flux' ? vaeModel : undefined,
         loraPath: useLora && loraModel ? loraModel : undefined,
         loraStrength: useLora ? loraStrength : undefined,
+        offloadTextEncoder: pipeline === 'flux' ? offloadTextEncoder : undefined,
         prompt,
         negativePrompt: pipeline === 'standard' ? negativePrompt : undefined,
         width: targetWidth,
@@ -396,6 +402,8 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         setLoraModel={setLoraModel}
         loraStrength={loraStrength}
         setLoraStrength={setLoraStrength}
+        offloadTextEncoder={offloadTextEncoder}
+        setOffloadTextEncoder={setOffloadTextEncoder}
         prompt={prompt}
         setPrompt={setPrompt}
         negativePrompt={negativePrompt}

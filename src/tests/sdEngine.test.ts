@@ -58,3 +58,43 @@ describe('buildSdCliArgs - LoRA wiring', () => {
     expect(args[promptIndex + 1]).toBe('a cat');
   });
 });
+
+describe('buildSdCliArgs - FLUX pipeline', () => {
+  it('passes "flux_flow" (not the old "flux2_flow") for a Klein diffusion model', () => {
+    // Current sd-cli builds reject "flux2_flow" outright (dumps --help and
+    // exits) — verified against a real generation run. Locking this in so a
+    // future revert doesn't silently re-break FLUX.2 Klein generation.
+    const args = buildSdCliArgs(
+      { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat' },
+      'out.png'
+    );
+    expect(args).toContain('--prediction');
+    expect(args[args.indexOf('--prediction') + 1]).toBe('flux_flow');
+    expect(args).not.toContain('flux2_flow');
+  });
+
+  it('does not pass --prediction for a non-Klein FLUX model', () => {
+    const args = buildSdCliArgs(
+      { pipeline: 'flux', modelPath: 'flux1-dev.safetensors', prompt: 'a cat' },
+      'out.png'
+    );
+    expect(args).not.toContain('--prediction');
+  });
+
+  it('adds --backend te=cpu when offloadTextEncoder is set', () => {
+    const args = buildSdCliArgs(
+      { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat', offloadTextEncoder: true },
+      'out.png'
+    );
+    expect(args).toContain('--backend');
+    expect(args[args.indexOf('--backend') + 1]).toBe('te=cpu');
+  });
+
+  it('omits --backend te=cpu by default', () => {
+    const args = buildSdCliArgs(
+      { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat' },
+      'out.png'
+    );
+    expect(args).not.toContain('--backend');
+  });
+});

@@ -54,6 +54,8 @@ export interface ImageControlsProps {
   setLoraModel: (m: string) => void;
   loraStrength: number;
   setLoraStrength: (s: number) => void;
+  offloadTextEncoder: boolean;
+  setOffloadTextEncoder: (o: boolean) => void;
   prompt: string;
   setPrompt: (p: string) => void;
   negativePrompt: string;
@@ -105,6 +107,8 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
   setLoraModel,
   loraStrength,
   setLoraStrength,
+  offloadTextEncoder,
+  setOffloadTextEncoder,
   prompt,
   setPrompt,
   negativePrompt,
@@ -297,6 +301,21 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
                 );
               })}
             </select>
+          </div>
+
+          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', background: 'rgba(0,0,0,0.25)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={offloadTextEncoder}
+                onChange={(e) => setOffloadTextEncoder(e.target.checked)}
+                style={{ accentColor: 'var(--accent)' }}
+              />
+              Offload Text Encoder to CPU
+            </label>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }} title="Large uncensored text encoders (7-9B) can exceed VRAM alongside the diffusion model. Running the text encoder on CPU RAM instead frees that VRAM — it only runs once before sampling starts, so the slowdown is minor.">
+              Frees VRAM, slower encode
+            </span>
           </div>
 
           {clipModel.toLowerCase().includes('qwen_3_8b_fp8mixed') && (

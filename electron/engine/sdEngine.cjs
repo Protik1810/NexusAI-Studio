@@ -108,11 +108,23 @@ function buildSdCliArgs(params, outFullPath) {
   let prompt = params.prompt || '';
   if (params.pipeline === 'flux') {
     args.push('--diffusion-model', params.modelPath);
+    // "flux2_flow" was the prediction-type name in older sd-cli builds;
+    // current builds renamed it to "flux_flow" (shared with FLUX.1) and
+    // reject the old name outright (dumps --help and exits) — verified
+    // against a real generation run after the June-2026-era Windows CUDA
+    // binary was replaced with a current build to get correct fp8 support.
     const isKlein = (params.modelPath || '').toLowerCase().includes('klein');
-    if (isKlein) args.push('--prediction', 'flux2_flow');
+    if (isKlein) args.push('--prediction', 'flux_flow');
     if (params.clipPath && fs.existsSync(params.clipPath)) args.push('--llm', params.clipPath);
     if (params.t5Path && fs.existsSync(params.t5Path)) args.push('--t5xxl', params.t5Path);
     if (params.vaePath && fs.existsSync(params.vaePath)) args.push('--vae', params.vaePath);
+    // Uncensored FLUX.2 text encoders are often full LLMs (7-9B dense
+    // params) and can need more VRAM alone than the diffusion model —
+    // confirmed on a 12GB card: a 9B fp8 diffusion model (9.1GB) plus a 9B
+    // text encoder (14.4GB) don't fit together, but offloading just the
+    // text encoder to system RAM does (9.3GB peak VRAM), since it only
+    // runs once before sampling starts, not during every step.
+    if (params.offloadTextEncoder) args.push('--backend', 'te=cpu');
   } else {
     args.push('-m', params.modelPath);
     if (params.negativePrompt) args.push('-n', params.negativePrompt);

@@ -6,6 +6,7 @@ export interface SDCppGenerationParams {
   vaePath?: string;
   loraPath?: string;
   loraStrength?: number;
+  offloadTextEncoder?: boolean;
   prompt: string;
   negativePrompt?: string;
   width: number;
