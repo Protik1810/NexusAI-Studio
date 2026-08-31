@@ -80,11 +80,20 @@ const replacements = {
   SITE_BASE_URL,
   FAVICON_URL: faviconUrl,
   OG_IMAGE_URL: `${SITE_BASE_URL}${logoUrl}`,
+  // electron-builder's productName ("Solframe Studio") has a space, and
+  // GitHub replaces spaces with dots when it sanitizes uploaded release
+  // asset filenames (confirmed against the real uploaded assets: "Solframe
+  // Studio-1.1.0.AppImage" -> "Solframe.Studio-1.1.0.AppImage"). Windows
+  // and .deb artifactNames are explicitly hyphenated already, so they never
+  // had a space to begin with and are unaffected. A prior fix (f6c0e79)
+  // corrected the stale names in RELEASE_NOTES.md/CHECKSUMS.txt but missed
+  // this file — the actual generator for the live download buttons — so
+  // the Linux AppImage and macOS zip buttons were 404ing on the real site.
   DOWNLOAD_WIN_COMPLETE: `${RELEASE_BASE}/Solframe-Studio-Setup-${VERSION}.exe`,
   DOWNLOAD_WIN_LIGHT: `${RELEASE_BASE}/Solframe-Studio-Setup-${VERSION}-Lightweight.exe`,
-  DOWNLOAD_LINUX_APPIMAGE: `${RELEASE_BASE}/Solframe-Studio-${VERSION}-x86_64.AppImage`,
+  DOWNLOAD_LINUX_APPIMAGE: `${RELEASE_BASE}/Solframe.Studio-${VERSION}.AppImage`,
   DOWNLOAD_LINUX_DEB: `${RELEASE_BASE}/solframe-studio_${VERSION}_amd64.deb`,
-  DOWNLOAD_MAC_ZIP: `${RELEASE_BASE}/Solframe-Studio-${VERSION}-mac.zip`,
+  DOWNLOAD_MAC_ZIP: `${RELEASE_BASE}/Solframe.Studio-${VERSION}-mac.zip`,
   ...screenshots,
   ...themeAssets
 };

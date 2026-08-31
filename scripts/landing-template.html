@@ -2301,7 +2301,7 @@
                 <span class="download-platform">Linux · Portable</span>
               </div>
             </div>
-            <p class="download-desc">Single-file app. chmod +x then run. Works across modern distributions.</p>
+            <p class="download-desc">Single-file app. chmod +x then run. Works across modern distributions. UI shell only — no bundled inference engine yet.</p>
           </div>
           <a href="{{DOWNLOAD_LINUX_APPIMAGE}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline" id="btn-linux-appimage">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
@@ -2321,7 +2321,7 @@
                 <span class="download-platform">Linux · Debian-based</span>
               </div>
             </div>
-            <p class="download-desc">Install with sudo apt install. Clean system integration.</p>
+            <p class="download-desc">Install with sudo apt install. Clean system integration. UI shell only — no bundled inference engine yet.</p>
           </div>
           <a href="{{DOWNLOAD_LINUX_DEB}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
@@ -2626,7 +2626,7 @@
           btnId: 'btn-linux-appimage',
           shellLabel: 'bash',
           buildCmd: 'npm run electron:build:linux',
-          captionText: 'Produces an AppImage + .deb on Linux with native Vulkan and AVX2 CPU kernels.'
+          captionText: 'Produces an AppImage + .deb on Linux — UI shell only for now, no bundled inference engine (Windows and macOS ship the real thing).'
         };
       }
 
