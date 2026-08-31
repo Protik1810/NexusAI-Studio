@@ -97,28 +97,23 @@ function createServer(options = {}) {
     // pathname before we ever see it, so this is safe today regardless, but
     // safeJoin is what every other request-driven path in this codebase
     // uses and costs nothing here.
+    // /outputs/* is handled by apiRouter above (shared with dev mode) and
+    // already returned by this point if matched — this is publicDir/distDir
+    // static assets and SPA fallback only.
     let filePath;
     try {
-      // /outputs/* — serve from user-writable data dir first, then publicDir
-      if (requestedFile.startsWith('/outputs/')) {
-        const outputFilename = requestedFile.replace(/^.*\//, '').split('?')[0];
-        const userFile = safeJoin(userOutputsDir, outputFilename);
-        const publicFile = safeJoin(publicDir, 'outputs', outputFilename);
-        filePath = fs.existsSync(userFile) ? userFile : publicFile;
-      } else {
-        // safeJoin resolves a leading "/" as a Windows drive-root anchor
-        // (path.resolve(base, "/x") discards base entirely) — strip it so
-        // the segment is relative to publicDir/distDir like it should be.
-        const relFile = requestedFile.replace(/^\/+/, '');
-        // Check public directory (themes, icons)
-        filePath = safeJoin(publicDir, relFile);
-        if (!fs.existsSync(filePath)) {
-          filePath = safeJoin(distDir, relFile);
-        }
-        // Fallback to index.html for SPA client-side routing
-        if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-          filePath = path.join(distDir, 'index.html');
-        }
+      // safeJoin resolves a leading "/" as a Windows drive-root anchor
+      // (path.resolve(base, "/x") discards base entirely) — strip it so
+      // the segment is relative to publicDir/distDir like it should be.
+      const relFile = requestedFile.replace(/^\/+/, '');
+      // Check public directory (themes, icons)
+      filePath = safeJoin(publicDir, relFile);
+      if (!fs.existsSync(filePath)) {
+        filePath = safeJoin(distDir, relFile);
+      }
+      // Fallback to index.html for SPA client-side routing
+      if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+        filePath = path.join(distDir, 'index.html');
       }
     } catch (e) {
       filePath = path.join(distDir, 'index.html');

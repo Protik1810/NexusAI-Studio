@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
+import { Writable } from 'stream';
 const { createApiRouter } = require('../../electron/engine/apiRoutes.cjs');
 
 type Listener = (chunk?: Buffer) => void;
@@ -27,12 +28,23 @@ function mockReq(method: string, headers: Record<string, string> = {}, body?: st
 }
 
 function mockRes() {
-  const res: any = {
-    statusCode: 200,
-    headers: {} as Record<string, string>,
-    body: '' as string,
-    setHeader(name: string, value: string) { res.headers[name] = value; },
-    end(chunk?: string) { if (chunk) res.body = chunk; }
+  // A real Writable so fs.createReadStream(...).pipe(res) — used by the
+  // /outputs/* file-serving route — works against this mock exactly like a
+  // real http.ServerResponse, without hand-rolling EventEmitter semantics.
+  const chunks: Buffer[] = [];
+  const res: any = new Writable({
+    write(chunk, _enc, cb) { chunks.push(chunk); cb(); }
+  });
+  res.statusCode = 200;
+  res.headers = {} as Record<string, string>;
+  res.body = '';
+  res.setHeader = (name: string, value: string) => { res.headers[name] = value; };
+  const originalEnd = res.end.bind(res);
+  res.end = (chunk?: string) => {
+    if (chunk) { res.body = chunk; return originalEnd(); }
+    const result = originalEnd();
+    if (chunks.length) res.body = Buffer.concat(chunks).toString('utf8');
+    return result;
   };
   return res;
 }
@@ -160,6 +172,49 @@ describe('apiRoutes - mutating routes require POST', () => {
       expect(res.statusCode).toBe(405);
     });
   }
+});
+
+describe('apiRoutes - /outputs/* file serving', () => {
+  // Regression test: vite.config.ts's dev-mode plugin only wires this
+  // router (no separate static-file serving of its own, unlike
+  // electron/server.cjs), so a generated image was never actually
+  // viewable when running `npm run dev` — the request fell through this
+  // handler unhandled and dead-ended at Vite's SPA index.html fallback.
+  // Confirmed live: a real FLUX generation produced a correct 595KB PNG on
+  // disk, but the browser's <img> got back a 741-byte text/html response.
+  it('serves a generated image from userOutputsDir with an image/png content type', async () => {
+    const ctx = makeCtx();
+    fs.writeFileSync(path.join(ctx.userOutputsDir, 'gen_123.png'), Buffer.from('fake-png-bytes'));
+    const router = createApiRouter(ctx);
+    const req = mockReq('GET');
+    const res = mockRes();
+    const handled = await router.handle(req, res, new URL('http://localhost/outputs/gen_123.png?t=1'));
+    // fs.createReadStream(...).pipe(res) streams asynchronously — handle()
+    // returns as soon as the pipe *starts*, not once it's finished.
+    await new Promise(resolve => res.on('finish', resolve));
+    expect(handled).toBe(true);
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['Content-Type']).toBe('image/png');
+    expect(res.body).toBe('fake-png-bytes');
+  });
+
+  it('returns 404 for a filename that does not exist, instead of falling through', async () => {
+    const router = createApiRouter(makeCtx());
+    const req = mockReq('GET');
+    const res = mockRes();
+    const handled = await router.handle(req, res, new URL('http://localhost/outputs/missing.png'));
+    expect(handled).toBe(true);
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('does not allow path traversal out of userOutputsDir', async () => {
+    const router = createApiRouter(makeCtx());
+    const req = mockReq('GET');
+    const res = mockRes();
+    const handled = await router.handle(req, res, new URL('http://localhost/outputs/..%2f..%2fetc%2fpasswd'));
+    expect(handled).toBe(true);
+    expect(res.statusCode).not.toBe(200);
+  });
 });
 
 describe('apiRoutes - /api/download-progress', () => {

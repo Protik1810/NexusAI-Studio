@@ -271,6 +271,38 @@ function createApiRouter(ctx) {
     if (pathname.startsWith('/llama-api/')) {
       return proxyToLlama(req, res, pathname, parsedUrl.search);
     }
+    // Generated images live in userOutputsDir (AppData/.../Solframe
+    // Studio/outputs), outside both publicDir and distDir — electron/
+    // server.cjs's own static-file serving already special-cased this for
+    // the packaged app, but vite.config.ts's dev-mode plugin only wires
+    // this router, so a generated image was never actually viewable when
+    // running `npm run dev`: the request fell through this handler
+    // (unhandled) into Vite's own static middleware, which only knows
+    // about publicDir/distDir, and dead-ended at the SPA's index.html —
+    // same dev/prod parity gap this file's /llama-api proxy above was
+    // written to close. Handling it here instead of duplicating it in
+    // vite.config.ts keeps a single implementation for both, same as
+    // everything else in this router.
+    if (pathname.startsWith('/outputs/')) {
+      const outputFilename = pathname.replace(/^.*\//, '');
+      let filePath;
+      try {
+        const userFile = safeJoin(userOutputsDir, outputFilename);
+        filePath = fs.existsSync(userFile) ? userFile : safeJoin(rootDir, 'public/outputs', outputFilename);
+      } catch (e) {
+        res.statusCode = 400;
+        res.end('Bad Request');
+        return true;
+      }
+      if (!fs.existsSync(filePath)) {
+        res.statusCode = 404;
+        res.end('Not Found');
+        return true;
+      }
+      res.setHeader('Content-Type', 'image/png');
+      fs.createReadStream(filePath).pipe(res);
+      return true;
+    }
     if (!pathname.startsWith('/api/')) return false;
 
     // This server has no authentication. Any website open in the user's
