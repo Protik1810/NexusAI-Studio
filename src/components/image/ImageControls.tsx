@@ -412,18 +412,22 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
         ))}
       </div>
 
-      {/* 5. NEGATIVE PROMPT */}
-      {pipeline === 'standard' && (
-        <div className="input-group" style={{ marginBottom: '12px' }}>
-          <label className="control-label">Negative Prompt (-n)</label>
-          <textarea 
-            value={negativePrompt} 
-            onChange={(e) => setNegativePrompt(e.target.value)} 
-            rows={2}
-            className="styled-textarea"
-          />
-        </div>
-      )}
+      {/* 5. NEGATIVE PROMPT — optional for both pipelines. For FLUX it only
+          has a visible effect once real CFG guidance is active (cfg > 1,
+          e.g. the "base" Klein variants); it's a no-op at the distilled
+          default of cfg 1.0. */}
+      <div className="input-group" style={{ marginBottom: '12px' }}>
+        <label className="control-label">
+          Negative Prompt (-n){pipeline === 'flux' ? ' — optional' : ''}
+        </label>
+        <textarea
+          value={negativePrompt}
+          onChange={(e) => setNegativePrompt(e.target.value)}
+          rows={2}
+          placeholder={pipeline === 'flux' ? 'Only affects generation when cfg > 1 (e.g. a "base" model)' : undefined}
+          className="styled-textarea"
+        />
+      </div>
 
       {/* 6. ASPECT RATIO SELECTOR */}
       <div className="control-group">

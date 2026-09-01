@@ -138,8 +138,14 @@ function buildSdCliArgs(params, outFullPath) {
     if (params.offloadTextEncoder) args.push('--offload-to-cpu');
   } else {
     args.push('-m', params.modelPath);
-    if (params.negativePrompt) args.push('-n', params.negativePrompt);
   }
+
+  // -n applies to both pipelines. For FLUX it only has a visible effect
+  // once real classifier-free guidance is active (cfg > 1, e.g. the "base"
+  // Klein variants at cfg 4.0) — the distilled models default to cfg 1.0,
+  // where CFG is a no-op and a negative prompt does nothing. It's harmless
+  // either way, so it's not worth gating behind a pipeline check.
+  if (params.negativePrompt) args.push('-n', params.negativePrompt);
 
   // sd-cli has no standalone --lora flag: LoRAs are applied via a
   // <lora:name:strength> tag inside the prompt text itself, plus

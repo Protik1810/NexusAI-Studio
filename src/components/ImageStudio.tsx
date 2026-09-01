@@ -45,6 +45,12 @@ const ASPECT_RATIOS: AspectRatioOption[] = [
   { label: 'Custom', name: 'Custom Resolution', width: 0, height: 0, icon: '⚙', isCustom: true }
 ];
 
+// SDXL/checkpoint-style negative-prompt boilerplate — meaningful for the
+// standard pipeline's non-distilled samplers, but not something FLUX
+// should inherit by default (its own negative prompt is opt-in and starts
+// empty, see handlePipelineSwitch).
+const STANDARD_DEFAULT_NEGATIVE_PROMPT = 'ugly, distorted, blurry, deformed hands, extra limbs, bad anatomy, cartoon, watermark, signature';
+
 const PROMPT_TAGS = [
   '8k masterpiece',
   'photorealistic raw photograph',
@@ -77,8 +83,11 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
 
   const [pipeline, setPipeline] = useState<'standard' | 'flux'>('standard');
   const [checkpointModel, setCheckpointModel] = useState<string>('models/checkpoints/RealVisXL_V5.0_Lightning_fp16.safetensors');
-  const [unetModel, setUnetModel] = useState<string>('models/unet/flux2-klein-9b-uncensored-q8_0.gguf');
-  const [clipModel, setClipModel] = useState<string>('models/clip/flux2-klein-9b-uncensored-text-encoder-q8_0.gguf');
+  // Safetensors only — GGUF is reserved for LLM Chat (see reloadLocalModels'
+  // noGguf filter below, which is the actual enforcement; these are just
+  // sane initial values before the first scan populates real options).
+  const [unetModel, setUnetModel] = useState<string>('models/unet/flux-2-klein-base-9b-fp8.safetensors');
+  const [clipModel, setClipModel] = useState<string>('models/clip/ponpokeflux2-klein-9b-uncensored-text-encoder.safetensors');
   const [vaeModel, setVaeModel] = useState<string>('models/vae/flux2-vae.safetensors');
   const [activeGpu, setActiveGpu] = useState<string>('');
 
@@ -97,7 +106,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
   // transfer from Chat/Gallery via initialPrompt) and is cleared again after
   // every successful generation so the next prompt starts fresh.
   const [prompt, setPrompt] = useState<string>(initialPrompt || '');
-  const [negativePrompt, setNegativePrompt] = useState<string>('ugly, distorted, blurry, deformed hands, extra limbs, bad anatomy, cartoon, watermark, signature');
+  const [negativePrompt, setNegativePrompt] = useState<string>(STANDARD_DEFAULT_NEGATIVE_PROMPT);
   const [selectedRatio, setSelectedRatio] = useState<number>(1);
   const [customWidth, setCustomWidth] = useState<number>(1024);
   const [customHeight, setCustomHeight] = useState<number>(1024);
@@ -161,10 +170,19 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         const data = await res.json();
         if (data) {
           const toArr = (arr: any[]) => arr || [];
+          // FLUX image generation only uses safetensors unets/text-encoders now
+          // — GGUF is reserved for the LLM Chat feature (see PERSONA_PRESETS in
+          // llmApi.ts). Filtering here (not in apiRoutes.cjs) keeps the same
+          // /api/local-models response still backing /api/local-llm-models'
+          // GGUF-clip cross-use for chat; this is the single place both the
+          // dropdown rendering and the auto-select fallback below read from.
+          const noGguf = (arr: any[]) => toArr(arr).filter(m => !m.name?.toLowerCase().endsWith('.gguf'));
+          const unetsNoGguf = noGguf(data.unets);
+          const clipsNoGguf = noGguf(data.clips);
           setLocalModels({
             checkpoints: toArr(data.checkpoints),
-            unets: toArr(data.unets),
-            clips: toArr(data.clips),
+            unets: unetsNoGguf,
+            clips: clipsNoGguf,
             loras: toArr(data.loras),
             vaes: toArr(data.vaes)
           });
@@ -178,32 +196,32 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
               return exists ? prev : data.checkpoints[0].fullPath;
             });
           }
-          if (data.unets?.length > 0) {
+          if (unetsNoGguf.length > 0) {
             setUnetModel(prev => {
-              const exists = data.unets.some((u: any) => u.fullPath === prev);
-              return exists ? prev : data.unets[0].fullPath;
+              const exists = unetsNoGguf.some((u: any) => u.fullPath === prev);
+              return exists ? prev : unetsNoGguf[0].fullPath;
             });
           }
 
           // Only auto-select a text encoder we're actually confident is
           // one — "q8_0" alone matches almost any quantized GGUF file
           // regardless of what it actually is, and silently falling back
-          // to data.clips[0] risks handing sd-cli a completely incompatible
+          // to clipsNoGguf[0] risks handing sd-cli a completely incompatible
           // file (wrong tensor layout), surfacing as a cryptic native
           // "tensor not in model metadata" error deep in generation
           // instead of a clear "please pick one" message here.
-          const bestClip = data.clips?.find((c: any) => c.name.toLowerCase().includes('text-encoder'));
+          const bestClip = clipsNoGguf.find((c: any) => c.name.toLowerCase().includes('text-encoder'));
           if (bestClip) {
             setClipModel(prev => {
-              const prevStillValid = data.clips.some((c: any) => c.fullPath === prev);
+              const prevStillValid = clipsNoGguf.some((c: any) => c.fullPath === prev);
               return prevStillValid ? prev : bestClip.fullPath;
             });
-          } else if (!data.clips?.some((c: any) => c.fullPath === clipModel)) {
+          } else if (!clipsNoGguf.some((c: any) => c.fullPath === clipModel)) {
             setClipModel('');
             if (pipeline === 'flux') {
               onError(
                 'No Text Encoder Found',
-                'FLUX generation needs a text encoder (a file with "text-encoder" in its name, e.g. flux2-klein-9b-uncensored-text-encoder-q8_0.gguf). None was found automatically — select one manually in Studio Controls, or switch to the Standalone Checkpoint pipeline.'
+                'FLUX generation needs a safetensors text encoder (a file with "text-encoder" in its name, e.g. flux2-klein-9b-uncensored-text-encoder.safetensors — GGUF text encoders are reserved for LLM Chat). None was found automatically — select one manually in Studio Controls, or switch to the Standalone Checkpoint pipeline.'
               );
             }
           }
@@ -213,7 +231,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
           ) || data.vaes?.[0];
           if (bestVae) setVaeModel(bestVae.fullPath);
 
-          const count = (data.checkpoints?.length || 0) + (data.unets?.length || 0) + (data.clips?.length || 0) + (data.loras?.length || 0) + (data.vaes?.length || 0);
+          const count = (data.checkpoints?.length || 0) + unetsNoGguf.length + clipsNoGguf.length + (data.loras?.length || 0) + (data.vaes?.length || 0);
           setReloadSuccessMsg(`Found ${count} models across system`);
           setTimeout(() => setReloadSuccessMsg(null), 4000);
         }
@@ -278,10 +296,15 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         setCfg(1.0);
       }
       setSamplingMethod('euler');
+      // FLUX's negative prompt is opt-in — the standard pipeline's SDXL
+      // boilerplate (anatomy/watermark negatives) isn't meant for FLUX and
+      // would otherwise carry over silently on switch.
+      setNegativePrompt(prev => prev === STANDARD_DEFAULT_NEGATIVE_PROMPT ? '' : prev);
     } else {
       setSteps(4);
       setCfg(1.8);
       setSamplingMethod('euler_a');
+      setNegativePrompt(prev => prev === '' ? STANDARD_DEFAULT_NEGATIVE_PROMPT : prev);
     }
   };
 
@@ -344,7 +367,11 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         loraStrength: useLora ? loraStrength : undefined,
         offloadTextEncoder: pipeline === 'flux' ? offloadTextEncoder : undefined,
         prompt,
-        negativePrompt: pipeline === 'standard' ? negativePrompt : undefined,
+        // Optional for both pipelines now — sd-cli's -n applies universally;
+        // for FLUX it only has a visible effect once real CFG is active
+        // (base-variant models at cfg > 1), a no-op at the distilled cfg 1.0
+        // default, harmless either way.
+        negativePrompt: negativePrompt.trim() ? negativePrompt : undefined,
         width: targetWidth,
         height: targetHeight,
         steps,

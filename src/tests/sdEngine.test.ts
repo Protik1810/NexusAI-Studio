@@ -113,4 +113,24 @@ describe('buildSdCliArgs - FLUX pipeline', () => {
     );
     expect(args).toContain('--diffusion-fa');
   });
+
+  it('passes -n for the flux pipeline when a negative prompt is given', () => {
+    // Previously only the non-flux branch pushed -n at all — FLUX's
+    // negative prompt is opt-in and only visibly matters once real CFG is
+    // active (cfg > 1), but sd-cli accepts it unconditionally either way.
+    const args = buildSdCliArgs(
+      { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat', negativePrompt: 'blurry' },
+      'out.png'
+    );
+    expect(args).toContain('-n');
+    expect(args[args.indexOf('-n') + 1]).toBe('blurry');
+  });
+
+  it('omits -n for the flux pipeline when no negative prompt is given', () => {
+    const args = buildSdCliArgs(
+      { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat' },
+      'out.png'
+    );
+    expect(args).not.toContain('-n');
+  });
 });
