@@ -52,19 +52,23 @@ function classifyModelFile(fullPath, sourceLabel, rootDir = '') {
   const isGguf = filename.toLowerCase().endsWith('.gguf');
 
   if (isGguf && filename.startsWith('ggml-vocab-')) return null;
-  // mmproj-* files are llama.cpp vision-LLM multimodal projectors — nothing
-  // in this app wires up --mmproj support, so surfacing them was actively
-  // harmful: they were classified as "clips" alongside real FLUX text
-  // encoders (same 'mmproj' substring match below used to catch both), and
-  // could get silently auto-selected as a text encoder for image
-  // generation — producing a cryptic "tensor not in model metadata" error
-  // from sd-cli instead of a real one, since their tensor layout has
-  // nothing in common with an actual text encoder.
-  if (isGguf && lower.includes('mmproj')) return null;
+  const isMmproj = isGguf && lower.includes('mmproj');
 
   // Always assigned below — the chain ends in an unconditional else.
   let category;
-  if (lower.includes('controlnet') || lower.includes('union-sdxl') || lower.includes('promax')) {
+  // mmproj-* files are llama.cpp vision-LLM multimodal projectors. They used
+  // to be dropped entirely (return null) because nothing wired up --mmproj
+  // support — surfacing them risked getting silently auto-selected as a
+  // FLUX text encoder (their tensor layout has nothing in common with one),
+  // producing a cryptic "tensor not in model metadata" error from sd-cli.
+  // Now that Chat can load one alongside a vision-capable GGUF model
+  // (engineCore.cjs::startLlama's --mmproj), they get their own dedicated
+  // category — checked first so they can never fall into "clips"/"llms"
+  // and get picked for image generation or as a primary chat model by
+  // mistake.
+  if (isMmproj) {
+    category = 'mmprojs';
+  } else if (lower.includes('controlnet') || lower.includes('union-sdxl') || lower.includes('promax')) {
     category = 'controlnets';
   } else if (lower.includes('vae') || filename.toLowerCase().startsWith('ae.') || lower.includes('flux2-vae') || lower.includes('flux-vae')) {
     category = 'vaes';
@@ -124,7 +128,7 @@ function getFullSystemModels(rootDir = '', customPaths = [], state = {}) {
   const scanPaths = getAllSystemScanPaths(rootDir, customPaths);
   const seenPaths = new Set();
   const modelsByCategory = {
-    checkpoints: [], unets: [], clips: [], loras: [], vaes: [], controlnets: [], llms: []
+    checkpoints: [], unets: [], clips: [], loras: [], vaes: [], controlnets: [], llms: [], mmprojs: []
   };
 
   state.scanTotal = scanPaths.length;

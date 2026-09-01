@@ -136,6 +136,13 @@ function buildSdCliArgs(params, outFullPath) {
     // the flag stable-diffusion.cpp's own docs/flux2.md recommends for
     // Klein-scale models on constrained VRAM.
     if (params.offloadTextEncoder) args.push('--offload-to-cpu');
+    // -r/--ref-image is FLUX Kontext-style image editing: the diffusion
+    // model conditions directly on the reference image's own latents, not
+    // through the text encoder — verified working this session (used for a
+    // real relighting LoRA test). Not every FLUX checkpoint supports it
+    // (Kontext-capability isn't detectable from a filename), so this is
+    // opt-in via the UI rather than assumed.
+    if (params.refImagePath && fs.existsSync(params.refImagePath)) args.push('-r', params.refImagePath);
   } else {
     args.push('-m', params.modelPath);
   }

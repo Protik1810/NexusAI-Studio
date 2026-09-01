@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Send, 
-  Trash2, 
-  Copy, 
-  Check, 
-  Sparkles, 
-  Bot, 
-  User, 
-  StopCircle, 
+import {
+  Send,
+  Trash2,
+  Copy,
+  Check,
+  Sparkles,
+  Bot,
+  User,
+  StopCircle,
   Image as ImageIcon,
   RefreshCw,
   Sliders,
@@ -16,9 +16,55 @@ import {
   Square,
   HardDrive,
   FolderOpen,
-  AlertTriangle
+  AlertTriangle,
+  Paperclip,
+  X,
+  ChevronDown,
+  Brain,
+  FileText
 } from 'lucide-react';
-import { llmService, ChatMessage, PERSONA_PRESETS, PersonaPreset, LLMStatus, LocalGgufModel } from '../services/llmApi';
+import { llmService, ChatMessage, ChatAttachment, PERSONA_PRESETS, PersonaPreset, LLMStatus, LocalGgufModel } from '../services/llmApi';
+// Cap on extracted PDF text length — a full book-length PDF would blow past
+// any reasonable context window; truncating with a visible note is more
+// honest than silently cutting the model's context off mid-document.
+const MAX_PDF_TEXT_CHARS = 20000;
+
+let pdfjsLibPromise: Promise<typeof import('pdfjs-dist')> | null = null;
+// pdfjs-dist adds ~500KB to whatever bundle imports it — dynamic import
+// keeps that cost out of the app's initial load entirely, paid only the
+// first time someone actually attaches a PDF in a session.
+function loadPdfjs() {
+  if (!pdfjsLibPromise) {
+    pdfjsLibPromise = Promise.all([
+      import('pdfjs-dist'),
+      // Bundled locally via Vite's ?url asset import — never fetched from a
+      // CDN, consistent with this app's offline-only design (pdfjs-dist's
+      // default of pulling its worker from a CDN URL would otherwise be the
+      // one network call anywhere in the whole app).
+      import('pdfjs-dist/build/pdf.worker.mjs?url')
+    ]).then(([lib, worker]) => {
+      lib.GlobalWorkerOptions.workerSrc = worker.default;
+      return lib;
+    });
+  }
+  return pdfjsLibPromise;
+}
+
+async function extractPdfText(file: File): Promise<string> {
+  const pdfjsLib = await loadPdfjs();
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const pageTexts: string[] = [];
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const content = await page.getTextContent();
+    pageTexts.push(content.items.map((item: any) => item.str || '').join(' '));
+  }
+  const fullText = pageTexts.join('\n\n');
+  return fullText.length > MAX_PDF_TEXT_CHARS
+    ? `${fullText.slice(0, MAX_PDF_TEXT_CHARS)}\n\n[...truncated, ${fullText.length - MAX_PDF_TEXT_CHARS} more characters omitted...]`
+    : fullText;
+}
 
 interface ChatStudioProps {
   llmStatus: LLMStatus;
@@ -74,14 +120,19 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   const [input, setInput] = useState<string>('');
   const [activePersona, setActivePersona] = useState<PersonaPreset>(PERSONA_PRESETS[0]);
   const [localGgufModels, setLocalGgufModels] = useState<LocalGgufModel[]>([]);
+  const [mmprojModels, setMmprojModels] = useState<LocalGgufModel[]>([]);
   const [selectedGgufPath, setSelectedGgufPath] = useState<string>('');
   const [isStartingServer, setIsStartingServer] = useState<boolean>(false);
   const [embeddedServerStatus, setEmbeddedServerStatus] = useState<{ running: boolean; port: number; model: string | null }>({ running: false, port: 8080, model: null });
   const [loadParams, setLoadParams] = useState<{
     ctxSize: number; gpuLayers: number; batchSize: number; flashAttn: 'auto' | 'on' | 'off';
     cacheTypeK: string; cacheTypeV: string; cacheTypeKEnabled: boolean; cacheTypeVEnabled: boolean;
+    mmprojPath: string; reasoningEnabled: boolean;
   }>(() => {
-    const defaults = { ctxSize: 4096, gpuLayers: 99, batchSize: 2048, flashAttn: 'auto' as const, cacheTypeK: 'f16', cacheTypeV: 'f16', cacheTypeKEnabled: false, cacheTypeVEnabled: false };
+    const defaults = {
+      ctxSize: 4096, gpuLayers: 99, batchSize: 2048, flashAttn: 'auto' as const, cacheTypeK: 'f16', cacheTypeV: 'f16', cacheTypeKEnabled: false, cacheTypeVEnabled: false,
+      mmprojPath: '', reasoningEnabled: false
+    };
     try {
       const saved = localStorage.getItem('solframe_llm_load_params');
       if (saved) return { ...defaults, ...JSON.parse(saved) };
@@ -92,6 +143,11 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   const [streaming, setStreaming] = useState<boolean>(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [isScanningModels, setIsScanningModels] = useState<boolean>(false);
+  const [pendingAttachments, setPendingAttachments] = useState<ChatAttachment[]>([]);
+  // Reasoning panels are collapsed by default (traces can be long) — tracked
+  // per message index rather than one global flag.
+  const [expandedReasoning, setExpandedReasoning] = useState<Set<number>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
@@ -104,6 +160,8 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
       if (models.length > 0 && !selectedGgufPath) {
         setSelectedGgufPath(models[0].fullPath);
       }
+      const mmprojs = await llmService.getLocalMmprojModels();
+      setMmprojModels(mmprojs);
       const status = await llmService.getEmbeddedLlamaStatus();
       setEmbeddedServerStatus(status);
     } catch (e) {
@@ -137,7 +195,9 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
       const res = await llmService.startEmbeddedLlama(
         selectedGgufPath, loadParams.gpuLayers, loadParams.ctxSize, loadParams.batchSize, loadParams.flashAttn,
         loadParams.cacheTypeKEnabled ? loadParams.cacheTypeK : 'f16',
-        loadParams.cacheTypeVEnabled ? loadParams.cacheTypeV : 'f16'
+        loadParams.cacheTypeVEnabled ? loadParams.cacheTypeV : 'f16',
+        loadParams.mmprojPath || undefined,
+        loadParams.reasoningEnabled
       );
       setEmbeddedServerStatus({ running: true, port: res.port, model: res.model });
     } catch (err: any) {
@@ -167,12 +227,14 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
     const userMessage: ChatMessage = {
       role: 'user',
       content: input.trim(),
+      attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined,
       timestamp: Date.now()
     };
 
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
+    setPendingAttachments([]);
     setStreaming(true);
 
     const assistantPlaceholder: ChatMessage = {
@@ -187,6 +249,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
     abortControllerRef.current = controller;
 
     let accumulatedContent = '';
+    let accumulatedReasoning = '';
 
     try {
       await llmService.streamChat(
@@ -205,7 +268,18 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
             return copy;
           });
         },
-        controller.signal
+        controller.signal,
+        (reasoningToken) => {
+          accumulatedReasoning += reasoningToken;
+          setMessages((prev) => {
+            const copy = [...prev];
+            copy[copy.length - 1] = {
+              ...copy[copy.length - 1],
+              reasoningContent: accumulatedReasoning
+            };
+            return copy;
+          });
+        }
       );
     } catch (err: any) {
       if (err.name !== 'AbortError') {
@@ -233,6 +307,53 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  const handleAttachFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ''; // allow re-attaching the same file after removing it
+    files.forEach(async (file) => {
+      const isImage = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+      if (isImage) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setPendingAttachments((prev) => [...prev, { type: 'image', name: file.name, mimeType: file.type, dataUrl: reader.result as string }]);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      if (isPdf) {
+        try {
+          const extractedText = await extractPdfText(file);
+          setPendingAttachments((prev) => [...prev, { type: 'document', name: file.name, mimeType: file.type, extractedText }]);
+        } catch (err: any) {
+          onError('PDF Extraction Failed', `Couldn't read text from "${file.name}": ${err.message || 'unknown error'}`);
+        }
+        return;
+      }
+
+      // Plain text (.txt/.md) needs no library — just the raw read result.
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPendingAttachments((prev) => [...prev, { type: 'document', name: file.name, mimeType: file.type, extractedText: reader.result as string }]);
+      };
+      reader.readAsText(file);
+    });
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleReasoningExpanded = (index: number) => {
+    setExpandedReasoning((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index); else next.add(index);
+      return next;
+    });
   };
 
   return (
@@ -336,6 +457,51 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                 </div>
 
                 <div className={`chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'assistant-bubble'}`}>
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                      {msg.attachments.map((att, attIdx) => (
+                        att.type === 'image' ? (
+                          <img
+                            key={attIdx}
+                            src={att.dataUrl}
+                            alt={att.name}
+                            title={att.name}
+                            style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.15)' }}
+                          />
+                        ) : (
+                          <span
+                            key={attIdx}
+                            title={att.name}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '10px', padding: '4px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          >
+                            <FileText size={11} /> {att.name}
+                          </span>
+                        )
+                      ))}
+                    </div>
+                  )}
+
+                  {msg.reasoningContent && (
+                    <div style={{ marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px' }}>
+                      <button
+                        type="button"
+                        className="accordion-header"
+                        onClick={() => toggleReasoningExpanded(idx)}
+                        style={{ fontSize: '11px' }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Brain size={12} /> Thinking
+                        </span>
+                        <ChevronDown size={12} style={{ transform: expandedReasoning.has(idx) ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                      </button>
+                      {expandedReasoning.has(idx) && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, marginTop: '4px', whiteSpace: 'pre-wrap' }}>
+                          {msg.reasoningContent}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="bubble-text">
                     {msg.content || (streaming && idx === messages.length - 1 ? (
                       <span className="pulse-dots">Synthesizing response<span>.</span><span>.</span><span>.</span></span>
@@ -370,8 +536,53 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
           <div ref={chatBottomRef} />
         </div>
 
+        {/* Pending Attachments */}
+        {pendingAttachments.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '10px 20px 0', background: 'rgba(0, 0, 0, 0.2)' }}>
+            {pendingAttachments.map((att, i) => (
+              <span
+                key={i}
+                title={att.name}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', padding: '4px 6px 4px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.08)', color: 'var(--text-secondary)', maxWidth: '180px' }}
+              >
+                {att.type === 'image' ? (
+                  <img src={att.dataUrl} alt={att.name} style={{ width: '18px', height: '18px', objectFit: 'cover', borderRadius: '3px' }} />
+                ) : (
+                  <FileText size={12} />
+                )}
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveAttachment(i)}
+                  title="Remove attachment"
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Input Bar */}
         <div className="chat-input-bar">
+          <input
+            type="file"
+            ref={fileInputRef}
+            multiple
+            accept="image/*,.txt,.md,.pdf"
+            style={{ display: 'none' }}
+            onChange={handleAttachFiles}
+          />
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach an image or text file"
+          >
+            <Paperclip size={18} />
+          </button>
+
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -555,7 +766,41 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                       ))}
                     </select>
                   </div>
+                  <div style={{ ...loadParamRowStyle, borderBottom: 'none' }}>
+                    <label style={loadParamLabelStyle}>
+                      <Brain size={12} style={{ marginRight: '5px' }} /> Reasoning / Thinking
+                    </label>
+                    <input
+                      type="checkbox"
+                      checked={loadParams.reasoningEnabled}
+                      disabled={embeddedServerStatus.running}
+                      onChange={(e) => setLoadParams({ ...loadParams, reasoningEnabled: e.target.checked })}
+                      style={{ accentColor: 'var(--accent)' }}
+                      title="For reasoning models (e.g. DeepSeek-R1 style) — shows the model's reasoning trace in a collapsible panel above its final answer, instead of it leaking into the visible reply."
+                    />
+                  </div>
                 </div>
+
+                {mmprojModels.length > 0 && (
+                  <div style={{ marginBottom: '10px', opacity: embeddedServerStatus.running ? 0.5 : 1 }}>
+                    <label style={{ ...loadParamLabelStyle, display: 'block', marginBottom: '4px' }}>
+                      Vision Projector (mmproj) — optional
+                    </label>
+                    <select
+                      value={loadParams.mmprojPath}
+                      disabled={embeddedServerStatus.running}
+                      onChange={(e) => setLoadParams({ ...loadParams, mmprojPath: e.target.value })}
+                      className="select-input"
+                    >
+                      <option value="">None (text-only)</option>
+                      {mmprojModels.map((m) => (
+                        <option key={m.fullPath} value={m.fullPath}>
+                          🖼️ {m.filename} ({m.formattedSize})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {embeddedServerStatus.running && (
                   <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '-6px', marginBottom: '10px' }}>
                     Stop the engine to change load parameters.

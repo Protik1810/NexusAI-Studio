@@ -73,4 +73,14 @@ describe('modelScanner - classifyModelFile', () => {
     const item = classifyModelFile(f, 'Test Source', tmpDir);
     expect(item?.category).toBe('clips');
   });
+
+  it('classifies an mmproj file into its own category instead of dropping it', () => {
+    // Used to unconditionally return null (nothing wired up --mmproj
+    // support) — now Chat can load one alongside a vision-capable GGUF
+    // model, so it needs to be surfaced, just kept out of "clips"/"llms"
+    // so it can't be picked as a text encoder or primary chat model.
+    const f = makeFile('llm/mmproj-model-f16.gguf');
+    const item = classifyModelFile(f, 'Test Source', tmpDir);
+    expect(item?.category).toBe('mmprojs');
+  });
 });

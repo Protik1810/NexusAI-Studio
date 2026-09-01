@@ -7,6 +7,10 @@ export interface SDCppGenerationParams {
   loraPath?: string;
   loraStrength?: number;
   offloadTextEncoder?: boolean;
+  // FLUX Kontext-style image editing: a browser FileReader data URL
+  // ("data:image/png;base64,...") for -r/--ref-image. Decoded to a temp
+  // file server-side (engineCore.cjs) — never a models/-tree path.
+  refImageDataUrl?: string;
   prompt: string;
   negativePrompt?: string;
   width: number;

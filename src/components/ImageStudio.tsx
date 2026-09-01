@@ -96,6 +96,13 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
   const [loraStrength, setLoraStrength] = useState<number>(0.85);
   const [useLora, setUseLora] = useState<boolean>(false);
 
+  // FLUX Kontext-style reference-image editing — no image pre-attached; the
+  // user opts in explicitly. Only meaningful for the flux pipeline (see
+  // sdEngine.cjs's buildSdCliArgs, which only pushes -r inside the flux
+  // branch).
+  const [refImageDataUrl, setRefImageDataUrl] = useState<string | null>(null);
+  const [refImageFileName, setRefImageFileName] = useState<string | null>(null);
+
   // Uncensored FLUX.2 text encoders are often full 7-9B LLMs — on a 12GB
   // card that plus even an fp8 diffusion model can exceed VRAM. Off by
   // default (fastest) since not every card/model combo needs it.
@@ -366,6 +373,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         loraPath: useLora && loraModel ? loraModel : undefined,
         loraStrength: useLora ? loraStrength : undefined,
         offloadTextEncoder: pipeline === 'flux' ? offloadTextEncoder : undefined,
+        refImageDataUrl: pipeline === 'flux' ? (refImageDataUrl || undefined) : undefined,
         prompt,
         // Optional for both pipelines now — sd-cli's -n applies universally;
         // for FLUX it only has a visible effect once real CFG is active
@@ -480,6 +488,10 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
         setLoraStrength={setLoraStrength}
         offloadTextEncoder={offloadTextEncoder}
         setOffloadTextEncoder={setOffloadTextEncoder}
+        refImageDataUrl={refImageDataUrl}
+        setRefImageDataUrl={setRefImageDataUrl}
+        refImageFileName={refImageFileName}
+        setRefImageFileName={setRefImageFileName}
         prompt={prompt}
         setPrompt={setPrompt}
         negativePrompt={negativePrompt}

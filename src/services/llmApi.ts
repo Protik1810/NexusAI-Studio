@@ -1,6 +1,26 @@
+export interface ChatAttachment {
+  type: 'image' | 'document';
+  name: string;
+  mimeType: string;
+  // Images: sent to a vision model as an OpenAI-format image_url content
+  // part. Documents: not sent as an image — see extractedText instead.
+  dataUrl?: string;
+  // Documents: extracted text (PDF via pdfjs-dist, or plain read for
+  // .txt/.md), prepended into the message's text content instead of being
+  // sent as a vision content part — there's no document-understanding
+  // pathway in llama.cpp, only image understanding.
+  extractedText?: string;
+}
+
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  attachments?: ChatAttachment[];
+  // Populated only when --reasoning-format is enabled server-side and the
+  // model actually emits reasoning_content deltas — kept separate from
+  // content so the UI can render it as a collapsible "thinking" panel
+  // instead of leaking into the visible answer.
+  reasoningContent?: string;
   timestamp?: number;
 }
 
@@ -68,6 +88,22 @@ export class LLMService {
     return [];
   }
 
+  // Separate fetch (same endpoint as getLocalGgufModels) rather than folding
+  // mmprojs into that method's return shape — mirrors how getEmbeddedLlamaStatus
+  // is already its own independent call instead of being bundled in.
+  async getLocalMmprojModels(): Promise<LocalGgufModel[]> {
+    try {
+      const res = await fetch('/api/local-llm-models');
+      if (res.ok) {
+        const data = await res.json();
+        return data.mmprojs || [];
+      }
+    } catch (e) {
+      console.error('Failed to fetch local mmproj models', e);
+    }
+    return [];
+  }
+
   async startEmbeddedLlama(
     modelPath: string,
     gpuLayers: number = 99,
@@ -75,12 +111,14 @@ export class LLMService {
     batchSize: number = 2048,
     flashAttn: 'auto' | 'on' | 'off' = 'auto',
     cacheTypeK: string = 'f16',
-    cacheTypeV: string = 'f16'
+    cacheTypeV: string = 'f16',
+    mmprojPath?: string,
+    reasoning?: boolean
   ): Promise<{ success: boolean; port: number; model: string; message: string }> {
     const res = await fetch('/api/llama/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modelPath, gpuLayers, ctxSize, batchSize, flashAttn, cacheTypeK, cacheTypeV })
+      body: JSON.stringify({ modelPath, gpuLayers, ctxSize, batchSize, flashAttn, cacheTypeK, cacheTypeV, mmprojPath, reasoning })
     });
 
     const data = await res.json();
@@ -125,17 +163,40 @@ export class LLMService {
     };
   }
 
+  // Builds one message's `content` for the OpenAI-format request. A message
+  // with image attachments becomes a content-parts array (the vision format
+  // llama-server's mtmd pipeline expects); everything else — including
+  // document attachments, which have no vision-model equivalent — stays a
+  // plain string, with any extracted document text prepended ahead of the
+  // user's own words.
+  private buildMessageContent(m: ChatMessage): string | Array<{ type: string; text?: string; image_url?: { url: string } }> {
+    const images = (m.attachments || []).filter(a => a.type === 'image' && a.dataUrl);
+    const documentText = (m.attachments || [])
+      .filter(a => a.type === 'document' && a.extractedText)
+      .map(a => `[Attached: ${a.name}]\n${a.extractedText}`)
+      .join('\n\n');
+    const textContent = documentText ? `${documentText}\n\n${m.content}` : m.content;
+
+    if (images.length === 0) return textContent;
+
+    return [
+      { type: 'text', text: textContent },
+      ...images.map(a => ({ type: 'image_url', image_url: { url: a.dataUrl! } }))
+    ];
+  }
+
   async streamChat(
     messages: ChatMessage[],
     model: string,
     systemPrompt: string,
     temperature: number,
     onToken: (token: string) => void,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    onReasoningToken?: (token: string) => void
   ): Promise<string> {
     const formattedMessages = [
       { role: 'system', content: systemPrompt },
-      ...messages.map(m => ({ role: m.role, content: m.content }))
+      ...messages.map(m => ({ role: m.role, content: this.buildMessageContent(m) }))
     ];
 
     const res = await fetch('/llama-api/v1/chat/completions', {
@@ -173,10 +234,17 @@ export class LLMService {
         if (trimmed.startsWith('data: ') && trimmed !== 'data: [DONE]') {
           try {
             const json = JSON.parse(trimmed.substring(6));
-            const delta = json.choices?.[0]?.delta?.content || '';
-            if (delta) {
-              fullText += delta;
-              onToken(delta);
+            const delta = json.choices?.[0]?.delta || {};
+            // With --reasoning-format deepseek (see engineCore.cjs::startLlama),
+            // reasoning tokens arrive as their own field, separate from and
+            // usually preceding the final-answer content tokens — not
+            // embedded <think> tags to strip out of content.
+            if (delta.reasoning_content) {
+              onReasoningToken?.(delta.reasoning_content);
+            }
+            if (delta.content) {
+              fullText += delta.content;
+              onToken(delta.content);
             }
           } catch (e) {
             // partial chunk parsing skip

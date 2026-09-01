@@ -392,7 +392,7 @@ function createApiRouter(ctx) {
     }
 
     if (pathname === '/api/system-models') {
-      const data = cachedModels || { modelsByCategory: { checkpoints: [], unets: [], clips: [], loras: [], vaes: [], controlnets: [], llms: [] }, scanPaths: [] };
+      const data = cachedModels || { modelsByCategory: { checkpoints: [], unets: [], clips: [], loras: [], vaes: [], controlnets: [], llms: [], mmprojs: [] }, scanPaths: [] };
       sendJson(res, 200, {
         ...data.modelsByCategory,
         scanPaths: (data.scanPaths || []).map(s => ({ path: s.path, label: s.label, isBuiltIn: s.isBuiltIn })),
@@ -403,7 +403,7 @@ function createApiRouter(ctx) {
     }
 
     if (pathname === '/api/local-models') {
-      const data = cachedModels || { modelsByCategory: { checkpoints: [], unets: [], clips: [], loras: [], vaes: [], controlnets: [], llms: [] } };
+      const data = cachedModels || { modelsByCategory: { checkpoints: [], unets: [], clips: [], loras: [], vaes: [], controlnets: [], llms: [], mmprojs: [] } };
       const m = data.modelsByCategory;
       const toEntry = item => ({ name: item.filename, fullPath: item.fullPath, size: item.formattedSize });
       sendJson(res, 200, {
@@ -419,10 +419,10 @@ function createApiRouter(ctx) {
     }
 
     if (pathname === '/api/local-llm-models') {
-      const data = cachedModels || { modelsByCategory: { llms: [], clips: [] } };
+      const data = cachedModels || { modelsByCategory: { llms: [], clips: [], mmprojs: [] } };
       const m = data.modelsByCategory;
       const llmModels = [...(m.llms || []), ...(m.clips || []).filter(item => item.isGguf)];
-      sendJson(res, 200, { models: llmModels, scanStatus: scanState });
+      sendJson(res, 200, { models: llmModels, mmprojs: m.mmprojs || [], scanStatus: scanState });
       return true;
     }
 

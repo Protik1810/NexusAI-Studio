@@ -133,4 +133,43 @@ describe('buildSdCliArgs - FLUX pipeline', () => {
     );
     expect(args).not.toContain('-n');
   });
+
+  it('passes -r for the flux pipeline when a reference image path is given', () => {
+    // -r/--ref-image is FLUX Kontext-style editing — verified working
+    // directly against sd-cli this session. engineCore.cjs decodes a
+    // browser-uploaded data URL to this temp file path before calling
+    // buildSdCliArgs, so by the time it gets here it's always a real file.
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'solframe-sdengine-refimg-test-'));
+    const refImagePath = path.join(tmpDir, 'solframe-refimg-123.png');
+    fs.writeFileSync(refImagePath, 'fake');
+    try {
+      const args = buildSdCliArgs(
+        { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'relight this', refImagePath },
+        'out.png'
+      );
+      expect(args).toContain('-r');
+      expect(args[args.indexOf('-r') + 1]).toBe(refImagePath);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('omits -r when no reference image path is given', () => {
+    const args = buildSdCliArgs(
+      { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat' },
+      'out.png'
+    );
+    expect(args).not.toContain('-r');
+  });
+
+  it('omits -r when the reference image path does not exist on disk', () => {
+    // Defensive: buildSdCliArgs gates on fs.existsSync the same way every
+    // other file-path param here does (loraPath, clipPath, etc.) — a stale
+    // or already-cleaned-up temp path shouldn't silently reach sd-cli.
+    const args = buildSdCliArgs(
+      { pipeline: 'flux', modelPath: 'flux-2-klein-base-9b-fp8.safetensors', prompt: 'a cat', refImagePath: 'C:/nonexistent/refimg.png' },
+      'out.png'
+    );
+    expect(args).not.toContain('-r');
+  });
 });

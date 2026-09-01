@@ -56,6 +56,10 @@ export interface ImageControlsProps {
   setLoraStrength: (s: number) => void;
   offloadTextEncoder: boolean;
   setOffloadTextEncoder: (o: boolean) => void;
+  refImageDataUrl: string | null;
+  setRefImageDataUrl: (d: string | null) => void;
+  refImageFileName: string | null;
+  setRefImageFileName: (n: string | null) => void;
   prompt: string;
   setPrompt: (p: string) => void;
   negativePrompt: string;
@@ -109,6 +113,10 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
   setLoraStrength,
   offloadTextEncoder,
   setOffloadTextEncoder,
+  refImageDataUrl,
+  setRefImageDataUrl,
+  refImageFileName,
+  setRefImageFileName,
   prompt,
   setPrompt,
   negativePrompt,
@@ -141,6 +149,18 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
   copied,
   onCopyPrompt
 }) => {
+  const handleRefImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file after removing it
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setRefImageDataUrl(reader.result as string);
+      setRefImageFileName(file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="studio-controls glass-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
@@ -329,6 +349,42 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
               ℹ️ <strong>FLUX.2 Notice:</strong> FLUX.2 Klein requires a 32-channel VAE (<code>flux2-vae.safetensors</code>). For immediate generation without extra downloads, switch to <strong>Standalone Checkpoint</strong> mode (SDXL Lightning).
             </div>
           )}
+
+          {/* Reference-image editing (FLUX Kontext-style, --ref-image) */}
+          <div style={{ marginTop: '10px', background: 'rgba(0,0,0,0.25)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Reference Image (-r, edit mode)
+              </label>
+              {!refImageDataUrl && (
+                <label className="btn-secondary" style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  Attach
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleRefImageFile} />
+                </label>
+              )}
+            </div>
+            {refImageDataUrl ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
+                <img src={refImageDataUrl} alt="Reference" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }} />
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {refImageFileName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setRefImageDataUrl(null); setRefImageFileName(null); }}
+                  className="icon-btn"
+                  title="Remove reference image"
+                  style={{ fontSize: '13px', padding: '2px 8px' }}
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: 1.4 }}>
+                Attach an image to edit it with your prompt instead of generating from scratch. Requires a Kontext/edit-capable FLUX model — not every FLUX checkpoint supports this, and there's no reliable way to detect it from the filename alone.
+              </p>
+            )}
+          </div>
         </div>
       )}
 

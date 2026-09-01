@@ -9,8 +9,23 @@
 'use strict';
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { spawn } = require('child_process');
 const { runSdCli, buildSdCliArgs } = require('./sdEngine.cjs');
+
+// Decodes a "data:image/png;base64,...." URL (from a browser FileReader)
+// into a temp file on disk — sd-cli needs a real file path for -r/--ref-image,
+// it has no way to accept image bytes directly. Written to os.tmpdir()
+// rather than userOutputsDir so it never gets mistaken for a generated
+// result by anything that scans the outputs folder (e.g. the gallery).
+function writeRefImageTempFile(dataUrl) {
+  const match = /^data:image\/(\w+);base64,(.+)$/.exec(dataUrl || '');
+  if (!match) throw new Error('Invalid reference image data URL');
+  const [, ext, base64Data] = match;
+  const tempPath = path.join(os.tmpdir(), `solframe-refimg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`);
+  fs.writeFileSync(tempPath, Buffer.from(base64Data, 'base64'));
+  return tempPath;
+}
 
 // llama.cpp's allowed KV cache quantization types (from llama-server.exe's
 // own --help). Quantized V-cache (anything but f32/f16) requires Flash
@@ -44,7 +59,7 @@ function createEngineCore(ctx) {
   }
 
   /**
-   * @param {{modelPath:string, port?:number, ctxSize?:number, gpuLayers?:number, batchSize?:number, flashAttn?:string, cacheTypeK?:string, cacheTypeV?:string}} params
+   * @param {{modelPath:string, port?:number, ctxSize?:number, gpuLayers?:number, batchSize?:number, flashAttn?:string, cacheTypeK?:string, cacheTypeV?:string, mmprojPath?:string, reasoning?:boolean}} params
    * @returns {Promise<{success:true, port:number, model:string, message:string}>}
    */
   async function startLlama(params) {
@@ -54,6 +69,12 @@ function createEngineCore(ctx) {
       err.statusCode = 404;
       throw err;
     }
+    // mmproj is optional (only vision models need it) — a bad/stale path
+    // here shouldn't block starting a normal text-only model, so this
+    // silently drops it rather than throwing, unlike the hard-required
+    // modelPath check above.
+    const mmprojFullPath = params.mmprojPath ? resolveModel(params.mmprojPath) : null;
+    const mmprojValid = mmprojFullPath && fs.existsSync(mmprojFullPath) ? mmprojFullPath : null;
     if (llamaProc) {
       try { llamaProc.kill('SIGKILL'); } catch (e) {}
       llamaProc = null;
@@ -69,6 +90,12 @@ function createEngineCore(ctx) {
     const cacheTypeV = ALLOWED_CACHE_TYPES.includes(params.cacheTypeV) ? params.cacheTypeV : 'f16';
 
     const args = ['-m', modelFullPath, '--port', String(requestedPort), '--host', '127.0.0.1', '-ngl', String(gpuLayers), '-c', String(ctxSize), '-b', String(batchSize), '-fa', flashAttn, '-ctk', cacheTypeK, '-ctv', cacheTypeV];
+    if (mmprojValid) args.push('--mmproj', mmprojValid);
+    // "deepseek" (not "deepseek-legacy") puts reasoning in its own
+    // reasoning_content field instead of embedding <think> tags in the
+    // visible content — that's what streamChat()'s SSE parser expects, so
+    // the UI can render it as a separate collapsible panel.
+    if (params.reasoning) args.push('--reasoning-format', 'deepseek');
     console.log(`[llama.cpp] Starting llama-server: ${llamaExe}`);
     const llamaDir = path.dirname(llamaExe);
     const llamaEnv = process.platform === 'darwin'
@@ -169,16 +196,27 @@ function createEngineCore(ctx) {
     const outFilename = `gen_${Date.now()}.png`;
     const outFullPath = path.join(userOutputsDir, outFilename);
 
+    // refImageDataUrl comes from the browser (FileReader on a user-attached
+    // file), not the models/ scan tree — resolveModel's directory-search
+    // logic doesn't apply to it, so it's decoded to its own temp file
+    // instead of going through resolveModel like every other path here.
+    let refImageTempPath = null;
+    if (params.refImageDataUrl) {
+      refImageTempPath = writeRefImageTempFile(params.refImageDataUrl);
+    }
+
     const resolvedParams = {
       ...params,
       modelPath: resolveModel(params.modelPath),
       clipPath: resolveModel(params.clipPath),
       t5Path: resolveModel(params.t5Path),
       vaePath: resolveModel(params.vaePath),
-      loraPath: params.loraPath ? resolveModel(params.loraPath) : undefined
+      loraPath: params.loraPath ? resolveModel(params.loraPath) : undefined,
+      refImagePath: refImageTempPath || undefined
     };
 
     if (!resolvedParams.modelPath || !fs.existsSync(resolvedParams.modelPath)) {
+      if (refImageTempPath) { try { fs.unlinkSync(refImageTempPath); } catch (e) {} }
       const err = new Error(`Model file not found: ${params.modelPath}`);
       err.statusCode = 404;
       throw err;
@@ -206,7 +244,10 @@ function createEngineCore(ctx) {
       execPath, args, outFullPath, outFilename, workingDir, env: procEnv,
       onSpawn: proc => { activeSdProc = proc; },
       onStdout: opts.onStdout
-    }).finally(() => { activeSdProc = null; });
+    }).finally(() => {
+      activeSdProc = null;
+      if (refImageTempPath) { try { fs.unlinkSync(refImageTempPath); } catch (e) {} }
+    });
   }
 
   function cancelImage() {
