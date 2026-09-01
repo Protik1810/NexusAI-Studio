@@ -19,12 +19,16 @@ Solframe Studio is a standalone, self-contained desktop app for 100% private, of
 - FLUX.2 Klein's "base" (non-distilled) model variants now get correct default steps/cfg automatically. Previously, loading a base model kept the fast distilled-model defaults and silently rendered malformed output — no error, just a wrong image.
 
 ### 🎨 Image Studio
+- **New: reference-image editing.** Attach an existing image (FLUX pipeline only) and describe the change instead of generating from scratch — FLUX Kontext-style editing via `-r/--ref-image`. Requires a Kontext/edit-capable FLUX model; not every FLUX checkpoint supports it, and there's no reliable way to detect that from the filename alone.
 - Image generation now uses **safetensors models only** — GGUF is reserved for LLM Chat. If you were pointing the diffusion model or text encoder at a GGUF file, switch to its safetensors equivalent.
 - **Negative prompt is now available for FLUX** too (previously standard-pipeline only) — optional, empty by default, and only has a visible effect once real CFG guidance is active (e.g. a "base" Klein model).
 - Fixed generated images never displaying when running the app via `npm run dev` — a dev/production parity gap, not a generation bug.
 - Fixed the model scanner missing text-encoder files using a hyphenated `text-encoder` filename outside a dedicated `/clip/` folder.
 
 ### 💬 Chat
+- **New: image attachments for vision-capable models.** Attach a photo and ask about it — wires up `llama-server`'s `--mmproj` multimodal projector support. Pick an optional vision projector alongside your GGUF model in the sidebar; projector files now get their own category in the model scanner instead of being hidden.
+- **New: reasoning/"thinking" model support.** For DeepSeek-R1-style reasoning models, the model's reasoning trace now renders in a collapsible "Thinking" panel above its final answer instead of leaking `<think>` tags into the visible reply. Toggle it on per-session in the sidebar. (Support depends on the specific model's thinking-tag convention matching what `llama.cpp` recognizes — not every "reasoning" model uses the same tags.)
+- **New: document attachments.** Attach a `.txt`, `.md`, or `.pdf` file and its text gets added as context for your question — PDF text extraction runs fully offline (no cloud service involved), loaded on demand so it doesn't add to the app's normal startup cost.
 - Renamed the "Uncensored Creative Writer" persona to **"Unfiltered Storyteller."**
 
 ### 🌐 Website
