@@ -30,16 +30,18 @@
 ## 🚀 Key Features
 
 ### 🎨 1. Image Studio (Multi-Architecture Diffusion)
-- **FLUX.2-Klein Architecture Support**: Auto-configured `--prediction flux2_flow` with 32-channel VAEs (`flux2-vae.safetensors` / `ae.safetensors`) and GGUF text encoders.
+- **FLUX.2-Klein Architecture Support**: Auto-configured `--prediction flux_flow` with 32-channel VAEs (`flux2-vae.safetensors` / `ae.safetensors`) and safetensors text encoders — GGUF is reserved for LLM Chat, not image generation.
+- **Flash Attention + RAM Offload**: `--diffusion-fa` runs by default on the FLUX pipeline, and weight offloading to system RAM auto-enables above ~512x512 to avoid VRAM overflow on constrained cards — both are silent, automatic optimizations, not settings you need to tune.
+- **Automatic Base-Model Detection**: FLUX.2 Klein's distilled and "base" (non-distilled) variants need very different steps/cfg defaults — Studio detects which one is loaded from the filename and switches automatically.
 - **SDXL Lightning & Turbo**: 4-step ultra-fast photo-realistic generation.
-- **LoRA Dynamic Stacking**: Real-time slider strength control for fine-tuned LoRA weights.
+- **LoRA Support**: One LoRA slot with a real-time strength slider, applied via `--lora-model-dir`. Must match the loaded diffusion model's architecture — a FLUX.1 LoRA is not compatible with a FLUX.2 Klein model (different hidden dimensions), so pick LoRAs trained specifically for the Klein size you're running.
 - **Cancel Generation**: Abort a run mid-flight instead of waiting it out or force-closing the app.
 - **Distraction-Free Canvas**: Pure studio neutral generation viewport for accurate color fidelity.
 
 ### 💬 2. Uncensored Local LLM Chat
 - **Native `llama.cpp` GPU Server**: Stream tokens in real time from quantized GGUF models (DeepSeek, Qwen 2.5, Gemma 4, Llama 3, Dolphin).
 - **Configurable Load Parameters**: Context Length, GPU Layers, Batch Size, and Flash Attention, set before loading instead of hardcoded.
-- **Custom Personas**: Seamless roleplay switching (Creative Visionary, Technical Prompt Engineer, Uncensored Assistant).
+- **Custom Personas**: Seamless roleplay switching (Unfiltered Storyteller, Visual Director & Prompt Crafter, Raw Technical Companion).
 - **Cross-Studio Pipeline**: Send generated prompts directly to the Image Studio with one click.
 
 ### 🎮 3. Dynamic Hardware Auto-Detection
