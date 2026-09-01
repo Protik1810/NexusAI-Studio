@@ -90,13 +90,13 @@ Dark Void, Neon Cyber, Cinema Gold (default), Synthwave Sunset, Anime Fantasy, a
 
 | Platform | File | Size | Direct Link |
 |---|---|---|---|
-| 🪟 Windows | Complete Setup | ~957 MB | [Solframe-Studio-Setup-1.1.1.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe-Studio-Setup-1.1.1.exe) |
-| 🪟 Windows | Lightweight Setup | ~100 MB | [Solframe-Studio-Setup-1.1.1-Lightweight.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe-Studio-Setup-1.1.1-Lightweight.exe) |
-| 🪟 Windows | Portable | ~952 MB | [Solframe-Studio-Portable-1.1.1.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe-Studio-Portable-1.1.1.exe) |
-| 🍎 macOS | Apple Silicon `.zip` | ~199 MB | [Solframe.Studio-1.1.1-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe.Studio-1.1.1-arm64-mac.zip) |
-| 🍎 macOS | Intel `.zip` | ~204 MB | [Solframe.Studio-1.1.1-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe.Studio-1.1.1-mac.zip) |
-| 🐧 Linux | AppImage | ~143 MB | [Solframe.Studio-1.1.1.AppImage](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe.Studio-1.1.1.AppImage) |
-| 🐧 Linux | `.deb` | ~93 MB | [solframe-studio_1.1.1_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/solframe-studio_1.1.1_amd64.deb) |
+| 🪟 Windows | Complete Setup | ~969 MB | [Solframe-Studio-Setup-1.1.1.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe-Studio-Setup-1.1.1.exe) |
+| 🪟 Windows | Lightweight Setup | ~112 MB | [Solframe-Studio-Setup-1.1.1-Lightweight.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe-Studio-Setup-1.1.1-Lightweight.exe) |
+| 🪟 Windows | Portable | ~964 MB | [Solframe-Studio-Portable-1.1.1.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe-Studio-Portable-1.1.1.exe) |
+| 🍎 macOS | Apple Silicon `.zip` | ~233 MB | [Solframe.Studio-1.1.1-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe.Studio-1.1.1-arm64-mac.zip) |
+| 🍎 macOS | Intel `.zip` | ~237 MB | [Solframe.Studio-1.1.1-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe.Studio-1.1.1-mac.zip) |
+| 🐧 Linux | AppImage | ~178 MB | [Solframe.Studio-1.1.1.AppImage](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe.Studio-1.1.1.AppImage) |
+| 🐧 Linux | `.deb` | ~110 MB | [solframe-studio_1.1.1_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/solframe-studio_1.1.1_amd64.deb) |
 
 **Platform note:** Windows and macOS ship full local inference (CUDA/Vulkan/CPU on Windows, Metal/CPU on macOS). Linux currently runs the UI shell and Model Hub only — a native engine build is planned.
 
