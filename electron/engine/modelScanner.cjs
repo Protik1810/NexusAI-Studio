@@ -72,9 +72,14 @@ function classifyModelFile(fullPath, sourceLabel, rootDir = '') {
     category = 'loras';
   } else if (
     lower.includes('/clip/') || lower.includes('\\clip\\') ||
-    lower.includes('text_encoder') || lower.includes('t5xxl') ||
-    lower.includes('clip_l') || lower.includes('clip_g') ||
-    (isGguf && lower.includes('text-encoder'))
+    // "text_encoder" (underscore, HF convention) and "text-encoder" (hyphen,
+    // ComfyUI/community convention) both show up in the wild — this used to
+    // only catch the hyphen form for .gguf files, so a safetensors text
+    // encoder outside a /clip/ folder (e.g. ponpoke's 9B uncensored encoder,
+    // which only worked because it happened to sit in /clip/) would've been
+    // silently classified as a diffusion model instead.
+    lower.includes('text_encoder') || lower.includes('text-encoder') ||
+    lower.includes('t5xxl') || lower.includes('clip_l') || lower.includes('clip_g')
   ) {
     category = 'clips';
   } else if (

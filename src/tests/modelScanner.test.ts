@@ -63,4 +63,14 @@ describe('modelScanner - classifyModelFile', () => {
     const item = classifyModelFile(f, 'Test Source', tmpDir);
     expect(item?.relativePath).toBe('llm/model.gguf');
   });
+
+  it('classifies a hyphenated "text-encoder" safetensors file as a clip, even outside /clip/', () => {
+    // Regression test: this used to only match the hyphen spelling for
+    // .gguf files, so a real safetensors text encoder sitting anywhere
+    // other than a /clip/ folder (e.g. downloaded into unet/ by mistake)
+    // fell through to the diffusion-model/checkpoint branches instead.
+    const f = makeFile('diffusion_models/ponpokeflux2-klein-9b-uncensored-text-encoder.safetensors');
+    const item = classifyModelFile(f, 'Test Source', tmpDir);
+    expect(item?.category).toBe('clips');
+  });
 });
