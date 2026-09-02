@@ -23,7 +23,7 @@
 
 **Solframe Studio** is a standalone, self-contained desktop generative AI suite engineered for 100% private, offline inference. Combining **`stable-diffusion.cpp`** (supporting FLUX.2 Klein, SDXL Lightning, and standard SD checkpoints) with **`llama.cpp`** (running GGUF text models with full GPU offloading), Solframe Studio brings high-performance generative AI directly to consumer hardware with zero subscription fees, zero cloud telemetry, and complete offline autonomy.
 
-> **Platform status:** Windows (`backend/win/**`, CUDA/Vulkan/CPU) and macOS (`backend/mac/**`, Metal-accelerated, universal x86_64+arm64) both ship real, working inference engines — image generation and local LLM chat run out of the box on either. On Linux, only the UI shell currently runs (see [Getting Started](#-getting-started)) — a native Linux engine build is planned, not shipped yet.
+> **Platform status:** Windows (`backend/win/**`, CUDA/Vulkan/CPU) and macOS (`backend/mac/**`, Metal-accelerated, Apple Silicon) both ship real, working inference engines — image generation and local LLM chat run out of the box on either. On Linux, only the UI shell currently runs (see [Getting Started](#-getting-started)) — a native Linux engine build is planned, not shipped yet.
 
 <div align="center">
 <table>
@@ -47,17 +47,17 @@ Real output from both pipelines, unedited — prompt included for each. Solframe
 <div align="center">
 <table>
 <tr>
-<td width="50%">
+<td width="50%" valign="top" align="center">
 
-<img src="public/screenshots/showcase-lion-artwork.webp" width="100%"/>
+<img src="public/screenshots/showcase-lion-render.webp" height="240"/>
 
 **Standard checkpoint pipeline** (SDXL, `Juggernaut-XL_v9` + a LoRA)
 > Sensual photorealistic portrait of an alluring mystic lion, intricate realistic skin texture, soft dramatic studio lighting, 8k resolution, raw photo, natural eyes
 
 </td>
-<td width="50%">
+<td width="50%" valign="top" align="center">
 
-<img src="public/screenshots/showcase-flux-ramen-chef.webp" width="100%"/>
+<img src="public/screenshots/showcase-flux-ramen-chef.webp" height="240"/>
 
 **FLUX.2 Klein pipeline** (`flux-2-klein-4b-fp8-official` + a LoRA)
 > Candid 35mm photograph of an elderly Japanese ramen chef with intense focus, dusting flour off his hands over a steaming, boiling pot of rich tonkotsu broth in a tiny, atmospheric Tokyo alleyway stall at night. Thick white volumetric steam swirls upward, backlit by warm vintage pendant lights hanging from the wooden ceiling...
