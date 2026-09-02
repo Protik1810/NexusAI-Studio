@@ -41,6 +41,7 @@ Run `node scripts/fetch-engines.js` to fetch and unpack them automatically — i
 - Keep PRs focused — one change, one PR.
 - Explain the *why* in the description, not just the *what*.
 - If you're touching `electron/engine/*.cjs`, add or update a test in `src/tests/` — these files are shared between dev mode (`vite.config.ts`) and the packaged app (`electron/server.cjs`), so a regression there breaks both.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, `docs:`, etc. — see `git log` for real examples). Not bot-enforced, just the convention — it's what keeps [CHANGELOG.md](CHANGELOG.md) easy to maintain.
 
 ## Reporting bugs
 

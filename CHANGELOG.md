@@ -1,0 +1,120 @@
+# Changelog
+
+All notable changes to Solframe Studio are documented here. Format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
+[Semantic Versioning](https://semver.org/).
+
+This file is the terse, technical record. [RELEASE_NOTES.md](RELEASE_NOTES.md)
+carries the fuller, user-facing writeup for the latest release (and doubles
+as the GitHub Release body) — the two overlap on content, not on purpose.
+
+## [Unreleased]
+
+### Added
+- Content-Security-Policy and `X-Content-Type-Options` headers on every
+  response, applied identically in dev and production.
+- Electron permission handler denying camera/mic/geolocation/notification
+  requests outright — the app's UI never needs any of them.
+- `.github/dependabot.yml` (npm + GitHub Actions, weekly) and a
+  non-blocking `npm audit` step in CI.
+- GitHub build-provenance attestations on every CI-built release artifact.
+- `scripts/fetch-engines.js` — downloads and SHA-256-verifies the
+  `stable-diffusion.cpp`/`llama.cpp` engine binaries from upstream releases
+  into `backend/win/`/`backend/mac/`, checked against `engines-lock.json`.
+- jsdom + Testing Library UI test suite (`src/tests/ui/`), a golden-snapshot
+  test locking the full FLUX CLI argument array, and a coverage gate in CI.
+- `ARCHITECTURE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue/PR
+  templates.
+- Real generated/edited image examples with prompts in the README.
+
+### Changed
+- `electron-builder` bumped to a version released after Electron 36 existed.
+- `ImageStudio.tsx` (31 `useState` calls) and `ChatStudio.tsx` (~14) each
+  collapsed into a single `useReducer`.
+- `index.css` split into `src/styles/base.css`, `themes.css`,
+  `components.css`, `studio.css`.
+- `SECURITY.md` expanded into a full threat model (internal API's no-auth
+  design, the Agent API's key-gating, model files as a trust boundary, why
+  there's no auto-updater yet).
+
+## [1.1.1] — 2026-09-01
+
+### Added
+- FLUX Kontext-style reference-image editing (`-r/--ref-image`) in Image
+  Studio — attach an image, describe the change.
+- Chat: image attachments for vision-capable models via `llama-server`'s
+  `--mmproj`; reasoning/"thinking" model support with a collapsible
+  "Thinking" panel; document attachments (`.txt`/`.md`/`.pdf`, extracted
+  fully offline).
+- Negative prompt support for the FLUX pipeline (previously standard-only).
+
+### Fixed
+- Flash attention now runs by default on every FLUX generation
+  (`--diffusion-fa`) — fixes large Klein models silently overflowing VRAM
+  and falling back to ~30-40x-slower CUDA driver paging with no visible
+  error.
+- FLUX.2 Klein "base" (non-distilled) variants now get correct default
+  steps/cfg automatically instead of silently rendering malformed output
+  under distilled-model defaults.
+- FLUX prediction flag corrected for current `stable-diffusion.cpp` builds
+  (`--prediction flux2_flow` → `flux_flow`, rejected outright by newer
+  binaries).
+- Generated images not displaying under `npm run dev` (a dev/prod parity
+  gap).
+- Model scanner missing hyphenated `text-encoder` filenames outside a
+  dedicated `/clip/` folder.
+- Landing page: broken Linux AppImage/macOS `.zip` download links, and an
+  inaccurate claim that Linux ships native Vulkan/AVX2 kernels.
+
+### Changed
+- Replaced CPU text-encoder offload with `--offload-to-cpu` (keeps FLUX
+  weights in system RAM, computes entirely on GPU) — auto-enables above
+  ~512x512 resolution, still manually overridable.
+- Image generation now uses safetensors models only; GGUF is reserved for
+  LLM Chat.
+- Renamed the "Uncensored Creative Writer" persona to "Unfiltered
+  Storyteller."
+
+## [1.1.0] — 2026-08-31
+
+### Added
+- Real macOS support (Apple Silicon + Intel): native Metal-accelerated
+  `stable-diffusion.cpp`/`llama.cpp`, universal binaries, correct hardware
+  detection, `/Volumes/*` model scanning.
+- Image Studio: 1080p/1440p/2K/4K resolution presets plus Custom
+  width/height; a translucent prompt viewer with "Use Again"; generated
+  image and in-progress settings now survive switching tabs; sidebar
+  generation-progress ring and "ready to view" badge.
+
+### Fixed
+- Three curated Model Hub presets pointing at renamed/moved files (404s);
+  removed three off-topic/incompatible presets.
+- Downloads now save to the portable `AppData/Solframe Studio` location
+  instead of the app's install folder, which silently failed or lost files
+  on Linux AppImage, `.deb`, and packaged macOS builds.
+- "Rescan" now triggers a real fresh scan instead of re-reading a stale
+  cache.
+- A cancelled download no longer leaves a corrupt partial file mistakenly
+  reported as "Installed."
+- Download failures now surface a real error message instead of the
+  progress bar silently vanishing.
+- Windows installers were unintentionally bundling ~175MB of unrelated
+  macOS `.dylib` binaries due to an overly broad resource-copying rule.
+
+## [1.0.0] — 2026-08-30
+
+Initial public release.
+
+### Added
+- FLUX.2-Klein and SDXL Lightning image generation via native
+  `stable-diffusion.cpp` (CUDA/Vulkan/Metal/CPU, auto-detected).
+- LoRA support with a live strength slider.
+- Cancel Generation (abort mid-flight).
+- Native `llama.cpp` GPU server with real-time token streaming from any
+  local GGUF model.
+- LM Studio-style load parameters (Context Length, GPU Layers, Batch Size,
+  Flash Attention, K/V Cache Quantization).
+- Custom chat personas with one-click prompt handoff to Image Studio.
+- Six ambient UI themes.
+- Local control server: Origin validation on every request, path-traversal
+  guards, POST-only mutating endpoints.

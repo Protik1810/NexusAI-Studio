@@ -19,6 +19,14 @@ name: Build Linux/macOS/Windows Installers
 # it cryptographically ties the file back to this exact workflow run and
 # source commit. The manually-built Windows Complete installer has no such
 # attestation, since it isn't produced by this (or any) CI run.
+#
+# On a version tag push, the final job collects everything the three build
+# jobs produced and opens a DRAFT GitHub Release with them attached, plus a
+# CHECKSUMS.txt covering exactly those files. It's a draft, not published,
+# on purpose: the Windows Complete/Portable installers and the real
+# (engine-bundled) macOS build still have to be built and uploaded by hand
+# (see RELEASING.md) before the release is complete — publishing
+# automatically here would ship a release missing its main downloads.
 
 on:
   workflow_dispatch:
@@ -120,3 +128,34 @@ jobs:
         with:
           name: solframe-studio-windows-lightweight
           path: installer-output/*-Lightweight.exe
+
+  draft-release:
+    # Only on a real version tag push — workflow_dispatch runs (used for
+    # testing the builds themselves) never open a release.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-linux, build-mac, build-windows-lightweight]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist-artifacts
+          merge-multiple: true
+
+      - name: Generate checksums for these artifacts
+        working-directory: dist-artifacts
+        run: sha256sum * > CHECKSUMS.txt
+
+      - name: Open a draft release with what CI could build
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: Solframe Studio ${{ github.ref_name }}
+          body: |
+            Draft opened automatically by CI from this tag's build. **Not ready to publish yet** — the following still need to be built and uploaded by hand (see [RELEASING.md](https://github.com/${{ github.repository }}/blob/main/RELEASING.md)):
+            - The Windows Complete and Portable installers (real inference engines bundled — CI only has access to `backend/win/` binaries if `fetch-engines.js` was run on this runner, which it isn't yet)
+            - The real macOS build with `backend/mac/` bundled (this release's `.dmg`/`.zip` are UI-shell-only, same gap as the Linux build)
+            - A regenerated `CHECKSUMS.txt` covering *all* final assets (this draft's `CHECKSUMS.txt` only covers what CI itself built)
+            - The actual release notes (see [RELEASE_NOTES.md](https://github.com/${{ github.repository }}/blob/main/RELEASE_NOTES.md))
+          files: dist-artifacts/*
