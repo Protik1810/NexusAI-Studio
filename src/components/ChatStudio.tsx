@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useReducer, useEffect, useRef } from 'react';
 import {
   Send,
   Trash2,
@@ -102,72 +102,210 @@ const loadParamControlStyle: React.CSSProperties = {
   flexShrink: 0
 };
 
+interface LoadParams {
+  ctxSize: number;
+  gpuLayers: number;
+  batchSize: number;
+  flashAttn: 'auto' | 'on' | 'off';
+  cacheTypeK: string;
+  cacheTypeV: string;
+  cacheTypeKEnabled: boolean;
+  cacheTypeVEnabled: boolean;
+  mmprojPath: string;
+  reasoningEnabled: boolean;
+}
+
+const DEFAULT_LOAD_PARAMS: LoadParams = {
+  ctxSize: 4096, gpuLayers: 99, batchSize: 2048, flashAttn: 'auto', cacheTypeK: 'f16', cacheTypeV: 'f16', cacheTypeKEnabled: false, cacheTypeVEnabled: false,
+  mmprojPath: '', reasoningEnabled: false
+};
+
+interface EmbeddedServerStatus {
+  running: boolean;
+  port: number;
+  model: string | null;
+}
+
+interface ChatState {
+  messages: ChatMessage[];
+  input: string;
+  activePersona: PersonaPreset;
+  localGgufModels: LocalGgufModel[];
+  mmprojModels: LocalGgufModel[];
+  selectedGgufPath: string;
+  isStartingServer: boolean;
+  embeddedServerStatus: EmbeddedServerStatus;
+  loadParams: LoadParams;
+  temperature: number;
+  streaming: boolean;
+  copiedIndex: number | null;
+  isScanningModels: boolean;
+  pendingAttachments: ChatAttachment[];
+  // Reasoning panels are collapsed by default (traces can be long) —
+  // tracked per message index rather than one global flag.
+  expandedReasoning: Set<number>;
+}
+
+function initState(): ChatState {
+  let messages: ChatMessage[] = [];
+  try {
+    const saved = localStorage.getItem('solframe_chat_history');
+    if (saved) messages = JSON.parse(saved);
+  } catch {}
+
+  let loadParams = DEFAULT_LOAD_PARAMS;
+  try {
+    const saved = localStorage.getItem('solframe_llm_load_params');
+    if (saved) loadParams = { ...DEFAULT_LOAD_PARAMS, ...JSON.parse(saved) };
+  } catch {}
+
+  return {
+    messages,
+    input: '',
+    activePersona: PERSONA_PRESETS[0],
+    localGgufModels: [],
+    mmprojModels: [],
+    selectedGgufPath: '',
+    isStartingServer: false,
+    embeddedServerStatus: { running: false, port: 8080, model: null },
+    loadParams,
+    temperature: 0.7,
+    streaming: false,
+    copiedIndex: null,
+    isScanningModels: false,
+    pendingAttachments: [],
+    expandedReasoning: new Set()
+  };
+}
+
+type Action =
+  | { type: 'SET_FIELD'; field: keyof ChatState; value: any }
+  | { type: 'LOAD_PARAMS_MERGE'; patch: Partial<LoadParams> }
+  | { type: 'SCAN_START' }
+  | { type: 'SCAN_END' }
+  | { type: 'GGUF_MODELS_LOADED'; models: LocalGgufModel[] }
+  | { type: 'SERVER_STARTED'; port: number; model: string | null }
+  | { type: 'SERVER_STOPPED' }
+  | { type: 'SEND_MESSAGE_START'; userMessage: ChatMessage }
+  | { type: 'STREAM_TOKEN'; token: string }
+  | { type: 'STREAM_REASONING_TOKEN'; token: string }
+  | { type: 'STREAM_SETTLED' }
+  | { type: 'CLEAR_CHAT' }
+  | { type: 'COPY_MESSAGE'; index: number }
+  | { type: 'COPY_DONE' }
+  | { type: 'ADD_ATTACHMENT'; attachment: ChatAttachment }
+  | { type: 'REMOVE_ATTACHMENT'; index: number }
+  | { type: 'TOGGLE_REASONING_EXPANDED'; index: number };
+
+function reducer(state: ChatState, action: Action): ChatState {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value };
+
+    case 'LOAD_PARAMS_MERGE':
+      return { ...state, loadParams: { ...state.loadParams, ...action.patch } };
+
+    case 'SCAN_START':
+      return { ...state, isScanningModels: true };
+
+    case 'SCAN_END':
+      return { ...state, isScanningModels: false };
+
+    case 'GGUF_MODELS_LOADED': {
+      const next: ChatState = { ...state, localGgufModels: action.models };
+      if (action.models.length > 0 && !state.selectedGgufPath) {
+        next.selectedGgufPath = action.models[0].fullPath;
+      }
+      return next;
+    }
+
+    case 'SERVER_STARTED':
+      return { ...state, embeddedServerStatus: { running: true, port: action.port, model: action.model }, isStartingServer: false };
+
+    case 'SERVER_STOPPED':
+      return { ...state, embeddedServerStatus: { running: false, port: 8080, model: null } };
+
+    case 'SEND_MESSAGE_START': {
+      const assistantPlaceholder: ChatMessage = { role: 'assistant', content: '', timestamp: Date.now() };
+      return {
+        ...state,
+        messages: [...state.messages, action.userMessage, assistantPlaceholder],
+        input: '',
+        pendingAttachments: [],
+        streaming: true
+      };
+    }
+
+    case 'STREAM_TOKEN': {
+      const messages = [...state.messages];
+      const last = messages[messages.length - 1];
+      messages[messages.length - 1] = { ...last, content: last.content + action.token };
+      return { ...state, messages };
+    }
+
+    case 'STREAM_REASONING_TOKEN': {
+      const messages = [...state.messages];
+      const last = messages[messages.length - 1];
+      messages[messages.length - 1] = { ...last, reasoningContent: (last.reasoningContent || '') + action.token };
+      return { ...state, messages };
+    }
+
+    case 'STREAM_SETTLED':
+      return { ...state, streaming: false };
+
+    case 'CLEAR_CHAT':
+      return { ...state, messages: [] };
+
+    case 'COPY_MESSAGE':
+      return { ...state, copiedIndex: action.index };
+
+    case 'COPY_DONE':
+      return { ...state, copiedIndex: null };
+
+    case 'ADD_ATTACHMENT':
+      return { ...state, pendingAttachments: [...state.pendingAttachments, action.attachment] };
+
+    case 'REMOVE_ATTACHMENT':
+      return { ...state, pendingAttachments: state.pendingAttachments.filter((_, i) => i !== action.index) };
+
+    case 'TOGGLE_REASONING_EXPANDED': {
+      const next = new Set(state.expandedReasoning);
+      if (next.has(action.index)) next.delete(action.index); else next.add(action.index);
+      return { ...state, expandedReasoning: next };
+    }
+
+    default:
+      return state;
+  }
+}
+
 export const ChatStudio: React.FC<ChatStudioProps> = ({
   llmStatus,
   onSendToImageStudio,
   onError,
   onNavigateToHub
 }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    try {
-      const saved = localStorage.getItem('solframe_chat_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [input, setInput] = useState<string>('');
-  const [activePersona, setActivePersona] = useState<PersonaPreset>(PERSONA_PRESETS[0]);
-  const [localGgufModels, setLocalGgufModels] = useState<LocalGgufModel[]>([]);
-  const [mmprojModels, setMmprojModels] = useState<LocalGgufModel[]>([]);
-  const [selectedGgufPath, setSelectedGgufPath] = useState<string>('');
-  const [isStartingServer, setIsStartingServer] = useState<boolean>(false);
-  const [embeddedServerStatus, setEmbeddedServerStatus] = useState<{ running: boolean; port: number; model: string | null }>({ running: false, port: 8080, model: null });
-  const [loadParams, setLoadParams] = useState<{
-    ctxSize: number; gpuLayers: number; batchSize: number; flashAttn: 'auto' | 'on' | 'off';
-    cacheTypeK: string; cacheTypeV: string; cacheTypeKEnabled: boolean; cacheTypeVEnabled: boolean;
-    mmprojPath: string; reasoningEnabled: boolean;
-  }>(() => {
-    const defaults = {
-      ctxSize: 4096, gpuLayers: 99, batchSize: 2048, flashAttn: 'auto' as const, cacheTypeK: 'f16', cacheTypeV: 'f16', cacheTypeKEnabled: false, cacheTypeVEnabled: false,
-      mmprojPath: '', reasoningEnabled: false
-    };
-    try {
-      const saved = localStorage.getItem('solframe_llm_load_params');
-      if (saved) return { ...defaults, ...JSON.parse(saved) };
-    } catch {}
-    return defaults;
-  });
-  const [temperature, setTemperature] = useState<number>(0.7);
-  const [streaming, setStreaming] = useState<boolean>(false);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-  const [isScanningModels, setIsScanningModels] = useState<boolean>(false);
-  const [pendingAttachments, setPendingAttachments] = useState<ChatAttachment[]>([]);
-  // Reasoning panels are collapsed by default (traces can be long) — tracked
-  // per message index rather than one global flag.
-  const [expandedReasoning, setExpandedReasoning] = useState<Set<number>>(new Set());
+  const [state, dispatch] = useReducer(reducer, undefined, initState);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
+  const setField = <K extends keyof ChatState>(field: K, value: ChatState[K]) =>
+    dispatch({ type: 'SET_FIELD', field, value });
+
   const refreshLocalGgufModels = async () => {
-    setIsScanningModels(true);
+    dispatch({ type: 'SCAN_START' });
     try {
       const models = await llmService.getLocalGgufModels();
-      setLocalGgufModels(models);
-      if (models.length > 0 && !selectedGgufPath) {
-        setSelectedGgufPath(models[0].fullPath);
-      }
+      dispatch({ type: 'GGUF_MODELS_LOADED', models });
       const mmprojs = await llmService.getLocalMmprojModels();
-      setMmprojModels(mmprojs);
+      setField('mmprojModels', mmprojs);
       const status = await llmService.getEmbeddedLlamaStatus();
-      setEmbeddedServerStatus(status);
+      setField('embeddedServerStatus', status);
     } catch (e) {
       console.error('Failed to load local GGUF models', e);
     } finally {
-      setIsScanningModels(false);
+      dispatch({ type: 'SCAN_END' });
     }
   };
 
@@ -176,47 +314,46 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('solframe_chat_history', JSON.stringify(messages));
+    localStorage.setItem('solframe_chat_history', JSON.stringify(state.messages));
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [state.messages]);
 
   useEffect(() => {
-    localStorage.setItem('solframe_llm_load_params', JSON.stringify(loadParams));
-  }, [loadParams]);
+    localStorage.setItem('solframe_llm_load_params', JSON.stringify(state.loadParams));
+  }, [state.loadParams]);
 
   const handleStartEmbeddedServer = async () => {
-    if (!selectedGgufPath) {
+    if (!state.selectedGgufPath) {
       onError('No GGUF Model Selected', 'Please select a downloaded .gguf text model from the dropdown or download one from the Model Hub.');
       return;
     }
 
-    setIsStartingServer(true);
+    setField('isStartingServer', true);
     try {
       const res = await llmService.startEmbeddedLlama(
-        selectedGgufPath, loadParams.gpuLayers, loadParams.ctxSize, loadParams.batchSize, loadParams.flashAttn,
-        loadParams.cacheTypeKEnabled ? loadParams.cacheTypeK : 'f16',
-        loadParams.cacheTypeVEnabled ? loadParams.cacheTypeV : 'f16',
-        loadParams.mmprojPath || undefined,
-        loadParams.reasoningEnabled
+        state.selectedGgufPath, state.loadParams.gpuLayers, state.loadParams.ctxSize, state.loadParams.batchSize, state.loadParams.flashAttn,
+        state.loadParams.cacheTypeKEnabled ? state.loadParams.cacheTypeK : 'f16',
+        state.loadParams.cacheTypeVEnabled ? state.loadParams.cacheTypeV : 'f16',
+        state.loadParams.mmprojPath || undefined,
+        state.loadParams.reasoningEnabled
       );
-      setEmbeddedServerStatus({ running: true, port: res.port, model: res.model });
+      dispatch({ type: 'SERVER_STARTED', port: res.port, model: res.model });
     } catch (err: any) {
       onError('llama.cpp Startup Error', err.message || 'Failed to initialize CUDA llama-server on GPU.');
-    } finally {
-      setIsStartingServer(false);
+      setField('isStartingServer', false);
     }
   };
 
   const handleStopEmbeddedServer = async () => {
     await llmService.stopEmbeddedLlama();
-    setEmbeddedServerStatus({ running: false, port: 8080, model: null });
+    dispatch({ type: 'SERVER_STOPPED' });
   };
 
   const handleSendMessage = async () => {
-    if (!input.trim() || streaming) return;
+    if (!state.input.trim() || state.streaming) return;
 
-    if (!embeddedServerStatus.running) {
-      if (selectedGgufPath) {
+    if (!state.embeddedServerStatus.running) {
+      if (state.selectedGgufPath) {
         await handleStartEmbeddedServer();
       } else {
         onError('Engine Not Running', "Please select a .gguf text model and click 'Start Engine' to launch native GPU text generation.");
@@ -226,67 +363,37 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
     const userMessage: ChatMessage = {
       role: 'user',
-      content: input.trim(),
-      attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined,
+      content: state.input.trim(),
+      attachments: state.pendingAttachments.length > 0 ? state.pendingAttachments : undefined,
       timestamp: Date.now()
     };
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setInput('');
-    setPendingAttachments([]);
-    setStreaming(true);
-
-    const assistantPlaceholder: ChatMessage = {
-      role: 'assistant',
-      content: '',
-      timestamp: Date.now()
-    };
-
-    setMessages([...newMessages, assistantPlaceholder]);
+    // The messages array sent to streamChat must include this user message
+    // but not yet the empty assistant placeholder SEND_MESSAGE_START also
+    // adds to state — build it here rather than reading state back after
+    // dispatch, since dispatch doesn't resolve synchronously.
+    const newMessages = [...state.messages, userMessage];
+    dispatch({ type: 'SEND_MESSAGE_START', userMessage });
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    let accumulatedContent = '';
-    let accumulatedReasoning = '';
-
     try {
       await llmService.streamChat(
         newMessages,
-        embeddedServerStatus.model || 'local-gguf',
-        activePersona.systemPrompt,
-        temperature,
-        (token) => {
-          accumulatedContent += token;
-          setMessages((prev) => {
-            const copy = [...prev];
-            copy[copy.length - 1] = {
-              ...copy[copy.length - 1],
-              content: accumulatedContent
-            };
-            return copy;
-          });
-        },
+        state.embeddedServerStatus.model || 'local-gguf',
+        state.activePersona.systemPrompt,
+        state.temperature,
+        (token) => dispatch({ type: 'STREAM_TOKEN', token }),
         controller.signal,
-        (reasoningToken) => {
-          accumulatedReasoning += reasoningToken;
-          setMessages((prev) => {
-            const copy = [...prev];
-            copy[copy.length - 1] = {
-              ...copy[copy.length - 1],
-              reasoningContent: accumulatedReasoning
-            };
-            return copy;
-          });
-        }
+        (reasoningToken) => dispatch({ type: 'STREAM_REASONING_TOKEN', token: reasoningToken })
       );
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         onError('LLM Chat Error', err.message || 'Stream interrupted.');
       }
     } finally {
-      setStreaming(false);
+      dispatch({ type: 'STREAM_SETTLED' });
       abortControllerRef.current = null;
     }
   };
@@ -294,19 +401,19 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
   const handleStopStream = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      setStreaming(false);
+      dispatch({ type: 'STREAM_SETTLED' });
     }
   };
 
   const handleClearChat = () => {
-    setMessages([]);
+    dispatch({ type: 'CLEAR_CHAT' });
     localStorage.removeItem('solframe_chat_history');
   };
 
   const handleCopyMessage = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
+    dispatch({ type: 'COPY_MESSAGE', index });
+    setTimeout(() => dispatch({ type: 'COPY_DONE' }), 2000);
   };
 
   const handleAttachFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -319,7 +426,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
       if (isImage) {
         const reader = new FileReader();
         reader.onload = () => {
-          setPendingAttachments((prev) => [...prev, { type: 'image', name: file.name, mimeType: file.type, dataUrl: reader.result as string }]);
+          dispatch({ type: 'ADD_ATTACHMENT', attachment: { type: 'image', name: file.name, mimeType: file.type, dataUrl: reader.result as string } });
         };
         reader.readAsDataURL(file);
         return;
@@ -328,7 +435,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
       if (isPdf) {
         try {
           const extractedText = await extractPdfText(file);
-          setPendingAttachments((prev) => [...prev, { type: 'document', name: file.name, mimeType: file.type, extractedText }]);
+          dispatch({ type: 'ADD_ATTACHMENT', attachment: { type: 'document', name: file.name, mimeType: file.type, extractedText } });
         } catch (err: any) {
           onError('PDF Extraction Failed', `Couldn't read text from "${file.name}": ${err.message || 'unknown error'}`);
         }
@@ -338,23 +445,21 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
       // Plain text (.txt/.md) needs no library — just the raw read result.
       const reader = new FileReader();
       reader.onload = () => {
-        setPendingAttachments((prev) => [...prev, { type: 'document', name: file.name, mimeType: file.type, extractedText: reader.result as string }]);
+        dispatch({ type: 'ADD_ATTACHMENT', attachment: { type: 'document', name: file.name, mimeType: file.type, extractedText: reader.result as string } });
       };
       reader.readAsText(file);
     });
   };
 
   const handleRemoveAttachment = (index: number) => {
-    setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
+    dispatch({ type: 'REMOVE_ATTACHMENT', index });
   };
 
   const toggleReasoningExpanded = (index: number) => {
-    setExpandedReasoning((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index); else next.add(index);
-      return next;
-    });
+    dispatch({ type: 'TOGGLE_REASONING_EXPANDED', index });
   };
+
+  const { messages, input, activePersona, localGgufModels, mmprojModels, selectedGgufPath, isStartingServer, embeddedServerStatus, loadParams, temperature, streaming, copiedIndex, isScanningModels, pendingAttachments, expandedReasoning } = state;
 
   return (
     <div className="chat-layout">
@@ -388,9 +493,9 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
           <div style={{ display: 'flex', gap: '8px' }}>
             {messages.length > 0 && (
-              <button 
-                className="icon-btn" 
-                onClick={handleClearChat} 
+              <button
+                className="icon-btn"
+                onClick={handleClearChat}
                 title="Clear Conversation"
               >
                 <Trash2 size={16} />
@@ -438,7 +543,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                     key={p.id}
                     type="button"
                     className={`persona-card ${activePersona.id === p.id ? 'active' : ''}`}
-                    onClick={() => setActivePersona(p)}
+                    onClick={() => setField('activePersona', p)}
                   >
                     <span style={{ fontSize: '20px' }}>{p.icon}</span>
                     <span style={{ fontWeight: 600, fontSize: '12px' }}>{p.name}</span>
@@ -448,8 +553,8 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
             </div>
           ) : (
             messages.map((msg, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className={`chat-bubble-row ${msg.role === 'user' ? 'user-row' : 'assistant-row'}`}
               >
                 <div className="bubble-avatar">
@@ -510,8 +615,8 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
                   {msg.role === 'assistant' && msg.content && (
                     <div className="bubble-actions">
-                      <button 
-                        className="bubble-action-btn" 
+                      <button
+                        className="bubble-action-btn"
                         onClick={() => handleCopyMessage(msg.content, idx)}
                         title="Copy text"
                       >
@@ -519,8 +624,8 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                         {copiedIndex === idx ? 'Copied' : 'Copy'}
                       </button>
 
-                      <button 
-                        className="bubble-action-btn" 
+                      <button
+                        className="bubble-action-btn"
                         onClick={() => onSendToImageStudio(msg.content)}
                         title="Send this response as prompt to Image Studio"
                       >
@@ -585,7 +690,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
 
           <textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => setField('input', e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -602,9 +707,9 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               <StopCircle size={18} />
             </button>
           ) : (
-            <button 
-              className="chat-send-btn" 
-              onClick={handleSendMessage} 
+            <button
+              className="chat-send-btn"
+              onClick={handleSendMessage}
               disabled={!input.trim()}
               title="Send Message"
             >
@@ -643,7 +748,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               <>
                 <select
                   value={selectedGgufPath}
-                  onChange={(e) => setSelectedGgufPath(e.target.value)}
+                  onChange={(e) => setField('selectedGgufPath', e.target.value)}
                   className="select-input"
                   style={{ marginBottom: '10px' }}
                 >
@@ -665,7 +770,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                       step={512}
                       value={loadParams.ctxSize}
                       disabled={embeddedServerStatus.running}
-                      onChange={(e) => setLoadParams({ ...loadParams, ctxSize: parseInt(e.target.value, 10) || loadParams.ctxSize })}
+                      onChange={(e) => dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { ctxSize: parseInt(e.target.value, 10) || loadParams.ctxSize } })}
                       className="select-input"
                       style={loadParamControlStyle}
                     />
@@ -678,7 +783,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                       max={999}
                       value={loadParams.gpuLayers}
                       disabled={embeddedServerStatus.running}
-                      onChange={(e) => setLoadParams({ ...loadParams, gpuLayers: parseInt(e.target.value, 10) || 0 })}
+                      onChange={(e) => dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { gpuLayers: parseInt(e.target.value, 10) || 0 } })}
                       className="select-input"
                       style={loadParamControlStyle}
                     />
@@ -692,7 +797,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                       step={32}
                       value={loadParams.batchSize}
                       disabled={embeddedServerStatus.running}
-                      onChange={(e) => setLoadParams({ ...loadParams, batchSize: parseInt(e.target.value, 10) || loadParams.batchSize })}
+                      onChange={(e) => dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { batchSize: parseInt(e.target.value, 10) || loadParams.batchSize } })}
                       className="select-input"
                       style={loadParamControlStyle}
                     />
@@ -707,7 +812,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                         // Quantized V-cache requires Flash Attention — drop back
                         // to f16 rather than let an invalid combo get saved.
                         const vStillValid = flashAttn !== 'off';
-                        setLoadParams({ ...loadParams, flashAttn, cacheTypeVEnabled: vStillValid ? loadParams.cacheTypeVEnabled : false });
+                        dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { flashAttn, cacheTypeVEnabled: vStillValid ? loadParams.cacheTypeVEnabled : false } });
                       }}
                       className="select-input"
                       style={loadParamControlStyle}
@@ -724,7 +829,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                         type="checkbox"
                         checked={loadParams.cacheTypeKEnabled}
                         disabled={embeddedServerStatus.running}
-                        onChange={(e) => setLoadParams({ ...loadParams, cacheTypeKEnabled: e.target.checked })}
+                        onChange={(e) => dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { cacheTypeKEnabled: e.target.checked } })}
                         style={{ marginLeft: '6px', verticalAlign: 'middle', accentColor: 'var(--accent)' }}
                         title="Override the K cache's data type (defaults to f16)"
                       />
@@ -732,7 +837,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                     <select
                       value={loadParams.cacheTypeK}
                       disabled={embeddedServerStatus.running || !loadParams.cacheTypeKEnabled}
-                      onChange={(e) => setLoadParams({ ...loadParams, cacheTypeK: e.target.value })}
+                      onChange={(e) => dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { cacheTypeK: e.target.value } })}
                       className="select-input"
                       style={loadParamControlStyle}
                     >
@@ -748,7 +853,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                         type="checkbox"
                         checked={loadParams.cacheTypeVEnabled}
                         disabled={embeddedServerStatus.running || loadParams.flashAttn === 'off'}
-                        onChange={(e) => setLoadParams({ ...loadParams, cacheTypeVEnabled: e.target.checked })}
+                        onChange={(e) => dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { cacheTypeVEnabled: e.target.checked } })}
                         style={{ marginLeft: '6px', verticalAlign: 'middle', accentColor: 'var(--accent)' }}
                         title={loadParams.flashAttn === 'off' ? 'Requires Flash Attention (On or Auto) to use a quantized V-cache' : "Override the V cache's data type (defaults to f16)"}
                       />
@@ -756,7 +861,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                     <select
                       value={loadParams.cacheTypeV}
                       disabled={embeddedServerStatus.running || !loadParams.cacheTypeVEnabled || loadParams.flashAttn === 'off'}
-                      onChange={(e) => setLoadParams({ ...loadParams, cacheTypeV: e.target.value })}
+                      onChange={(e) => dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { cacheTypeV: e.target.value } })}
                       className="select-input"
                       style={loadParamControlStyle}
                       title={loadParams.flashAttn === 'off' ? 'Requires Flash Attention (On or Auto) to use a quantized V-cache' : undefined}
@@ -774,7 +879,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                       type="checkbox"
                       checked={loadParams.reasoningEnabled}
                       disabled={embeddedServerStatus.running}
-                      onChange={(e) => setLoadParams({ ...loadParams, reasoningEnabled: e.target.checked })}
+                      onChange={(e) => dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { reasoningEnabled: e.target.checked } })}
                       style={{ accentColor: 'var(--accent)' }}
                       title="For reasoning models (e.g. DeepSeek-R1 style) — shows the model's reasoning trace in a collapsible panel above its final answer, instead of it leaking into the visible reply."
                     />
@@ -789,7 +894,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
                     <select
                       value={loadParams.mmprojPath}
                       disabled={embeddedServerStatus.running}
-                      onChange={(e) => setLoadParams({ ...loadParams, mmprojPath: e.target.value })}
+                      onChange={(e) => dispatch({ type: 'LOAD_PARAMS_MERGE', patch: { mmprojPath: e.target.value } })}
                       className="select-input"
                     >
                       <option value="">None (text-only)</option>
@@ -857,7 +962,7 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
               <div
                 key={p.id}
                 className={`persona-list-item ${activePersona.id === p.id ? 'active' : ''}`}
-                onClick={() => setActivePersona(p)}
+                onClick={() => setField('activePersona', p)}
               >
                 <span style={{ fontSize: '18px' }}>{p.icon}</span>
                 <div>
@@ -875,13 +980,13 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
             <label className="control-label">Creativity / Temp</label>
             <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 600 }}>{temperature.toFixed(2)}</span>
           </div>
-          <input 
-            type="range" 
-            min="0.1" 
-            max="1.5" 
+          <input
+            type="range"
+            min="0.1"
+            max="1.5"
             step="0.05"
-            value={temperature} 
-            onChange={(e) => setTemperature(parseFloat(e.target.value))}
+            value={temperature}
+            onChange={(e) => setField('temperature', parseFloat(e.target.value))}
             className="slider-input"
           />
         </div>
@@ -889,4 +994,3 @@ export const ChatStudio: React.FC<ChatStudioProps> = ({
     </div>
   );
 };
-
