@@ -81,8 +81,12 @@ Real output from both pipelines, unedited — prompt included for each. Solframe
 Another edit, on a different reference image:
 
 <div align="center">
-<img src="public/screenshots/showcase-flux-edit-lady-to-man.webp" width="60%"/>
-<br/><sub>Edit prompt: <code>change the lady to a man</code></sub>
+<table>
+<tr>
+<td width="50%" align="center"><img src="public/screenshots/showcase-flux-edit2-before.webp" width="100%"/><br/><sub>Original (attached as the reference image)</sub></td>
+<td width="50%" align="center"><img src="public/screenshots/showcase-flux-edit2-after.webp" width="100%"/><br/><sub>Edit prompt: <code>change the lady to a man</code></sub></td>
+</tr>
+</table>
 </div>
 
 ---
