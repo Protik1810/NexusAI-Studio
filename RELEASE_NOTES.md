@@ -14,7 +14,14 @@ Solframe Studio is a standalone, self-contained desktop app for 100% private, of
 
 A maintenance release — repo hardening and one real UI bug fix, no new user-facing features.
 
+### 🚀 New: guided first run
+
+- **Starter Packs.** A fresh install has no models, and neither image pipeline works until the right *combination* of files is present — one all-in-one checkpoint for the standard pipeline, or a diffusion model + text encoder + VAE for FLUX, none of which is useful alone. Model Hub now offers a known-good set matched to your GPU (fp8 builds under 16 GB VRAM, full precision above), downloads it, and files each piece where its pipeline looks. A first run with nothing installed opens on this tab.
+- **Models now download somewhere you can find them** — `Downloads/Solframe Studio/` instead of the hidden app-data folder, changeable in Settings. Your existing folder stays on the scan list, so nothing you already have disappears and nothing is moved.
+
 ### 🐛 Fixed
+- **Adding your own model folder silently did nothing in packaged builds.** The picker reported success and the folder was gone on the next read — the setting was being written inside the app bundle, which is a single archive file, so every save failed invisibly. Custom folders now persist properly.
+- **The splash screen logo never rendered** (broken-image icon) — it was loaded via `file://` from a `data:` URL page, which the browser engine blocks.
 - **Packaged builds (Windows, macOS, Linux) could crash shortly after launch.** An internal path used by the automatic update check pointed at a location that never actually existed in any packaged build, and the resulting error wasn't caught — every launch had a chance of taking the app down within the first second or two. Fixed at the root, and the download links below now point at rebuilt, verified artifacts (all three platforms were re-tested end-to-end, including a real image generation through the packaged Windows app and a live headless run on Linux).
 - **The GPU badge in Image Studio's Studio Controls panel now shows your actual detected GPU.** It was a hardcoded "RTX 4070 Ti (12GB)" string that never reflected real hardware — the canvas header's GPU badge was always correct, this second one just wasn't wired up.
 
@@ -80,7 +87,7 @@ A maintenance release — repo hardening and one real UI bug fix, no new user-fa
 
 ### 🗄️ Model Hub & Downloads
 - Fixed three curated presets that were pointing at renamed/moved files (404s on download) and removed three that were either off-topic or fundamentally incompatible with this app's single-file model loading.
-- Downloads now save to the portable `AppData/Solframe Studio` location instead of the app's own install folder — the old location silently failed or lost files on Linux AppImage, `.deb`, and packaged macOS builds.
+- Downloads now save to `Downloads/Solframe Studio` — a folder you can actually find — instead of the app's own install folder, which silently failed or lost files on Linux AppImage, `.deb`, and packaged macOS builds.
 - "Rescan" buttons now actually trigger a fresh scan instead of re-reading a stale cache — a freshly downloaded model shows up without restarting the app.
 - A cancelled download no longer leaves a corrupt partial file that gets mistakenly reported as "Installed."
 - Download failures (bad URL, gated repo, disk full) now surface as a real error message instead of the progress bar silently vanishing.
@@ -119,11 +126,10 @@ Dark Void, Neon Cyber, Cinema Gold (default), Synthwave Sunset, Anime Fantasy, a
 | 🪟 Windows | Complete Setup | ~927 MB | [Solframe-Studio-Setup-1.1.2.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe-Studio-Setup-1.1.2.exe) |
 | 🪟 Windows | Lightweight Setup | ~108 MB | [Solframe-Studio-Setup-1.1.2-Lightweight.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe-Studio-Setup-1.1.2-Lightweight.exe) |
 | 🍎 macOS | Apple Silicon `.zip` | ~225 MB | [Solframe.Studio-1.1.2-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2-arm64-mac.zip) |
-| 🍎 macOS | Intel `.zip` | ~229 MB | [Solframe.Studio-1.1.2-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2-mac.zip) |
 | 🐧 Linux | AppImage | ~172 MB | [Solframe.Studio-1.1.2.AppImage](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2.AppImage) |
 | 🐧 Linux | `.deb` | ~139 MB | [solframe-studio_1.1.2_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/solframe-studio_1.1.2_amd64.deb) |
 
-**Platform note:** Windows and macOS ship full local inference (CUDA/Vulkan/CPU on Windows, Metal/CPU on macOS). Linux currently runs the UI shell and Model Hub only — a native engine build is planned.
+**Platform note:** Windows and macOS ship full local inference (CUDA/Vulkan/CPU on Windows, Metal/CPU on macOS). macOS is Apple Silicon only — Metal inference needs an M-series GPU, so the Intel build has been dropped rather than shipping a bundle that can't generate. Linux currently runs the UI shell and Model Hub only — a native engine build is planned.
 
 #### 🔐 Verify Your Download (SHA-256)
 Published as [CHECKSUMS.txt](https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/CHECKSUMS.txt) — download it, then verify with `sha256sum -c CHECKSUMS.txt` (Linux/macOS) or `Get-FileHash <file> -Algorithm SHA256` (Windows PowerShell).

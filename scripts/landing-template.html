@@ -2396,26 +2396,9 @@
           </a>
         </div>
 
-        <!-- macOS App Bundle — Intel -->
-        <div class="download-card" id="card-macos-app" data-platform="macos">
-          <span class="os-badge-chip">Recommended for your OS</span>
-          <div>
-            <div class="card-top">
-              <div class="download-icon-box">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 0.92-2.85-.9.04-2 0.6-2.65 1.35-.58.66-1.09 1.73-.95 2.76.99.08 2.06-.51 2.68-1.26z"/></svg>
-              </div>
-              <div>
-                <h4 class="download-card-title">Intel Mac (.zip)</h4>
-                <span class="download-platform">macOS · x86_64 · Unsigned</span>
-              </div>
-            </div>
-            <p class="download-desc">Unzip and move to Applications. Right-click → Open on first launch.</p>
-          </div>
-          <a href="{{DOWNLOAD_MAC_ZIP}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline" id="btn-macos-app">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-            Download .zip
-          </a>
-        </div>
+        <!-- Intel Mac build dropped as of v1.1.2: inference runs on Metal,
+             which needs an Apple Silicon GPU, so an x86_64 bundle shipped a
+             UI that couldn't generate anything. Apple Silicon only. -->
       </div>
 
       <!-- Other Platforms (collapsed by default; populated by JS with every
@@ -2679,17 +2662,20 @@ Get-FileHash .\Solframe-Studio-Setup-1.1.1.exe   # Windows PowerShell</code></pr
         };
       } else if (platform.includes('mac') || ua.includes('macintosh') || ua.includes('mac os')) {
         const isArm = ua.includes('arm') || ua.includes('apple') || navigator.userAgentData?.architecture === 'arm';
-        // Previously both "Apple Silicon" and "Universal" labels pointed at
-        // the same single Intel x64 zip — every Apple Silicon Mac visitor
-        // got the wrong build. Now genuinely two cards/buttons/links.
+        // Apple Silicon only since v1.1.2 — inference runs on Metal, which
+        // needs an M-series GPU, so there is one macOS card and an Intel
+        // visitor is told plainly rather than handed a build that can't
+        // generate anything.
         return {
           os: 'macos',
           name: 'macOS',
-          archText: isArm ? 'Apple Silicon' : 'Intel',
+          archText: isArm ? 'Apple Silicon' : 'Intel (unsupported)',
           ctaText: 'Download for macOS',
-          ctaSub: isArm ? 'Detected: macOS (Apple Silicon) • Unsigned App Bundle' : 'Detected: macOS (Intel) • Unsigned App Bundle',
-          cardId: isArm ? 'card-macos-arm64' : 'card-macos-app',
-          btnId: isArm ? 'btn-macos-arm64' : 'btn-macos-app',
+          ctaSub: isArm
+            ? 'Detected: macOS (Apple Silicon) • Unsigned App Bundle'
+            : 'Detected: macOS (Intel) • Requires Apple Silicon — Metal GPU needed',
+          cardId: 'card-macos-arm64',
+          btnId: 'btn-macos-arm64',
           shellLabel: 'zsh',
           buildCmd: 'npm run electron:build:mac',
           captionText: 'Produces an unsigned macOS .zip app bundle. Right-click → Open on initial launch.'
