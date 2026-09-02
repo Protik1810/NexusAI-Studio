@@ -1,0 +1,71 @@
+name: Bug Report
+description: Something isn't working right
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most bugs in Solframe Studio turn out to be hardware- or model-specific — the fields below save a few round-trips.
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: e.g. Windows 11 23H2, macOS 15.1 (Apple Silicon), Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU
+      description: Make/model, e.g. RTX 4070 Ti 12GB, AMD RX 7900 XT, Apple M4
+    validations:
+      required: true
+
+  - type: input
+    id: driver
+    attributes:
+      label: GPU Driver Version
+    validations:
+      required: false
+
+  - type: input
+    id: build
+    attributes:
+      label: Which build?
+      description: Complete Setup / Lightweight / Portable / macOS zip / Linux AppImage / .deb — and the version number
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Model file involved (if applicable)
+      description: Filename and where you got it from, e.g. HuggingFace repo/filename
+    validations:
+      required: false
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Anything relevant from the app's console/log output. For image generation issues, the sd-cli args line and any error lines are especially useful.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: false

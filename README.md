@@ -25,6 +25,21 @@
 
 > **Platform status:** Windows (`backend/win/**`, CUDA/Vulkan/CPU) and macOS (`backend/mac/**`, Metal-accelerated, universal x86_64+arm64) both ship real, working inference engines — image generation and local LLM chat run out of the box on either. On Linux, only the UI shell currently runs (see [Getting Started](#-getting-started)) — a native Linux engine build is planned, not shipped yet.
 
+<div align="center">
+<table>
+<tr>
+<td><img src="public/screenshots/studio-image-canvas.webp" alt="Image Studio canvas" width="270"/></td>
+<td><img src="public/screenshots/llm-chat-studio.webp" alt="Uncensored LLM chat" width="270"/></td>
+<td><img src="public/screenshots/sampling-progress-step44.webp" alt="Live GPU sampling progress" width="270"/></td>
+</tr>
+<tr>
+<td align="center"><sub>Image Studio</sub></td>
+<td align="center"><sub>LLM Chat</sub></td>
+<td align="center"><sub>Live sampling progress</sub></td>
+</tr>
+</table>
+</div>
+
 ---
 
 ## 🚀 Key Features
