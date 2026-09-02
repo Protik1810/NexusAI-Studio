@@ -1,0 +1,79 @@
+/* ─── Theme: Dark Void (Cosmic Neural) ────────────────────────────── */
+[data-theme="dark"] {
+  --bg-color: #050810;
+  --panel-bg: rgba(10, 15, 28, 0.58);
+  --accent: #8b5cf6;
+  --accent-secondary: #06b6d4;
+  --accent-hover: #a78bfa;
+  --accent-glow: rgba(139, 92, 246, 0.35);
+  --purple-glow: rgba(168, 85, 247, 0.35);
+  --border-focus: rgba(139, 92, 246, 0.5);
+  --theme-wallpaper: url('/themes/dark-void.jpg');
+}
+
+/* ─── Theme: Neon Cyber (Cyberpunk Rain) ──────────────────────────── */
+[data-theme="neon"] {
+  --bg-color: #030a12;
+  --panel-bg: rgba(6, 16, 28, 0.58);
+  --accent: #06b6d4;
+  --accent-secondary: #ec4899;
+  --accent-hover: #22d3ee;
+  --accent-glow: rgba(6, 182, 212, 0.4);
+  --purple-glow: rgba(236, 72, 153, 0.3);
+  --border-focus: rgba(6, 182, 212, 0.6);
+  --theme-wallpaper: url('/themes/neon-cyber.jpg');
+}
+
+/* ─── Theme: Cinema Gold (Vintage Hollywood Studio) ────────────────── */
+[data-theme="cinema"] {
+  --bg-color: #0d0900;
+  --panel-bg: rgba(20, 12, 4, 0.60);
+  --accent: #f59e0b;
+  --accent-secondary: #b45309;
+  --accent-hover: #fbbf24;
+  --accent-glow: rgba(245, 158, 11, 0.35);
+  --purple-glow: rgba(180, 83, 9, 0.25);
+  --border-focus: rgba(245, 158, 11, 0.5);
+  --text-secondary: #c5a878;
+  --text-muted: #956e4c;
+  --theme-wallpaper: url('/themes/cinema-gold.jpg');
+}
+
+/* ─── Theme: Synthwave Sunset (Retro 80s Grid) ────────────────────── */
+[data-theme="synthwave"] {
+  --bg-color: #0e0618;
+  --panel-bg: rgba(18, 8, 30, 0.60);
+  --accent: #ec4899;
+  --accent-secondary: #8b5cf6;
+  --accent-hover: #f472b6;
+  --accent-glow: rgba(236, 72, 153, 0.45);
+  --purple-glow: rgba(139, 92, 246, 0.35);
+  --border-focus: rgba(236, 72, 153, 0.6);
+  --theme-wallpaper: url('/themes/synthwave.jpg');
+}
+
+/* ─── Theme: Anime Fantasy (Twilight Sakura Shrine) ───────────────── */
+[data-theme="anime"] {
+  --bg-color: #080d22;
+  --panel-bg: rgba(10, 14, 34, 0.58);
+  --accent: #f43f5e;
+  --accent-secondary: #38bdf8;
+  --accent-hover: #fb7185;
+  --accent-glow: rgba(244, 63, 94, 0.4);
+  --purple-glow: rgba(56, 189, 248, 0.3);
+  --border-focus: rgba(244, 63, 94, 0.6);
+  --theme-wallpaper: url('/themes/anime-fantasy.jpg');
+}
+
+/* ─── Theme: Emerald Matrix (Cyber Mainframe) ─────────────────────── */
+[data-theme="matrix"] {
+  --bg-color: #020d07;
+  --panel-bg: rgba(3, 16, 10, 0.62);
+  --accent: #10b981;
+  --accent-secondary: #06b6d4;
+  --accent-hover: #34d399;
+  --accent-glow: rgba(16, 185, 129, 0.45);
+  --purple-glow: rgba(6, 182, 212, 0.3);
+  --border-focus: rgba(16, 185, 129, 0.6);
+  --theme-wallpaper: url('/themes/emerald-matrix.jpg');
+}
