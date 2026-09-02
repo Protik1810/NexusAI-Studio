@@ -41,6 +41,13 @@ as the GitHub Release body) — the two overlap on content, not on purpose.
 - Image Studio's GPU badge in Studio Controls showed a literal hardcoded
   "RTX 4070 Ti (12GB)" string, unconnected to actual hardware detection —
   now shows the real detected GPU, matching the canvas header's badge.
+- Packaged builds (Windows, macOS, Linux) crashed shortly after launch:
+  `getPaths()` pointed `rootDir` at `resources/app`, but with `asar: true`
+  and no `asarUnpack`, app code actually lives packed inside
+  `resources/app.asar` — `resources/app` never existed on any platform.
+  Every launch's automatic update check required a `package.json` from
+  that nonexistent path and crashed on the unhandled rejection. The v1.1.2
+  release assets have been rebuilt with the fix.
 
 ## [1.1.1] — 2026-09-01
 

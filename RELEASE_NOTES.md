@@ -15,6 +15,7 @@ Solframe Studio is a standalone, self-contained desktop app for 100% private, of
 A maintenance release — repo hardening and one real UI bug fix, no new user-facing features.
 
 ### 🐛 Fixed
+- **Packaged builds (Windows, macOS, Linux) could crash shortly after launch.** An internal path used by the automatic update check pointed at a location that never actually existed in any packaged build, and the resulting error wasn't caught — every launch had a chance of taking the app down within the first second or two. Fixed at the root, and the download links below now point at rebuilt, verified artifacts (all three platforms were re-tested end-to-end, including a real image generation through the packaged Windows app and a live headless run on Linux).
 - **The GPU badge in Image Studio's Studio Controls panel now shows your actual detected GPU.** It was a hardcoded "RTX 4070 Ti (12GB)" string that never reflected real hardware — the canvas header's GPU badge was always correct, this second one just wasn't wired up.
 
 ### 🔒 Security
