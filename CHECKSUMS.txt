@@ -3,7 +3,6 @@ Verify with: sha256sum -c CHECKSUMS.txt (Linux/macOS) or Get-FileHash (Windows P
 
 9a45da48e538f0e05043a3e3037b147c6eaf2d3f57e2dce20ac289150be10875  Solframe-Studio-Setup-1.1.2.exe
 a1b1979d97a08f3d53763badafc3da15a8c68549df7eb19cd18e7f640246698e  Solframe-Studio-Setup-1.1.2-Lightweight.exe
-24065760d129059cb872da0773fe9642b862a4a5f53afa18f242105a68c5e6a4  Solframe-Studio-Portable-1.1.2.exe
 2b7f96d8bc3de595b00683543a875af30c044f1c55e340eaeda1c74d4ca5d9d7  Solframe.Studio-1.1.2.AppImage
 43ad1fc6243c24e0747d2c2d3e2b6105370564307f905aff137b42df352e7aba  solframe-studio_1.1.2_amd64.deb
 4efa25c30f9787438c4824bd5031a906c12973881c8d8e1a4f83764e3fb06b6a  Solframe.Studio-1.1.2-mac.zip
