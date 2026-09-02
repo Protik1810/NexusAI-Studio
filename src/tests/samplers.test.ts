@@ -16,7 +16,12 @@ describe('Frontend Services & Catalogs', () => {
       expect(model.id).toBeTruthy();
       expect(model.name).toBeTruthy();
       expect(model.downloadUrl.startsWith('https://')).toBe(true);
-      expect(model.targetFolder.startsWith('models/')).toBe(true);
+      // Image models land under models/<category>; chat models under
+      // llm-models/. Both are scan paths under the user's models root —
+      // anything else downloads somewhere the scanner never looks.
+      expect(
+        model.targetFolder.startsWith('models/') || model.targetFolder === 'llm-models'
+      ).toBe(true);
     });
   });
 });

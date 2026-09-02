@@ -12,7 +12,8 @@ const fs = require('fs');
 const http = require('http');
 const { Readable } = require('stream');
 const { detectHardware } = require('./hardware.cjs');
-const { getAllSystemScanPaths, getUserModelsRoot } = require('./pathUtils.cjs');
+const { getAllSystemScanPaths, getUserModelsRoot, getLegacyModelsRoot } = require('./pathUtils.cjs');
+const { setModelsRoot, getDefaultModelsRoot } = require('./userSettings.cjs');
 const { getFullSystemModels, loadScanCache, saveScanCache } = require('./modelScanner.cjs');
 const { createEngineCore } = require('./engineCore.cjs');
 const { createAgentApiServer } = require('./agentApiServer.cjs');
@@ -427,6 +428,33 @@ function createApiRouter(ctx) {
       return true;
     }
 
+    // Where downloads land. GET reports the active folder (and the default,
+    // so the UI can offer "reset"); POST moves it for future downloads —
+    // existing files are left where they are rather than silently relocating
+    // tens of GB, and the old folder stays on the scan list either way.
+    if (pathname === '/api/models-root') {
+      if (req.method === 'POST') {
+        try {
+          const { dirPath } = JSON.parse(await readBody(req));
+          if (!dirPath || typeof dirPath !== 'string') {
+            sendJson(res, 400, { success: false, error: 'Missing dirPath' });
+            return true;
+          }
+          const result = setModelsRoot(dirPath);
+          sendJson(res, result.success ? 200 : 400, result);
+        } catch (e) {
+          sendJson(res, 500, { success: false, error: e.message });
+        }
+        return true;
+      }
+      sendJson(res, 200, {
+        modelsRoot: getUserModelsRoot(),
+        defaultModelsRoot: getDefaultModelsRoot(),
+        legacyModelsRoot: getLegacyModelsRoot()
+      });
+      return true;
+    }
+
     if (pathname === '/api/custom-scan-paths') {
       if (req.method === 'POST') {
         try {
@@ -528,7 +556,19 @@ function createApiRouter(ctx) {
     }
 
     if (pathname === '/api/check-update') {
-      const currentVersion = require(path.join(rootDir, 'package.json')).version;
+      // Inside the try: this require() sat outside it until v1.1.3, so a
+      // wrong rootDir threw an *unhandled rejection* from this async
+      // handler and killed the whole app on launch (every packaged build
+      // called this endpoint automatically at startup). A failed version
+      // lookup should degrade to "can't check", never take the app down.
+      let currentVersion;
+      try {
+        currentVersion = require(path.join(rootDir, 'package.json')).version;
+      } catch (e) {
+        console.warn(`[Solframe] Couldn't read the app version for the update check: ${e.message}`);
+        sendJson(res, 200, { currentVersion: null, latestVersion: null, updateAvailable: false, error: 'version-unavailable' });
+        return true;
+      }
       const now = Date.now();
       if (updateCheckCache && now - updateCheckCache.checkedAt < UPDATE_CHECK_TTL_MS) {
         sendJson(res, 200, updateCheckCache.result);

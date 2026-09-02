@@ -6,17 +6,29 @@
 const path = require('path');
 const fs = require('fs');
 const { detectHardware } = require('./hardware.cjs');
+const { getModelsRoot } = require('./userSettings.cjs');
 
 /**
- * The per-user "Solframe Studio" app-data folder, platform-correct:
- * %APPDATA%\Solframe Studio on Windows, ~/Library/Application Support/Solframe
- * Studio on macOS, ~/Solframe Studio elsewhere. This is a stable, always-
- * writable location outside the app's own install/bundle tree — unlike
- * rootDir/resourcesPath, which in a packaged build can be read-only
- * (Linux AppImage), root-owned (.deb under /opt), or simply wrong (mac's
- * "resources/app" doesn't exist; the app ships as an asar file, not a folder).
+ * Where new model downloads go: ~/Downloads/Solframe Studio by default, or
+ * wherever the user pointed it in Settings. Always writable without
+ * elevation, and — unlike the app-data folder this used to be — somewhere
+ * a person can actually find a 7 GB checkpoint they downloaded.
+ *
+ * Never rootDir/resourcesPath: in a packaged build that's read-only (Linux
+ * AppImage), root-owned (.deb under /opt), or not a directory at all (the
+ * app ships as an asar archive, so writes fail with ENOTDIR).
  */
 function getUserModelsRoot() {
+  return getModelsRoot();
+}
+
+/**
+ * The pre-1.1.3 download location (%APPDATA%\Solframe Studio, ~/Library/
+ * Application Support/Solframe Studio). New downloads no longer go here,
+ * but anyone upgrading already has models in it — it stays a scan path so
+ * their library doesn't vanish, and nothing has to be moved.
+ */
+function getLegacyModelsRoot() {
   const userHome = process.env.USERPROFILE || process.env.HOME || '';
   const appDataDir = process.env.APPDATA || (
     process.platform === 'win32' ? path.join(userHome, 'AppData/Roaming') :
@@ -91,7 +103,14 @@ function getAllSystemScanPaths(rootDir = '', customPaths = []) {
 
   // 2. User home & AppData directories (HuggingFace, LM Studio, Ollama, Solframe, etc.)
   const userDirs = [
-    { path: path.join(getUserModelsRoot(), 'models'), label: 'AppData Solframe Models' },
+    { path: path.join(getUserModelsRoot(), 'models'), label: 'Solframe Models (Downloads)' },
+    // Chat models download to <root>/llm-models, a sibling of models/ — it
+    // needs its own entry or downloaded GGUFs are invisible to the scanner.
+    { path: path.join(getUserModelsRoot(), 'llm-models'), label: 'Solframe LLM Models (Downloads)' },
+    // Pre-1.1.3 downloads lived in app-data. Kept so upgrading users keep
+    // seeing models they already have.
+    { path: path.join(getLegacyModelsRoot(), 'models'), label: 'Solframe Models (legacy AppData)' },
+    { path: path.join(getLegacyModelsRoot(), 'llm-models'), label: 'Solframe LLM Models (legacy AppData)' },
     { path: path.join(userHome, '.solframe/models'), label: 'User Home Solframe Models' },
     { path: path.join(userHome, '.cache/huggingface/hub'), label: 'Hugging Face Cache' },
     { path: path.join(userHome, '.lmstudio/models'), label: 'LM Studio Models' },
@@ -260,4 +279,4 @@ function getLlamaExecutable({ rootDir = '', resourcesPath = '' } = {}) {
   return candidates[0];
 }
 
-module.exports = { getAllSystemScanPaths, resolveModelFullPath, getSdCliExecutable, getLlamaExecutable, getUserModelsRoot };
+module.exports = { getAllSystemScanPaths, resolveModelFullPath, getSdCliExecutable, getLlamaExecutable, getUserModelsRoot, getLegacyModelsRoot };

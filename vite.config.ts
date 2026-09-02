@@ -16,35 +16,15 @@ function sdCppBackendPlugin() {
   const { getOutputDir } = require('./electron/engine/sdEngine.cjs');
   const { createApiRouter } = require('./electron/engine/apiRoutes.cjs');
 
-  function loadCustomScanPaths(): string[] {
-    const cfgFile = path.join(rootDir, 'models/custom_paths.json');
-    if (fs.existsSync(cfgFile)) {
-      try {
-        const data = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
-        if (Array.isArray(data)) return data.filter((p: unknown) => typeof p === 'string' && fs.existsSync(p));
-      } catch (e: any) {
-        console.warn(`[Solframe] Failed to parse ${cfgFile} — your custom scan paths won't be included until this is fixed: ${e.message}`);
-      }
-    }
-    return [];
-  }
-
-  function saveCustomScanPaths(pathsList: string[]) {
-    const cfgFile = path.join(rootDir, 'models/custom_paths.json');
-    try {
-      const dir = path.dirname(cfgFile);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(cfgFile, JSON.stringify(Array.from(new Set(pathsList)), null, 2));
-    } catch (e: any) {
-      console.warn(`[Solframe] Failed to save custom scan paths to ${cfgFile} — the paths you just added won't persist across restarts: ${e.message}`);
-    }
-  }
+  // Same persistence as the packaged app — see userSettings.cjs for why
+  // these can't live next to the app.
+  const { loadCustomScanPaths, saveCustomScanPaths } = require('./electron/engine/userSettings.cjs');
 
   const userHome = process.env.USERPROFILE || process.env.HOME || '';
   const cacheFilePaths = {
     globalCacheDir: path.join(userHome, '.solframe'),
     globalCacheFile: path.join(userHome, '.solframe', 'scan_cache.json'),
-    localCacheFile: path.join(rootDir, 'models/.scan_cache.json')
+    localCacheFile: null
   };
 
   const userOutputsDir = getOutputDir(publicDir);

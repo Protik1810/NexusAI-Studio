@@ -46,7 +46,19 @@ function getPaths() {
 function createSplashWindow() {
   const { publicDir } = getPaths();
   const iconPath = path.join(publicDir, "logo.png");
-  const iconExists = fs.existsSync(iconPath);
+
+  // The splash page is itself a data: URL, which Chromium gives an opaque
+  // origin — such a page is not allowed to pull in file:// subresources, so
+  // the old <img src="file://…/logo.png"> always rendered as a broken-image
+  // icon (in dev and packaged alike; in a packaged build the path also
+  // points inside the asar archive). Inlining the bytes sidesteps both
+  // problems, and falls back to the ✨ glyph if the file is missing.
+  let iconUrl = "";
+  try {
+    iconUrl = "data:image/png;base64," + fs.readFileSync(iconPath).toString("base64");
+  } catch (e) {
+    console.warn(`[Solframe] Splash logo unavailable (${iconPath}): ${e.message}`);
+  }
 
   splashWindow = new BrowserWindow({
     width: 460,
@@ -62,8 +74,6 @@ function createSplashWindow() {
       sandbox: true
     }
   });
-
-  const iconUrl = iconExists ? "file://" + iconPath.replace(/\\/g, "/") : "";
 
   splashWindow.loadURL("data:text/html," + encodeURIComponent(`
     <!DOCTYPE html>

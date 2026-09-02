@@ -164,7 +164,7 @@ Download the latest installer from [Releases](https://github.com/Protik1810/Solf
 There is currently no winget package; the links above are the only official builds.
 
 ### 🍎 macOS Setup (Installer)
-Download `Solframe-Studio-<version>-mac.zip` (Intel) or `Solframe-Studio-<version>-arm64-mac.zip` (Apple Silicon) from [Releases](https://github.com/Protik1810/Solframe-Studio/releases/latest), unzip, and move `Solframe Studio.app` to Applications. The build isn't code-signed/notarized, so the first launch needs **Control-click → Open** (not a double-click) to get past Gatekeeper — or run `xattr -cr "/path/to/Solframe Studio.app"` in Terminal if macOS reports it as "damaged."
+Download `Solframe-Studio-<version>-arm64-mac.zip` from [Releases](https://github.com/Protik1810/Solframe-Studio/releases/latest), unzip, and move `Solframe Studio.app` to Applications. Apple Silicon only — inference runs on Metal, which needs an M-series GPU. The build isn't code-signed/notarized, so the first launch needs **Control-click → Open** (not a double-click) to get past Gatekeeper — or run `xattr -cr "/path/to/Solframe Studio.app"` in Terminal if macOS reports it as "damaged."
 
 ### 🐧 Linux (UI Preview — 1-Line Terminal Install)
 ```bash
@@ -173,6 +173,56 @@ curl -fsSL https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/ins
 This clones the repo and runs `npm run dev`, which brings up the Solframe Studio interface. There's no `backend/linux/` engine yet, so **image generation and local LLM chat will not run** until a native Linux build ships — this path is useful today for UI development and preview, not for production inference.
 
 Prefer an installable app over the terminal preview? `npm run electron:build:linux` (AppImage + .deb) packages the same UI-only build as a native app — run it on the target OS, or grab the artifact from the [Build Linux/macOS Installers](https://github.com/Protik1810/Solframe-Studio/actions/workflows/release-build.yml) GitHub Actions workflow. Note that workflow's macOS job produces a UI-only build too (it has no access to the `backend/mac/` binaries, which — like `backend/win/` — are large local build inputs, not committed to the repo); the real inference-capable macOS build linked above is built and packaged separately.
+
+## 🧠 Getting Models (First Run)
+
+A fresh install ships with **no models** — the app is the engine, the models are yours to choose. Open **Model Hub → 🚀 Starter Packs** and it will offer a known-good set matched to your GPU, download it, and file each piece where the pipeline expects it. On a first run with nothing installed, the app opens on this tab automatically.
+
+### Where models are stored
+
+Downloads go to a folder you can actually find:
+
+| Platform | Default location |
+|---|---|
+| Windows | `C:\Users\<you>\Downloads\Solframe Studio\` |
+| macOS | `~/Downloads/Solframe Studio/` |
+| Linux | `~/Downloads/Solframe Studio/` |
+
+Inside it, files are sorted automatically — `models/checkpoints`, `models/unet`, `models/clip`, `models/vae`, `models/loras`, and `llm-models` for chat models. You can change the location any time (**Model Hub → Settings**), and the previous folder stays on the scan list so nothing disappears.
+
+Already have a model library from ComfyUI, Automatic1111, LM Studio, Ollama, or Fooocus? The scanner finds those automatically — no copying required. You can also add any folder manually and it will be remembered.
+
+> **Upgrading from v1.1.2 or earlier?** Downloads used to land in the hidden app-data folder (`%APPDATA%\Solframe Studio` / `~/Library/Application Support/Solframe Studio`). That folder is still scanned, so your existing models keep working — only *new* downloads go to Downloads.
+
+### What the starter packs contain
+
+Which pack you're shown depends on your VRAM. The full-precision FLUX stack is ~15.5 GB of weights and wants a 16 GB card; the fp8 stack is ~8.3 GB and is the right pick for 12 GB and below.
+
+**Standard Checkpoint** — the fastest way to a first image. One self-contained SDXL file, nothing else needed:
+
+| Model | Role | Size |
+|---|---|---|
+| RealVisXL V5.0 Lightning | All-in-one SDXL checkpoint, 4–6 steps | ~6.6 GB |
+
+**FLUX.2 Klein** — higher quality, but needs three separate pieces that are useless individually:
+
+| Model | Role | Size (full / fp8) |
+|---|---|---|
+| FLUX.2 Klein 4B | Diffusion model (UNet) — generates the image | 7.22 GB / 3.79 GB |
+| Qwen3-VL 4B Heretic | Text encoder — turns your prompt into conditioning | 8.27 GB / 4.50 GB |
+| FLUX.2 32-channel VAE | Decodes the result into a viewable image | ~335 MB |
+| KLEIN Unchained V2 *(optional)* | LoRA — style/content adapter | ~311 MB |
+
+**LLM Chat** — picked by device:
+
+| Model | When | Size |
+|---|---|---|
+| Llama 3.2 3B Instruct Uncensored (Q4_K_M) | 4 GB VRAM or more | ~2.1 GB |
+| Llama 3.2 1B Instruct Uncensored (Q4_K_M) | Low VRAM / CPU only | ~0.8 GB |
+
+### Adding models by hand
+
+Prefer to pick your own? **Model Hub** also has live Hugging Face search, a curated preset list, and a direct-URL downloader that accepts any Hugging Face or Civitai link — all of which file into the same sorted folders.
 
 ### Running in Development Mode
 ```bash

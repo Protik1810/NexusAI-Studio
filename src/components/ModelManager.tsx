@@ -5,13 +5,15 @@ import {
   HardDrive, 
   Sparkles,
   RefreshCw, 
-  Globe, 
-  Loader2 
+  Globe,
+  Loader2,
+  Rocket
 } from 'lucide-react';
 import { hfHubService, HfModelResult, DownloadProgressState } from '../services/hfHubApi';
 import { systemModelsService, SystemModelsResult } from '../services/systemModelsApi';
 import { LocalModelList } from './models/LocalModelList';
 import { HuggingFaceDownloader } from './models/HuggingFaceDownloader';
+import { StarterPacks } from './models/StarterPacks';
 
 interface ModelManagerProps {
   onDownloadModel: (url: string, filename: string, targetFolder: string) => Promise<void>;
@@ -28,7 +30,11 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
   onSuccess,
   onError
 }) => {
-  const [activeView, setActiveView] = useState<'installed' | 'catalog' | 'hf-search'>('installed');
+  const [activeView, setActiveView] = useState<'installed' | 'catalog' | 'hf-search' | 'starter'>('installed');
+  // First run (nothing installed anywhere) opens on the starter packs
+  // instead of an empty "System Installed" list — that empty list is the
+  // dead end new users hit, with no indication of what to get or where.
+  const autoOpenedStarterRef = useRef<boolean>(false);
   const [customUrl, setCustomUrl] = useState<string>('');
   const [customFilename, setCustomFilename] = useState<string>('');
   const [customTargetFolder, setCustomTargetFolder] = useState<string>('models/checkpoints');
@@ -143,8 +149,25 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
     systemModels.clips.length + 
     systemModels.loras.length + 
     systemModels.vaes.length + 
-    systemModels.controlnets.length + 
+    systemModels.controlnets.length +
     systemModels.llms.length;
+
+  // Every model filename the scanner found, so a starter pack can show what
+  // is already on disk instead of offering to re-download it.
+  const installedFilenames = [
+    ...systemModels.checkpoints, ...systemModels.unets, ...systemModels.clips,
+    ...systemModels.loras, ...systemModels.vaes, ...systemModels.controlnets,
+    ...systemModels.llms
+  ].map(m => (typeof m === 'string' ? m : m.filename)).filter(Boolean);
+
+  useEffect(() => {
+    if (autoOpenedStarterRef.current) return;
+    // Wait for at least one scan to have reported back before deciding —
+    // scanPaths is populated even when no models were found.
+    if (systemModels.scanPaths.length === 0) return;
+    autoOpenedStarterRef.current = true;
+    if (totalLocalCount === 0) setActiveView('starter');
+  }, [systemModels.scanPaths.length, totalLocalCount]);
 
   const handleCustomDownload = async () => {
     if (!customUrl.trim()) {
@@ -244,6 +267,14 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
         <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
           <button
             type="button"
+            className={`tab-pill ${activeView === 'starter' ? 'active' : ''}`}
+            onClick={() => setActiveView('starter')}
+            style={{ fontSize: '14px', padding: '10px 18px' }}
+          >
+            <Rocket size={16} /> 🚀 Starter Packs
+          </button>
+          <button
+            type="button"
             className={`tab-pill ${activeView === 'installed' ? 'active' : ''}`}
             onClick={() => setActiveView('installed')}
             style={{ fontSize: '14px', padding: '10px 18px' }}
@@ -318,7 +349,13 @@ export const ModelManager: React.FC<ModelManagerProps> = ({
         </div>
       </div>
 
-      {activeView === 'installed' ? (
+      {activeView === 'starter' ? (
+        <StarterPacks
+          installedFilenames={installedFilenames}
+          onDownloadModel={onDownloadModel}
+          onError={onError}
+        />
+      ) : activeView === 'installed' ? (
         <LocalModelList
           systemModels={systemModels}
           onNavigateToStudio={onNavigateToStudio}

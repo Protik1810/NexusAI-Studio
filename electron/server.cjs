@@ -10,6 +10,10 @@ const {
 } = require('./engine/pathUtils.cjs');
 const { getOutputDir } = require('./engine/sdEngine.cjs');
 const { createApiRouter } = require('./engine/apiRoutes.cjs');
+const {
+  loadCustomScanPaths: userLoadCustomScanPaths,
+  saveCustomScanPaths: userSaveCustomScanPaths
+} = require('./engine/userSettings.cjs');
 const { safeJoin } = require('./engine/security.cjs');
 
 const MIME_TYPES = {
@@ -35,35 +39,20 @@ function createServer(options = {}) {
   const publicDir = options.publicDir || path.join(rootDir, 'public');
   const port = options.port || 1420;
 
-  const loadCustomScanPaths = () => {
-    const cfgFile = path.join(rootDir, 'models/custom_paths.json');
-    if (fs.existsSync(cfgFile)) {
-      try {
-        const data = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
-        if (Array.isArray(data)) return data.filter(p => typeof p === 'string' && fs.existsSync(p));
-      } catch (e) {
-        console.warn(`[Solframe] Failed to parse ${cfgFile} — your custom scan paths won't be included until this is fixed: ${e.message}`);
-      }
-    }
-    return [];
-  };
-
-  const saveCustomScanPaths = pathsList => {
-    const cfgFile = path.join(rootDir, 'models/custom_paths.json');
-    try {
-      const dir = path.dirname(cfgFile);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(cfgFile, JSON.stringify(Array.from(new Set(pathsList)), null, 2));
-    } catch (e) {
-      console.warn(`[Solframe] Failed to save custom scan paths to ${cfgFile} — the paths you just added won't persist across restarts: ${e.message}`);
-    }
-  };
+  // Custom scan paths persist via userSettings (~/.solframe/settings.json),
+  // not next to the app: in a packaged build the app is a single asar
+  // archive, so the old "<app>/models/custom_paths.json" write always
+  // failed with ENOTDIR — silently, because the API still returned success.
+  const loadCustomScanPaths = () => userLoadCustomScanPaths();
+  const saveCustomScanPaths = pathsList => userSaveCustomScanPaths(pathsList);
 
   const userHome = process.env.USERPROFILE || process.env.HOME || '';
   const cacheFilePaths = {
     globalCacheDir: path.join(userHome, '.solframe'),
     globalCacheFile: path.join(userHome, '.solframe', 'scan_cache.json'),
-    localCacheFile: path.join(rootDir, 'models/.scan_cache.json')
+    // No second copy inside the app bundle — same ENOTDIR problem, and the
+    // global cache above already covers every platform.
+    localCacheFile: null
   };
 
   const userOutputsDir = getOutputDir(publicDir);

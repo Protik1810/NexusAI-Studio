@@ -81,6 +81,8 @@ interface ImageStudioState {
   clipModel: string;
   vaeModel: string;
   activeGpu: string;
+  /** GPU name + backend without the VRAM figure, for the controls panel badge. */
+  activeGpuName: string;
   loraModel: string;
   loraStrength: number;
   useLora: boolean;
@@ -138,6 +140,7 @@ function initState(initialPrompt?: string): ImageStudioState {
     clipModel: 'models/clip/ponpokeflux2-klein-9b-uncensored-text-encoder.safetensors',
     vaeModel: 'models/vae/flux2-vae.safetensors',
     activeGpu: '',
+    activeGpuName: '',
     // LoRA Stack — no LoRA pre-selected; the user opts in explicitly.
     loraModel: '',
     loraStrength: 0.85,
@@ -390,6 +393,14 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
       .then(res => res.json())
       .then(data => {
         if (data.primaryGpu) setField('activeGpu', data.primaryGpu);
+        // Same GPU, without the VRAM figure — the controls panel wants the
+        // card and its backend, not its capacity. Built from the structured
+        // fields rather than by trimming primaryGpu's formatted string.
+        const gpu = data.gpus && data.gpus[0];
+        if (gpu && gpu.name) {
+          const backend = gpu.backend ? ` (${String(gpu.backend).toUpperCase()})` : '';
+          setField('activeGpuName', `${gpu.name}${backend}`);
+        }
       })
       .catch(() => {});
   }, []);
@@ -612,7 +623,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
       />
 
       <ImageControls
-        activeGpu={state.activeGpu}
+        activeGpu={state.activeGpuName || state.activeGpu}
         pipeline={state.pipeline}
         onPipelineSwitch={handlePipelineSwitch}
         localModels={state.localModels}
