@@ -88,3 +88,6 @@ Thumbs.db
 test_*.png
 
 installer-output/
+
+# Vitest coverage report (regenerate with `npm run test:coverage`)
+coverage/

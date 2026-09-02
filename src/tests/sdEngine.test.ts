@@ -173,3 +173,75 @@ describe('buildSdCliArgs - FLUX pipeline', () => {
     expect(args).not.toContain('-r');
   });
 });
+
+describe('buildSdCliArgs - golden snapshot (full FLUX argument array)', () => {
+  // Both real FLUX regressions fixed earlier this project (ffd18a5, 4d4e2fe)
+  // were argument-construction bugs — flags in the wrong branch, a stale
+  // flag name — that unit tests targeting one flag at a time didn't catch
+  // because each passed in isolation. This locks the *entire* array, in
+  // exact order, for a request that exercises every FLUX-branch flag at
+  // once, so a future change that reorders or drops a flag next to another
+  // one fails here even if every single-flag test above still passes.
+  let tmpDir: string;
+  let clipPath: string, t5Path: string, vaePath: string, loraPath: string, refImagePath: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'solframe-sdengine-golden-test-'));
+    clipPath = path.join(tmpDir, 'text-encoder.safetensors');
+    t5Path = path.join(tmpDir, 't5xxl.safetensors');
+    vaePath = path.join(tmpDir, 'ae.safetensors');
+    loraPath = path.join(tmpDir, 'my_style_v1.safetensors');
+    refImagePath = path.join(tmpDir, 'refimg.png');
+    for (const p of [clipPath, t5Path, vaePath, loraPath, refImagePath]) fs.writeFileSync(p, 'fake');
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('builds the exact argument array for a fully-configured Klein FLUX edit request', () => {
+    const args = buildSdCliArgs(
+      {
+        pipeline: 'flux',
+        modelPath: 'flux-2-klein-base-9b-fp8.safetensors',
+        clipPath,
+        t5Path,
+        vaePath,
+        offloadTextEncoder: true,
+        refImagePath,
+        negativePrompt: 'blurry, watermark',
+        loraPath,
+        loraStrength: 0.8,
+        prompt: 'relight this scene at golden hour',
+        width: 1024,
+        height: 1024,
+        steps: 6,
+        cfgScale: 4,
+        seed: 42,
+        samplingMethod: 'euler_a'
+      },
+      'out.png'
+    );
+
+    expect(args).toEqual([
+      '--diffusion-model', 'flux-2-klein-base-9b-fp8.safetensors',
+      '--prediction', 'flux_flow',
+      '--llm', clipPath,
+      '--t5xxl', t5Path,
+      '--vae', vaePath,
+      '--diffusion-fa',
+      '--offload-to-cpu',
+      '-r', refImagePath,
+      '-n', 'blurry, watermark',
+      '--lora-model-dir', tmpDir,
+      '-p', 'relight this scene at golden hour <lora:my_style_v1:0.8>',
+      '-o', 'out.png',
+      '-W', '1024',
+      '-H', '1024',
+      '--steps', '6',
+      '--cfg-scale', '4',
+      '--seed', '42',
+      '--sampling-method', 'euler_a'
+    ]);
+  });
+});
