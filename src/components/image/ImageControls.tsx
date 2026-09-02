@@ -37,6 +37,7 @@ export interface LocalModelsState {
 }
 
 export interface ImageControlsProps {
+  activeGpu: string;
   pipeline: 'standard' | 'flux';
   onPipelineSwitch: (p: 'standard' | 'flux') => void;
   localModels: LocalModelsState;
@@ -94,6 +95,7 @@ export interface ImageControlsProps {
 }
 
 export const ImageControls: React.FC<ImageControlsProps> = ({
+  activeGpu,
   pipeline,
   onPipelineSwitch,
   localModels,
@@ -192,7 +194,7 @@ export const ImageControls: React.FC<ImageControlsProps> = ({
             {isReloadingModels ? 'Scanning...' : reloadSuccessMsg || 'Reload Models'}
           </button>
           <span className="badge-pill" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-            <Cpu size={12} style={{ marginRight: '4px' }} /> RTX 4070 Ti (12GB)
+            <Cpu size={12} style={{ marginRight: '4px' }} /> {activeGpu || 'Detecting GPU...'}
           </span>
         </div>
       </div>

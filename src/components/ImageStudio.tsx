@@ -612,6 +612,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({
       />
 
       <ImageControls
+        activeGpu={state.activeGpu}
         pipeline={state.pipeline}
         onPipelineSwitch={handlePipelineSwitch}
         localModels={state.localModels}
