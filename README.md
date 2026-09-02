@@ -28,14 +28,12 @@
 <div align="center">
 <table>
 <tr>
-<td><img src="public/screenshots/studio-image-canvas.webp" alt="Image Studio canvas" width="270"/></td>
-<td><img src="public/screenshots/llm-chat-studio.webp" alt="Uncensored LLM chat" width="270"/></td>
-<td><img src="public/screenshots/sampling-progress-step44.webp" alt="Live GPU sampling progress" width="270"/></td>
+<td align="center"><img src="public/screenshots/studio-image-canvas.webp" alt="Image Studio canvas" width="400"/><br/><sub>Image Studio</sub></td>
+<td align="center"><img src="public/screenshots/llm-chat-studio.webp" alt="Uncensored LLM chat" width="400"/><br/><sub>LLM Chat</sub></td>
 </tr>
 <tr>
-<td align="center"><sub>Image Studio</sub></td>
-<td align="center"><sub>LLM Chat</sub></td>
-<td align="center"><sub>Live sampling progress</sub></td>
+<td align="center"><img src="public/screenshots/showcase-lion-artwork.webp" alt="Standard checkpoint pipeline in Image Studio" width="400"/><br/><sub>Standard checkpoint pipeline (SDXL + LoRA)</sub></td>
+<td align="center"><img src="public/screenshots/sampling-progress-step44.webp" alt="Live GPU sampling progress" width="400"/><br/><sub>Live sampling progress</sub></td>
 </tr>
 </table>
 </div>
@@ -83,8 +81,8 @@ Another edit, on a different reference image:
 <div align="center">
 <table>
 <tr>
-<td width="50%" align="center"><img src="public/screenshots/showcase-flux-edit2-before.webp" width="100%"/><br/><sub>Original (attached as the reference image)</sub></td>
-<td width="50%" align="center"><img src="public/screenshots/showcase-flux-edit2-after.webp" width="100%"/><br/><sub>Edit prompt: <code>change the lady to a man</code></sub></td>
+<td width="50%" align="center"><img src="public/screenshots/showcase-flux-edit2-before.webp" height="300"/><br/><sub>Original (attached as the reference image)</sub></td>
+<td width="50%" align="center"><img src="public/screenshots/showcase-flux-edit2-after.webp" height="300"/><br/><sub>Edit prompt: <code>change the lady to a man</code></sub></td>
 </tr>
 </table>
 </div>
