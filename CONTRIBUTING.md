@@ -27,7 +27,7 @@ npm test
 - If you're contributing to UI, model management, or the API layer, you generally don't need real engines — the test suite and dev server both work without them.
 - If you're contributing to `sdEngine.cjs`, `engineCore.cjs`, or anything that spawns the engines, you'll need real binaries to verify your change actually works, not just that it type-checks.
 
-There's no fetch script for these yet (see the roadmap) — for now, grab a current release from [`leejet/stable-diffusion.cpp`](https://github.com/leejet/stable-diffusion.cpp/releases) and [`ggml-org/llama.cpp`](https://github.com/ggml-org/llama.cpp/releases) matching your platform, and unpack into `backend/win/{cuda,vulkan,cpu,llama}/` or `backend/mac/{metal,llama}/`.
+Run `node scripts/fetch-engines.js` to fetch and unpack them automatically — it downloads the current release from [`leejet/stable-diffusion.cpp`](https://github.com/leejet/stable-diffusion.cpp/releases) and [`ggml-org/llama.cpp`](https://github.com/ggml-org/llama.cpp/releases), verifies each download's SHA-256 against the checked-in `engines-lock.json`, and unpacks into `backend/win/{cuda,vulkan,cpu,llama}/` or `backend/mac/{metal,llama}/`. On Windows it can't unpack the macOS targets specifically (their archives contain Unix symlinks Windows won't create without Developer Mode) — run it on macOS or Linux for those, or grab them by hand.
 
 ## Code style
 
