@@ -28,6 +28,10 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Audit dependencies for known high/critical vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
       - name: Type-check and build the app bundle
         run: npm run build
 

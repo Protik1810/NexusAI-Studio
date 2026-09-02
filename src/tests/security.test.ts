@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import path from 'path';
-const { safeJoin, isAllowedOrigin, isAllowedHost } = require('../../electron/engine/security.cjs');
+const { safeJoin, isAllowedOrigin, isAllowedHost, applySecurityHeaders } = require('../../electron/engine/security.cjs');
+
+function fakeRes() {
+  const headers: Record<string, string> = {};
+  return { headers, setHeader: (k: string, v: string) => { headers[k] = v; } };
+}
 
 describe('security - safeJoin', () => {
   const base = path.resolve(process.cwd(), 'models');
@@ -74,5 +79,34 @@ describe('security - isAllowedHost (DNS rebinding)', () => {
 
   it('rejects a missing Host header', () => {
     expect(isAllowedHost({ headers: {} }, port)).toBe(false);
+  });
+});
+
+describe('security - applySecurityHeaders (CSP)', () => {
+  it('sets a locked-down CSP and X-Content-Type-Options on every response', () => {
+    const res = fakeRes();
+    applySecurityHeaders(res, false);
+    expect(res.headers['X-Content-Type-Options']).toBe('nosniff');
+    expect(res.headers['Content-Security-Policy']).toContain("default-src 'self'");
+    expect(res.headers['Content-Security-Policy']).toContain("object-src 'none'");
+  });
+
+  it('allows Google Fonts (style-src/font-src) since index.css @imports it', () => {
+    const res = fakeRes();
+    applySecurityHeaders(res, false);
+    expect(res.headers['Content-Security-Policy']).toContain('https://fonts.googleapis.com');
+    expect(res.headers['Content-Security-Policy']).toContain('https://fonts.gstatic.com');
+  });
+
+  it('does not allow inline scripts in production (isDev=false)', () => {
+    const res = fakeRes();
+    applySecurityHeaders(res, false);
+    expect(res.headers['Content-Security-Policy']).toMatch(/script-src 'self'(?!.*unsafe-inline)/);
+  });
+
+  it('allows inline scripts only in dev mode, for Vite\'s React-refresh preamble', () => {
+    const res = fakeRes();
+    applySecurityHeaders(res, true);
+    expect(res.headers['Content-Security-Policy']).toContain("script-src 'self' 'unsafe-inline'");
   });
 });

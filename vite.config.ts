@@ -59,7 +59,8 @@ function sdCppBackendPlugin() {
     loadCustomScanPaths,
     saveCustomScanPaths,
     userOutputsDir,
-    cacheFilePaths
+    cacheFilePaths,
+    isDev: true
   });
 
   return {

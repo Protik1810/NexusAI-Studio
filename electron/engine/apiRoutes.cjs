@@ -17,7 +17,7 @@ const { getFullSystemModels, loadScanCache, saveScanCache } = require('./modelSc
 const { createEngineCore } = require('./engineCore.cjs');
 const { createAgentApiServer } = require('./agentApiServer.cjs');
 const { loadOrCreateConfig, saveConfig, generateApiKey } = require('./agentAuth.cjs');
-const { isAllowedOrigin, isAllowedHost, safeJoin } = require('./security.cjs');
+const { isAllowedOrigin, isAllowedHost, safeJoin, applySecurityHeaders } = require('./security.cjs');
 
 const WIN_LIBRARY_DEFINITIONS = [
   {
@@ -137,7 +137,7 @@ function createApiRouter(ctx) {
     rootDir, resourcesPath, port,
     getSdCliExecutable, getLlamaExecutable, resolveModel,
     loadCustomScanPaths, saveCustomScanPaths,
-    userOutputsDir, cacheFilePaths
+    userOutputsDir, cacheFilePaths, isDev
   } = ctx;
 
   const engineCore = createEngineCore({ getSdCliExecutable, getLlamaExecutable, resolveModel, rootDir, userOutputsDir });
@@ -267,6 +267,7 @@ function createApiRouter(ctx) {
   }
 
   async function handle(req, res, parsedUrl) {
+    applySecurityHeaders(res, isDev);
     const pathname = parsedUrl.pathname;
     if (pathname.startsWith('/llama-api/')) {
       return proxyToLlama(req, res, pathname, parsedUrl.search);

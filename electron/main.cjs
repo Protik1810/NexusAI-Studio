@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu } = require("electron");
+const { app, BrowserWindow, shell, Menu, session } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { createServer } = require("./server.cjs");
@@ -145,7 +145,20 @@ function createMainWindow() {
   });
 }
 
+// Solframe Studio has no legitimate use for camera, microphone, geolocation,
+// or notifications — it's an offline local image/LLM tool. Deny every
+// permission request/check outright rather than leaving Electron's default
+// (which varies by permission type, and for some prompts the user) in
+// place, since the app's own UI never needs to ask for any of these.
+function installPermissionHandlers() {
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    callback(false);
+  });
+  session.defaultSession.setPermissionCheckHandler(() => false);
+}
+
 app.whenReady().then(() => {
+  installPermissionHandlers();
   createSplashWindow();
 
   const paths = getPaths();
