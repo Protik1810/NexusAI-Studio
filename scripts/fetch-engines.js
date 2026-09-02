@@ -121,9 +121,30 @@ function sha256(buffer) {
 // No zip-extraction npm dependency needed — bsdtar (bundled with Windows
 // 10 1803+ as tar.exe) and macOS/Linux's own tar both handle .zip
 // transparently via -xf, so this stays dependency-free.
-function extractZip(zipPath, destDir) {
+// `tar -xf` extracts .zip transparently on macOS and Windows (both ship
+// bsdtar, which auto-detects zip vs tar), but plain Linux distros ship GNU
+// tar, which has no zip support at all and fails with "This does not look
+// like a tar archive" — verified live in WSL/Ubuntu. .tar.gz assets (the
+// macOS llama.cpp build) extract fine with tar everywhere; .zip assets
+// need `unzip` specifically on a GNU-tar system.
+function extractArchive(archivePath, destDir) {
   fs.mkdirSync(destDir, { recursive: true });
-  execFileSync('tar', ['-xf', zipPath, '-C', destDir], { stdio: 'inherit' });
+  if (archivePath.toLowerCase().endsWith('.zip') && process.platform === 'linux') {
+    try {
+      execFileSync('unzip', ['-o', archivePath, '-d', destDir], { stdio: 'inherit' });
+      return;
+    } catch (e) {
+      // Fall through to python3's zipfile module — no extra install needed
+      // on most Linux dev/CI environments that already have Python.
+    }
+    try {
+      execFileSync('python3', ['-m', 'zipfile', '-e', archivePath, destDir], { stdio: 'inherit' });
+      return;
+    } catch (e) {
+      throw new Error(`Couldn't extract ${path.basename(archivePath)}: GNU tar can't read .zip files, and neither 'unzip' nor 'python3' worked (try: sudo apt-get install unzip).`);
+    }
+  }
+  execFileSync('tar', ['-xf', archivePath, '-C', destDir], { stdio: 'inherit' });
 }
 
 function loadLockfile() {
@@ -184,7 +205,7 @@ async function fetchTarget(key, target, lock, bootstrap) {
       console.log(`[${key}] downloaded and verified, but skipping extraction: Windows can't unpack this macOS archive's symlinks without Developer Mode enabled. Run this script on macOS or Linux to actually unpack ${target.destDir}.`);
     } else {
       console.log(`[${key}] extracting into ${target.destDir}...`);
-      extractZip(tmpZip, path.join(ROOT, target.destDir));
+      extractArchive(tmpZip, path.join(ROOT, target.destDir));
     }
   } finally {
     fs.rmSync(tmpZip, { force: true });
