@@ -17,14 +17,26 @@ function getPaths() {
 
   if (isPackaged) {
     resourcesPath = process.resourcesPath;
-    rootDir = path.join(process.resourcesPath, "app");
+    // This build has asar:true with no asarUnpack, so the app's own code
+    // (package.json, electron/, dist/, public/) lives packed inside
+    // resources/app.asar — there is no physical resources/app/ directory.
+    // Electron transparently virtualizes fs/require calls for paths that
+    // include the ".asar" segment, so rootDir has to name that segment
+    // explicitly. Without it (verified live: a real, reproducible crash on
+    // both Windows and Linux packaged builds), every launch's automatic
+    // /api/check-update call threw "Cannot find module .../resources/app/
+    // package.json" as an unhandled rejection — engine-spawning happened to
+    // survive this same bug only because pathUtils.cjs's executable finders
+    // also try resourcesPath directly as a fallback candidate; this
+    // particular require() had no such fallback.
+    rootDir = path.join(process.resourcesPath, "app.asar");
     distDir = path.join(__dirname, "..", "dist");
     publicDir = path.join(__dirname, "..", "public");
     if (!fs.existsSync(distDir)) {
-      distDir = path.join(process.resourcesPath, "app", "dist");
+      distDir = path.join(process.resourcesPath, "app.asar", "dist");
     }
     if (!fs.existsSync(publicDir)) {
-      publicDir = path.join(process.resourcesPath, "app", "public");
+      publicDir = path.join(process.resourcesPath, "app.asar", "public");
     }
   }
 
