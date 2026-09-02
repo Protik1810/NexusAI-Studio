@@ -12,6 +12,13 @@ name: Build Linux/macOS/Windows Installers
 # are large enough that they're deliberately not checked into this repo,
 # so there's nothing for a CI runner to bundle them from. The Lightweight
 # installer built here has no such dependency and is fully reproducible.
+#
+# Every artifact this workflow builds gets a GitHub build-provenance
+# attestation (actions/attest-build-provenance), which anyone can verify
+# with `gh attestation verify <file> --repo Protik1810/Solframe-Studio` —
+# it cryptographically ties the file back to this exact workflow run and
+# source commit. The manually-built Windows Complete installer has no such
+# attestation, since it isn't produced by this (or any) CI run.
 
 on:
   workflow_dispatch:
@@ -22,6 +29,10 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
     steps:
       - uses: actions/checkout@v4
 
@@ -33,6 +44,13 @@ jobs:
       - run: npm ci
       - run: npm run electron:build:linux
 
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            release/*.AppImage
+            release/*.deb
+
       - uses: actions/upload-artifact@v4
         with:
           name: solframe-studio-linux
@@ -42,6 +60,10 @@ jobs:
 
   build-mac:
     runs-on: macos-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
     steps:
       - uses: actions/checkout@v4
 
@@ -53,6 +75,13 @@ jobs:
       - run: npm ci
       - run: npm run electron:build:mac
 
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            release/*.dmg
+            release/*.zip
+
       - uses: actions/upload-artifact@v4
         with:
           name: solframe-studio-macos
@@ -62,6 +91,10 @@ jobs:
 
   build-windows-lightweight:
     runs-on: windows-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
     steps:
       - uses: actions/checkout@v4
 
@@ -77,6 +110,11 @@ jobs:
         run: choco install innosetup -y
 
       - run: npm run build:installer:lightweight
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: installer-output/*-Lightweight.exe
 
       - uses: actions/upload-artifact@v4
         with:
