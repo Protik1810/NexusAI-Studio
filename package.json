@@ -2,7 +2,7 @@
   "name": "solframe-studio",
   "productName": "Solframe Studio",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Standalone AI Image Generation and Chat Studio with FLUX, SDXL, llama.cpp",
   "author": "Protik",
   "license": "GPL-3.0-or-later",

@@ -1,4 +1,4 @@
-# ✨ Solframe Studio v1.1.1
+# ✨ Solframe Studio v1.1.2
 
 **The Sovereign Desktop Generative AI Workstation** — by **Protik**
 
@@ -9,6 +9,31 @@
 ---
 
 Solframe Studio is a standalone, self-contained desktop app for 100% private, offline generative AI — image synthesis and LLM chat running as native C++ inference directly on your own GPU, with zero cloud calls, zero subscriptions, and zero telemetry.
+
+## 🆕 What's new in v1.1.2
+
+A maintenance release — repo hardening and one real UI bug fix, no new user-facing features.
+
+### 🐛 Fixed
+- **The GPU badge in Image Studio's Studio Controls panel now shows your actual detected GPU.** It was a hardcoded "RTX 4070 Ti (12GB)" string that never reflected real hardware — the canvas header's GPU badge was always correct, this second one just wasn't wired up.
+
+### 🔒 Security
+- Content-Security-Policy and `X-Content-Type-Options` headers on every response (dev and production alike).
+- Electron now denies camera/mic/geolocation/notification permission requests outright — the app never needs them.
+- Dependency updates now flow through Dependabot (npm + GitHub Actions, weekly), and CI runs a non-blocking `npm audit` on every push.
+- Every CI-built release artifact now carries a GitHub build-provenance attestation (`gh attestation verify`).
+- `SECURITY.md` expanded into a full threat model.
+
+### ⚙️ Engines
+- Windows CUDA/Vulkan/CPU (`stable-diffusion.cpp`) and llama.cpp CUDA binaries refreshed to their current upstream releases via the new `fetch-engines.js`, checksum-verified against `engines-lock.json`.
+
+### 🛠️ For contributors
+- `scripts/fetch-engines.js` — fetches and SHA-256-verifies the `stable-diffusion.cpp`/`llama.cpp` engine binaries automatically, instead of grabbing them by hand.
+- A real UI test suite (jsdom + Testing Library) alongside the existing engine/scanner tests, plus a golden-snapshot test locking FLUX's CLI argument construction.
+- `ARCHITECTURE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `RELEASING.md`, and issue/PR templates.
+- `ImageStudio.tsx` and `ChatStudio.tsx` internal state each collapsed into a single reducer (behavior-identical, verified live); `index.css` split into 4 focused files.
+
+---
 
 ## 🆕 What's new in v1.1.1
 
@@ -90,13 +115,13 @@ Dark Void, Neon Cyber, Cinema Gold (default), Synthwave Sunset, Anime Fantasy, a
 
 | Platform | File | Size | Direct Link |
 |---|---|---|---|
-| 🪟 Windows | Complete Setup | ~969 MB | [Solframe-Studio-Setup-1.1.1.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe-Studio-Setup-1.1.1.exe) |
-| 🪟 Windows | Lightweight Setup | ~112 MB | [Solframe-Studio-Setup-1.1.1-Lightweight.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe-Studio-Setup-1.1.1-Lightweight.exe) |
-| 🪟 Windows | Portable | ~964 MB | [Solframe-Studio-Portable-1.1.1.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe-Studio-Portable-1.1.1.exe) |
-| 🍎 macOS | Apple Silicon `.zip` | ~233 MB | [Solframe.Studio-1.1.1-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe.Studio-1.1.1-arm64-mac.zip) |
-| 🍎 macOS | Intel `.zip` | ~237 MB | [Solframe.Studio-1.1.1-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe.Studio-1.1.1-mac.zip) |
-| 🐧 Linux | AppImage | ~178 MB | [Solframe.Studio-1.1.1.AppImage](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/Solframe.Studio-1.1.1.AppImage) |
-| 🐧 Linux | `.deb` | ~110 MB | [solframe-studio_1.1.1_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.1/solframe-studio_1.1.1_amd64.deb) |
+| 🪟 Windows | Complete Setup | ~969 MB | [Solframe-Studio-Setup-1.1.2.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe-Studio-Setup-1.1.2.exe) |
+| 🪟 Windows | Lightweight Setup | ~112 MB | [Solframe-Studio-Setup-1.1.2-Lightweight.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe-Studio-Setup-1.1.2-Lightweight.exe) |
+| 🪟 Windows | Portable | ~964 MB | [Solframe-Studio-Portable-1.1.2.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe-Studio-Portable-1.1.2.exe) |
+| 🍎 macOS | Apple Silicon `.zip` | ~233 MB | [Solframe.Studio-1.1.2-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2-arm64-mac.zip) |
+| 🍎 macOS | Intel `.zip` | ~237 MB | [Solframe.Studio-1.1.2-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2-mac.zip) |
+| 🐧 Linux | AppImage | ~178 MB | [Solframe.Studio-1.1.2.AppImage](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2.AppImage) |
+| 🐧 Linux | `.deb` | ~110 MB | [solframe-studio_1.1.2_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/solframe-studio_1.1.2_amd64.deb) |
 
 **Platform note:** Windows and macOS ship full local inference (CUDA/Vulkan/CPU on Windows, Metal/CPU on macOS). Linux currently runs the UI shell and Model Hub only — a native engine build is planned.
 

@@ -8,7 +8,7 @@ This file is the terse, technical record. [RELEASE_NOTES.md](RELEASE_NOTES.md)
 carries the fuller, user-facing writeup for the latest release (and doubles
 as the GitHub Release body) — the two overlap on content, not on purpose.
 
-## [Unreleased]
+## [1.1.2] — 2026-09-02
 
 ### Added
 - Content-Security-Policy and `X-Content-Type-Options` headers on every
@@ -36,6 +36,11 @@ as the GitHub Release body) — the two overlap on content, not on purpose.
 - `SECURITY.md` expanded into a full threat model (internal API's no-auth
   design, the Agent API's key-gating, model files as a trust boundary, why
   there's no auto-updater yet).
+
+### Fixed
+- Image Studio's GPU badge in Studio Controls showed a literal hardcoded
+  "RTX 4070 Ti (12GB)" string, unconnected to actual hardware detection —
+  now shows the real detected GPU, matching the canvas header's badge.
 
 ## [1.1.1] — 2026-09-01
 
