@@ -40,6 +40,51 @@
 </table>
 </div>
 
+### 🖼️ Generated with Solframe Studio
+
+Real output from both pipelines, unedited — prompt included for each. Solframe Studio is an uncensored tool; the examples below are kept safe-for-work on purpose, since this README is public.
+
+<div align="center">
+<table>
+<tr>
+<td width="50%">
+
+<img src="public/screenshots/showcase-lion-artwork.webp" width="100%"/>
+
+**Standard checkpoint pipeline** (SDXL, `Juggernaut-XL_v9` + a LoRA)
+> Sensual photorealistic portrait of an alluring mystic lion, intricate realistic skin texture, soft dramatic studio lighting, 8k resolution, raw photo, natural eyes
+
+</td>
+<td width="50%">
+
+<img src="public/screenshots/showcase-flux-ramen-chef.webp" width="100%"/>
+
+**FLUX.2 Klein pipeline** (`flux-2-klein-4b-fp8-official` + a LoRA)
+> Candid 35mm photograph of an elderly Japanese ramen chef with intense focus, dusting flour off his hands over a steaming, boiling pot of rich tonkotsu broth in a tiny, atmospheric Tokyo alleyway stall at night. Thick white volumetric steam swirls upward, backlit by warm vintage pendant lights hanging from the wooden ceiling...
+
+</td>
+</tr>
+</table>
+</div>
+
+**FLUX Kontext-style reference-image editing** (`-r/--ref-image` — attach an image, describe the change, no re-generating from scratch):
+
+<div align="center">
+<table>
+<tr>
+<td width="50%" align="center"><img src="public/screenshots/showcase-flux-edit-before.webp" width="100%"/><br/><sub>Original (attached as the reference image)</sub></td>
+<td width="50%" align="center"><img src="public/screenshots/showcase-flux-edit-after-pose.webp" width="100%"/><br/><sub>Edit prompt: <code>change the action pose</code></sub></td>
+</tr>
+</table>
+</div>
+
+Another edit, on a different reference image:
+
+<div align="center">
+<img src="public/screenshots/showcase-flux-edit-lady-to-man.webp" width="60%"/>
+<br/><sub>Edit prompt: <code>change the lady to a man</code></sub>
+</div>
+
 ---
 
 ## 🚀 Key Features
