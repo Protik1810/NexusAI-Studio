@@ -1301,6 +1301,11 @@
       position: relative;
       z-index: 2;
       margin-top: 20px;
+      /* Owns its own gap to whatever follows (the terminal-install block).
+         That spacing used to come from the checksum <details> that sat
+         between them; once per-card SHA-256s replaced it, the collapsed
+         toggle butted straight up against the next section. */
+      margin-bottom: 32px;
     }
     .other-platforms-toggle {
       width: 100%;
