@@ -141,7 +141,7 @@ function extractArchive(archivePath, destDir) {
       execFileSync('python3', ['-m', 'zipfile', '-e', archivePath, destDir], { stdio: 'inherit' });
       return;
     } catch (e) {
-      throw new Error(`Couldn't extract ${path.basename(archivePath)}: GNU tar can't read .zip files, and neither 'unzip' nor 'python3' worked (try: sudo apt-get install unzip).`);
+      throw new Error(`Couldn't extract ${path.basename(archivePath)}: GNU tar can't read .zip files, and neither 'unzip' nor 'python3' worked (try: sudo apt-get install unzip).`, { cause: e });
     }
   }
   execFileSync('tar', ['-xf', archivePath, '-C', destDir], { stdio: 'inherit' });
