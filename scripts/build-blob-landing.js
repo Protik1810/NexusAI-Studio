@@ -76,6 +76,49 @@ console.log('✅ All assets copied successfully!');
 // copy the real assets those placeholders point at and substitute them in.
 let html = fs.readFileSync(path.join(__dirname, 'landing-template.html'), 'utf8');
 
+/**
+ * SHA-256 for each download, read straight out of CHECKSUMS.txt so the page
+ * cannot drift from the file that actually ships. The installers are
+ * unsigned, so this is the only way a visitor can tell they got the real
+ * binary — printing it on the card beats hiding it behind a collapsed
+ * "verify your download" section almost nobody opened.
+ *
+ * Missing entries are a hard error rather than a blank card: silently
+ * shipping a download with no checksum is exactly the failure this is
+ * meant to prevent.
+ */
+function checksumTokens() {
+  const checksumsFile = path.join(__dirname, '..', 'CHECKSUMS.txt');
+  const text = fs.readFileSync(checksumsFile, 'utf8');
+  const byFile = new Map();
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(/^([a-f0-9]{64})\s+\*?(.+?)\s*$/i);
+    if (m) byFile.set(m[2], m[1].toLowerCase());
+  }
+
+  const wanted = {
+    SHA_WIN_COMPLETE: `Solframe-Studio-Setup-${VERSION}.exe`,
+    SHA_WIN_LIGHT: `Solframe-Studio-Setup-${VERSION}-Lightweight.exe`,
+    SHA_LINUX_APPIMAGE: `Solframe.Studio-${VERSION}.AppImage`,
+    SHA_LINUX_DEB: `solframe-studio_${VERSION}_amd64.deb`,
+    SHA_MAC_ZIP_ARM64: `Solframe.Studio-${VERSION}-arm64-mac.zip`
+  };
+
+  const tokens = {};
+  const missing = [];
+  for (const [token, filename] of Object.entries(wanted)) {
+    const sha = byFile.get(filename);
+    if (!sha) missing.push(filename);
+    else tokens[token] = sha;
+  }
+  if (missing.length) {
+    throw new Error(
+      `CHECKSUMS.txt has no SHA-256 for: ${missing.join(', ')} — regenerate it for v${VERSION} before building the landing page.`
+    );
+  }
+  return tokens;
+}
+
 const replacements = {
   SITE_BASE_URL,
   FAVICON_URL: faviconUrl,
@@ -100,12 +143,7 @@ const replacements = {
   // in landing-template.html already computed "Apple Silicon" vs "Universal"
   // for display, it just pointed both labels at the same single download.
   DOWNLOAD_MAC_ZIP_ARM64: `${RELEASE_BASE}/Solframe.Studio-${VERSION}-arm64-mac.zip`,
-  // The repo maintains CHECKSUMS.txt for every release but the site never
-  // linked it or used the word "verify" — a strange gap for a product whose
-  // pitch is sovereignty over unsigned installers. Points at main so it
-  // always reflects the latest published checksums without a template
-  // rebuild, matching how RELEASE_NOTES.md already links it.
-  CHECKSUMS_URL: 'https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/CHECKSUMS.txt',
+  ...checksumTokens(),
   ...screenshots,
   ...themeAssets
 };

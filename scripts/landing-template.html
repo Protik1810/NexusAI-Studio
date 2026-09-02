@@ -1343,50 +1343,50 @@
       margin-bottom: 0;
     }
 
-    /* Checksum verification */
-    .verify-block {
-      max-width: 760px;
-      margin: 0 auto 32px;
-      background: #0d1117;
-      border: 1px solid var(--border-card-hover);
-      border-radius: var(--radius-md);
-      padding: 14px 20px;
+    /* Per-download SHA-256, shown on the card itself. The installers are
+       unsigned, so this is how a visitor confirms they got the real binary. */
+    .card-sha {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-card-hover);
     }
-    .verify-block summary {
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      list-style: none;
+    .card-sha-label {
       display: flex;
       align-items: center;
-      gap: 8px;
-    }
-    .verify-block summary::-webkit-details-marker { display: none; }
-    .verify-block summary::before {
-      content: '🔐';
-      font-size: 0.95em;
-    }
-    .verify-block p {
-      margin: 12px 0 8px;
-      font-size: 0.85rem;
+      gap: 5px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       color: var(--text-secondary);
+      margin-bottom: 5px;
     }
-    .verify-block pre {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 0.78rem;
-      overflow-x: auto;
+    .card-sha-value {
+      display: block;
+      width: 100%;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.66rem;
+      line-height: 1.45;
       color: var(--text-secondary);
+      background: rgba(0, 0, 0, 0.32);
+      border: 1px solid var(--border-card-hover);
+      border-radius: 6px;
+      padding: 7px 9px;
+      /* A 64-char hash has no spaces to break on, and must not widen the
+         card or spill out of it. */
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      cursor: pointer;
+      text-align: left;
+      transition: color 0.15s ease, border-color 0.15s ease;
     }
-    .verify-block a {
+    .card-sha-value:hover {
+      color: var(--text-primary);
+      border-color: var(--primary);
+    }
+    .card-sha-value.copied {
       color: var(--primary);
-      font-size: 0.85rem;
-      text-decoration: none;
-    }
-    .verify-block a:hover {
-      text-decoration: underline;
+      border-color: var(--primary);
     }
 
     /* Terminal Box */
@@ -2312,6 +2312,14 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
             Download .exe
           </a>
+        
+          <div class="card-sha">
+            <div class="card-sha-label">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              SHA-256
+            </div>
+            <code class="card-sha-value" role="button" tabindex="0" title="Click to copy">{{SHA_WIN_COMPLETE}}</code>
+          </div>
         </div>
 
         <!-- Windows Lightweight -->
@@ -2332,6 +2340,14 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
             Download Shell
           </a>
+        
+          <div class="card-sha">
+            <div class="card-sha-label">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              SHA-256
+            </div>
+            <code class="card-sha-value" role="button" tabindex="0" title="Click to copy">{{SHA_WIN_LIGHT}}</code>
+          </div>
         </div>
 
         <!-- Linux AppImage -->
@@ -2353,6 +2369,14 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
             Download .AppImage
           </a>
+        
+          <div class="card-sha">
+            <div class="card-sha-label">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              SHA-256
+            </div>
+            <code class="card-sha-value" role="button" tabindex="0" title="Click to copy">{{SHA_LINUX_APPIMAGE}}</code>
+          </div>
         </div>
 
         <!-- Linux .deb -->
@@ -2373,6 +2397,14 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
             Download .deb
           </a>
+        
+          <div class="card-sha">
+            <div class="card-sha-label">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              SHA-256
+            </div>
+            <code class="card-sha-value" role="button" tabindex="0" title="Click to copy">{{SHA_LINUX_DEB}}</code>
+          </div>
         </div>
 
         <!-- macOS App Bundle — Apple Silicon -->
@@ -2394,6 +2426,14 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
             Download .zip
           </a>
+        
+          <div class="card-sha">
+            <div class="card-sha-label">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              SHA-256
+            </div>
+            <code class="card-sha-value" role="button" tabindex="0" title="Click to copy">{{SHA_MAC_ZIP_ARM64}}</code>
+          </div>
         </div>
 
         <!-- Intel Mac build dropped as of v1.1.2: inference runs on Metal,
@@ -2413,15 +2453,6 @@
           <div class="download-grid" id="downloadGridOthers"></div>
         </div>
       </div>
-
-      <!-- Checksum Verification -->
-      <details class="verify-block reveal-item">
-        <summary>Verify your download</summary>
-        <p>Every release ships SHA-256 checksums — installers are unsigned, so compare before you run one.</p>
-        <pre><code>sha256sum -c CHECKSUMS.txt              # Linux / macOS
-Get-FileHash .\Solframe-Studio-Setup-1.1.1.exe   # Windows PowerShell</code></pre>
-        <a href="{{CHECKSUMS_URL}}" target="_blank" rel="noopener noreferrer">CHECKSUMS.txt for the latest release →</a>
-      </details>
 
       <!-- Direct Terminal Install -->
       <div class="terminal-container reveal-item">
@@ -2804,6 +2835,32 @@ Get-FileHash .\Solframe-Studio-Setup-1.1.1.exe   # Windows PowerShell</code></pr
         otherPlatformsToggle.setAttribute('aria-expanded', String(isExpanded));
       });
     }
+
+    // Click (or Enter/Space) a card's SHA-256 to copy it, so verifying a
+    // download doesn't mean hand-transcribing 64 hex characters.
+    document.querySelectorAll('.card-sha-value').forEach((el) => {
+      const copy = async () => {
+        const hash = el.textContent.trim();
+        try {
+          await navigator.clipboard.writeText(hash);
+        } catch (err) {
+          // Clipboard API needs a secure context and permission; fall back
+          // to selecting the text so it can still be copied manually.
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          return;
+        }
+        el.classList.add('copied');
+        setTimeout(() => el.classList.remove('copied'), 1200);
+      };
+      el.addEventListener('click', copy);
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copy(); }
+      });
+    });
 
     // Navbar scroll effect & parallax
     const navbar = document.getElementById('navbar');
