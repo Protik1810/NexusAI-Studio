@@ -33,6 +33,9 @@ jobs:
       - name: Generate showcase page
         run: node scripts/build-blob-landing.js
 
+      - name: Verify every release download link resolves
+        run: node scripts/check-release-links.js
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

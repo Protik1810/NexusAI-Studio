@@ -1343,6 +1343,52 @@
       margin-bottom: 0;
     }
 
+    /* Checksum verification */
+    .verify-block {
+      max-width: 760px;
+      margin: 0 auto 32px;
+      background: #0d1117;
+      border: 1px solid var(--border-card-hover);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+    }
+    .verify-block summary {
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .verify-block summary::-webkit-details-marker { display: none; }
+    .verify-block summary::before {
+      content: '🔐';
+      font-size: 0.95em;
+    }
+    .verify-block p {
+      margin: 12px 0 8px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .verify-block pre {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      overflow-x: auto;
+      color: var(--text-secondary);
+    }
+    .verify-block a {
+      color: var(--primary);
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+    .verify-block a:hover {
+      text-decoration: underline;
+    }
+
     /* Terminal Box */
     .terminal-container {
       position: relative;
@@ -2121,7 +2167,7 @@
               <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
             </div>
             <h3 class="feature-title">One-Click Offline Install</h3>
-            <p class="feature-desc">Bundled all-in-one installer ships every engine pre-compiled. Get from download to first generation in minutes.</p>
+            <p class="feature-desc">The Windows Complete and macOS installers bundle every engine pre-compiled — no first-run downloads, no account, no network. (The Lightweight installer and Linux build ship the interface only.)</p>
           </div>
         </div>
 
@@ -2162,7 +2208,7 @@
               <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z"/></svg>
             </div>
             <h3 class="feature-title">Cross-Platform</h3>
-            <p class="feature-desc">Native installers for Windows, Linux, and macOS. AppImage, .deb, and macOS app bundle all available.</p>
+            <p class="feature-desc">Full inference on Windows and macOS. Linux ships as a UI preview today — native installers (AppImage, .deb) are available, but a native engine build is planned, not shipped yet.</p>
           </div>
         </div>
 
@@ -2280,7 +2326,7 @@
                 <span class="download-platform">Windows · UI shell</span>
               </div>
             </div>
-            <p class="download-desc">Faster download. Ships the interface without bundled GPU libraries.</p>
+            <p class="download-desc">Faster download, but no image generation or local LLM chat — UI shell only, with no in-app way to fetch the missing engines afterward. Use the Complete installer for real inference.</p>
           </div>
           <a href="{{DOWNLOAD_WIN_LIGHT}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
@@ -2329,7 +2375,28 @@
           </a>
         </div>
 
-        <!-- macOS App Bundle -->
+        <!-- macOS App Bundle — Apple Silicon -->
+        <div class="download-card" id="card-macos-arm64" data-platform="macos">
+          <span class="os-badge-chip">Recommended for your OS</span>
+          <div>
+            <div class="card-top">
+              <div class="download-icon-box">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 0.92-2.85-.9.04-2 0.6-2.65 1.35-.58.66-1.09 1.73-.95 2.76.99.08 2.06-.51 2.68-1.26z"/></svg>
+              </div>
+              <div>
+                <h4 class="download-card-title">Apple Silicon (.zip)</h4>
+                <span class="download-platform">macOS · M1–M4 · Unsigned</span>
+              </div>
+            </div>
+            <p class="download-desc">Native arm64 build. Unzip and move to Applications. Right-click → Open on first launch.</p>
+          </div>
+          <a href="{{DOWNLOAD_MAC_ZIP_ARM64}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline" id="btn-macos-arm64">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            Download .zip
+          </a>
+        </div>
+
+        <!-- macOS App Bundle — Intel -->
         <div class="download-card" id="card-macos-app" data-platform="macos">
           <span class="os-badge-chip">Recommended for your OS</span>
           <div>
@@ -2338,8 +2405,8 @@
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 0.92-2.85-.9.04-2 0.6-2.65 1.35-.58.66-1.09 1.73-.95 2.76.99.08 2.06-.51 2.68-1.26z"/></svg>
               </div>
               <div>
-                <h4 class="download-card-title">App Bundle (.zip)</h4>
-                <span class="download-platform">macOS · Unsigned</span>
+                <h4 class="download-card-title">Intel Mac (.zip)</h4>
+                <span class="download-platform">macOS · x86_64 · Unsigned</span>
               </div>
             </div>
             <p class="download-desc">Unzip and move to Applications. Right-click → Open on first launch.</p>
@@ -2363,6 +2430,15 @@
           <div class="download-grid" id="downloadGridOthers"></div>
         </div>
       </div>
+
+      <!-- Checksum Verification -->
+      <details class="verify-block reveal-item">
+        <summary>Verify your download</summary>
+        <p>Every release ships SHA-256 checksums — installers are unsigned, so compare before you run one.</p>
+        <pre><code>sha256sum -c CHECKSUMS.txt              # Linux / macOS
+Get-FileHash .\Solframe-Studio-Setup-1.1.1.exe   # Windows PowerShell</code></pre>
+        <a href="{{CHECKSUMS_URL}}" target="_blank" rel="noopener noreferrer">CHECKSUMS.txt for the latest release →</a>
+      </details>
 
       <!-- Direct Terminal Install -->
       <div class="terminal-container reveal-item">
@@ -2603,14 +2679,17 @@
         };
       } else if (platform.includes('mac') || ua.includes('macintosh') || ua.includes('mac os')) {
         const isArm = ua.includes('arm') || ua.includes('apple') || navigator.userAgentData?.architecture === 'arm';
+        // Previously both "Apple Silicon" and "Universal" labels pointed at
+        // the same single Intel x64 zip — every Apple Silicon Mac visitor
+        // got the wrong build. Now genuinely two cards/buttons/links.
         return {
           os: 'macos',
           name: 'macOS',
-          archText: isArm ? 'Apple Silicon' : 'Universal',
+          archText: isArm ? 'Apple Silicon' : 'Intel',
           ctaText: 'Download for macOS',
-          ctaSub: 'Detected: macOS • Unsigned App Bundle',
-          cardId: 'card-macos-app',
-          btnId: 'btn-macos-app',
+          ctaSub: isArm ? 'Detected: macOS (Apple Silicon) • Unsigned App Bundle' : 'Detected: macOS (Intel) • Unsigned App Bundle',
+          cardId: isArm ? 'card-macos-arm64' : 'card-macos-app',
+          btnId: isArm ? 'btn-macos-arm64' : 'btn-macos-app',
           shellLabel: 'zsh',
           buildCmd: 'npm run electron:build:mac',
           captionText: 'Produces an unsigned macOS .zip app bundle. Right-click → Open on initial launch.'

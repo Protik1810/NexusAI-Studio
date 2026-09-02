@@ -94,6 +94,18 @@ const replacements = {
   DOWNLOAD_LINUX_APPIMAGE: `${RELEASE_BASE}/Solframe.Studio-${VERSION}.AppImage`,
   DOWNLOAD_LINUX_DEB: `${RELEASE_BASE}/solframe-studio_${VERSION}_amd64.deb`,
   DOWNLOAD_MAC_ZIP: `${RELEASE_BASE}/Solframe.Studio-${VERSION}-mac.zip`,
+  // The arm64 build has shipped as a real release asset since v1.1.0 but
+  // was never linked anywhere on the page — every Mac visitor, including
+  // Apple Silicon ones, was served the Intel x64 zip. The auto-detect logic
+  // in landing-template.html already computed "Apple Silicon" vs "Universal"
+  // for display, it just pointed both labels at the same single download.
+  DOWNLOAD_MAC_ZIP_ARM64: `${RELEASE_BASE}/Solframe.Studio-${VERSION}-arm64-mac.zip`,
+  // The repo maintains CHECKSUMS.txt for every release but the site never
+  // linked it or used the word "verify" — a strange gap for a product whose
+  // pitch is sovereignty over unsigned installers. Points at main so it
+  // always reflects the latest published checksums without a template
+  // rebuild, matching how RELEASE_NOTES.md already links it.
+  CHECKSUMS_URL: 'https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/CHECKSUMS.txt',
   ...screenshots,
   ...themeAssets
 };
