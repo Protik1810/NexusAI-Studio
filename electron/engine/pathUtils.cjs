@@ -207,6 +207,27 @@ function getSdCliExecutable({ rootDir = '', resourcesPath = '' } = {}) {
     return metalCandidates[0];
   }
 
+  if (process.platform === 'linux') {
+    // Vulkan first, then CPU. There is deliberately no CUDA tier: upstream
+    // stable-diffusion.cpp publishes no prebuilt Linux CUDA binary (only
+    // vulkan/rocm/cpu), and Vulkan covers NVIDIA, AMD and Intel alike.
+    const linuxCandidates = [];
+    for (const backend of ['vulkan', 'cpu']) {
+      linuxCandidates.push(
+        path.join(rootDir, `backend/linux/${backend}/sd-cli`),
+        path.join(resourcesPath, `backend/linux/${backend}/sd-cli`),
+        path.join(resourcesPath, `app/backend/linux/${backend}/sd-cli`),
+        path.join(exeDir, `resources/backend/linux/${backend}/sd-cli`),
+        path.join(exeDir, `backend/linux/${backend}/sd-cli`),
+        path.join(__dirname, `../../backend/linux/${backend}/sd-cli`)
+      );
+    }
+    for (const c of linuxCandidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    return linuxCandidates[0];
+  }
+
   const cudaCandidates = [
     path.join(rootDir, 'backend/win/cuda/sd-cli.exe'),
     path.join(rootDir, 'backend/win/cuda/sd-cuda.exe'),
@@ -263,6 +284,21 @@ function getLlamaExecutable({ rootDir = '', resourcesPath = '' } = {}) {
       if (fs.existsSync(c)) return c;
     }
     return macCandidates[0];
+  }
+
+  if (process.platform === 'linux') {
+    const linuxCandidates = [
+      path.join(rootDir, 'backend/linux/llama/llama-server'),
+      path.join(resourcesPath, 'backend/linux/llama/llama-server'),
+      path.join(resourcesPath, 'app/backend/linux/llama/llama-server'),
+      path.join(exeDir, 'resources/backend/linux/llama/llama-server'),
+      path.join(exeDir, 'backend/linux/llama/llama-server'),
+      path.join(__dirname, '../../backend/linux/llama/llama-server')
+    ];
+    for (const c of linuxCandidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    return linuxCandidates[0];
   }
 
   const candidates = [

@@ -99,7 +99,52 @@ const MAC_LIBRARY_DEFINITIONS = [
   }
 ];
 
-const LIBRARY_DEFINITIONS = process.platform === 'darwin' ? MAC_LIBRARY_DEFINITIONS : WIN_LIBRARY_DEFINITIONS;
+const LINUX_LIBRARY_DEFINITIONS = [
+  {
+    id: 'vulkan-sd',
+    name: 'Vulkan Diffusion Engine',
+    category: 'Vulkan GPU (Cross-Platform)',
+    description: 'GPU diffusion kernel for FLUX.2 & SDXL — drives NVIDIA, AMD and Intel GPUs alike',
+    requiredFor: 'GPU Image Synthesis',
+    files: [
+      { path: 'backend/linux/vulkan/sd-cli', name: 'sd-cli', required: true },
+      { path: 'backend/linux/vulkan/libstable-diffusion.so', name: 'libstable-diffusion.so (Vulkan)', required: true },
+      { path: 'backend/linux/vulkan/libggml-vulkan.so', name: 'libggml-vulkan.so', required: true }
+    ]
+  },
+  {
+    id: 'cpu-sd',
+    name: 'CPU Diffusion Engine',
+    category: 'CPU Fallback',
+    description: 'Multi-threaded CPU diffusion kernel, used when no usable GPU is present',
+    requiredFor: 'CPU-only Image Synthesis',
+    files: [
+      { path: 'backend/linux/cpu/sd-cli', name: 'sd-cli (CPU)', required: true },
+      { path: 'backend/linux/cpu/libstable-diffusion.so', name: 'libstable-diffusion.so (CPU)', required: true }
+    ]
+  },
+  {
+    id: 'llama-engine',
+    name: 'llama.cpp Server Runtime',
+    category: 'Local LLM Dialogue Engine',
+    description: 'Real-time GGUF token streaming engine with Vulkan GPU offload',
+    requiredFor: 'Uncensored LLM Chat',
+    files: [
+      { path: 'backend/linux/llama/llama-server', name: 'llama-server', required: true },
+      { path: 'backend/linux/llama/libllama.so', name: 'libllama.so', required: true },
+      { path: 'backend/linux/llama/libggml-base.so', name: 'libggml-base.so', required: true },
+      { path: 'backend/linux/llama/libggml-vulkan.so', name: 'libggml-vulkan.so (GPU offload)', required: false }
+    ]
+  }
+];
+
+// Linux used to fall through to the Windows set, so a Linux install
+// reported missing "sd-cli.exe"/"*.dll" under backend/win/ — paths that
+// could never exist there.
+const LIBRARY_DEFINITIONS =
+  process.platform === 'darwin' ? MAC_LIBRARY_DEFINITIONS :
+  process.platform === 'linux' ? LINUX_LIBRARY_DEFINITIONS :
+  WIN_LIBRARY_DEFINITIONS;
 
 /**
  * Compares two plain "x.y.z" version strings (a leading "v" on either is

@@ -34,5 +34,17 @@
     "tag": "b10752",
     "asset": "llama-b10752-bin-macos-arm64.tar.gz",
     "sha256": "3c2057747f1d3c618d818960524151e48797d3b7f19fbebacc00124d930e3028"
+  },
+  "linux.vulkan": {
+    "repo": "stable-diffusion.cpp",
+    "tag": "master-841-6b3edaa",
+    "asset": "sd-master-6b3edaa-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+    "sha256": "abf07bb51605a647fd874d766d71ad2bbd21b01a26fafd2c30d63259c1e34f44"
+  },
+  "linux.cpu": {
+    "repo": "stable-diffusion.cpp",
+    "tag": "master-841-6b3edaa",
+    "asset": "sd-master-6b3edaa-bin-Linux-Ubuntu-24.04-x86_64.zip",
+    "sha256": "66998807a8b21b6d00358310a23791c67d2e68f7e1820d99d5c9ac12738d882e"
   }
 }

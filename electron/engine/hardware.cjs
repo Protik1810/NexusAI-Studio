@@ -91,10 +91,15 @@ function detectHardware() {
   const hasAmdOrIntel = gpus.some(g => g.vendor === 'AMD' || g.vendor === 'Intel');
   const hasApple = gpus.some(g => g.isApple);
   if (hasNvidia) {
-    preferredBackend = 'cuda';
+    // CUDA everywhere except Linux, where neither stable-diffusion.cpp nor
+    // llama.cpp publishes a prebuilt CUDA binary — the shipped Linux engine
+    // is the Vulkan one, which drives NVIDIA cards fine. Reporting "CUDA"
+    // there would name a backend the app has no binary for.
+    const nvidiaBackend = process.platform === 'linux' ? 'vulkan' : 'cuda';
+    preferredBackend = nvidiaBackend;
     if (!primaryGpu || primaryGpu === 'Auto-Detect GPU') {
       const g = gpus.find(g => g.isNvidia);
-      primaryGpu = `${g.name} (${g.vram} - CUDA)`;
+      primaryGpu = `${g.name} (${g.vram} - ${nvidiaBackend.toUpperCase()})`;
     }
   } else if (hasAmdOrIntel) {
     preferredBackend = 'vulkan';

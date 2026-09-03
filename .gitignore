@@ -24,6 +24,11 @@ docs/
 # committed to git.
 backend/mac/
 
+# Linux engine binaries (sd-cli, llama-server + .so libs) — same as
+# backend/win/ and backend/mac/: large upstream build inputs fetched and
+# checksum-verified by scripts/fetch-engines.js, never committed.
+backend/linux/
+
 # Generated showcase page (canonical source: docs/index.html, see
 # scripts/build-blob-landing.js) — regenerate locally, don't commit a copy.
 /product.html

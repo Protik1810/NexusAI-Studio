@@ -126,7 +126,19 @@
       ],
       "category": "Graphics",
       "icon": "electron/icon.png",
-      "maintainer": "Protik <protik@solframe.local>"
+      "maintainer": "Protik <protik@solframe.local>",
+      "desktopName": "solframe-studio.desktop",
+      "syncDesktopName": true,
+      "synopsis": "Local generative AI image and LLM workstation",
+      "extraResources": [
+        {
+          "from": "backend/linux",
+          "to": "backend/linux",
+          "filter": [
+            "**/*"
+          ]
+        }
+      ]
     },
     "mac": {
       "extraResources": [

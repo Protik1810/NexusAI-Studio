@@ -58,7 +58,20 @@ const TARGETS = {
   'win.cpu': { repo: 'stable-diffusion.cpp', match: ['win', 'cpu'], exclude: ['cudart'], destDir: 'backend/win/cpu' },
   'win.llama': { repo: 'llama.cpp', match: ['win', 'cuda-12.4'], exclude: ['cudart'], destDir: 'backend/win/llama' },
   'mac.metal': { repo: 'stable-diffusion.cpp', match: ['macos'], destDir: 'backend/mac/metal' },
-  'mac.llama': { repo: 'llama.cpp', match: ['macos', 'arm64'], destDir: 'backend/mac/llama' }
+  'mac.llama': { repo: 'llama.cpp', match: ['macos', 'arm64'], destDir: 'backend/mac/llama' },
+  // Linux gets Vulkan + CPU, not CUDA: neither upstream publishes a
+  // prebuilt Linux CUDA binary (verified against both projects' current
+  // releases — Windows gets CUDA, Linux gets vulkan/rocm/cpu only), so a
+  // CUDA target here would just fail to match an asset. Vulkan covers
+  // NVIDIA, AMD and Intel GPUs on Linux, which is why hardware.cjs routes
+  // every Linux GPU to vulkan rather than cuda.
+  //
+  // The CPU builds need `exclude`: "…-x86_64.zip" is a substring-prefix of
+  // "…-x86_64-vulkan.zip"/"-rocm-*.zip", so without it the plain CPU match
+  // is ambiguous and pickAsset throws.
+  'linux.vulkan': { repo: 'stable-diffusion.cpp', match: ['linux', 'x86_64', 'vulkan'], destDir: 'backend/linux/vulkan' },
+  'linux.cpu': { repo: 'stable-diffusion.cpp', match: ['linux', 'x86_64'], exclude: ['vulkan', 'rocm', 'cuda'], destDir: 'backend/linux/cpu' },
+  'linux.llama': { repo: 'llama.cpp', match: ['ubuntu', 'vulkan', 'x64'], exclude: ['arm64'], destDir: 'backend/linux/llama' }
 };
 
 function parseArgs(argv) {
@@ -127,24 +140,73 @@ function sha256(buffer) {
 // like a tar archive" — verified live in WSL/Ubuntu. .tar.gz assets (the
 // macOS llama.cpp build) extract fine with tar everywhere; .zip assets
 // need `unzip` specifically on a GNU-tar system.
+/**
+ * Some upstream archives wrap everything in a single versioned folder
+ * (llama.cpp's Ubuntu tarballs unpack to "llama-b10780/…", while its macOS
+ * ones and every stable-diffusion.cpp zip unpack flat). The rest of the app
+ * looks for binaries directly under the target directory, so hoist a lone
+ * wrapper up one level. Flat archives make this a no-op.
+ */
+function flattenSingleDir(destDir) {
+  const entries = fs.readdirSync(destDir);
+  if (entries.length !== 1) return;
+  const inner = path.join(destDir, entries[0]);
+  if (!fs.statSync(inner).isDirectory()) return;
+  for (const name of fs.readdirSync(inner)) {
+    fs.renameSync(path.join(inner, name), path.join(destDir, name));
+  }
+  fs.rmdirSync(inner);
+  console.log(`  flattened wrapper directory "${entries[0]}/"`);
+}
+
 function extractArchive(archivePath, destDir) {
   fs.mkdirSync(destDir, { recursive: true });
-  if (archivePath.toLowerCase().endsWith('.zip') && process.platform === 'linux') {
+
+  // Sniff the real format instead of trusting the extension: downloads are
+  // always buffered to a "*.zip" temp name regardless of what the asset
+  // actually is, so a .tar.gz would otherwise be treated as a zip.
+  const head = Buffer.alloc(4);
+  const fd = fs.openSync(archivePath, 'r');
+  try { fs.readSync(fd, head, 0, 4, 0); } finally { fs.closeSync(fd); }
+  const isZip = head[0] === 0x50 && head[1] === 0x4b;           // "PK"
+
+  // Extractors are chosen by capability, not by platform:
+  //  - GNU tar cannot read .zip at all, and Git Bash puts it ahead of
+  //    Windows' own bsdtar on PATH, so a win32 box can hit the same
+  //    "not a tar archive" failure a plain Linux box does.
+  //  - bsdtar (System32 on Windows, shipped on macOS) reads both.
+  // Archive is passed as a bare filename with cwd set to its directory:
+  // GNU tar treats "C:\..." in -f as a remote host spec and dies with
+  // "Cannot connect to C: resolve failed".
+  const base = path.basename(archivePath);
+  const cwd = path.dirname(archivePath);
+  const bsdtar = process.platform === 'win32'
+    ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe')
+    : 'bsdtar';
+
+  const attempts = isZip
+    ? [[bsdtar, ['-xf', base, '-C', destDir]],
+       ['unzip', ['-o', base, '-d', destDir]],
+       ['python3', ['-m', 'zipfile', '-e', base, destDir]],
+       ['python', ['-m', 'zipfile', '-e', base, destDir]]]
+    : [['tar', ['-xf', base, '-C', destDir]],
+       [bsdtar, ['-xf', base, '-C', destDir]]];
+
+  const failures = [];
+  for (const [cmd, args] of attempts) {
     try {
-      execFileSync('unzip', ['-o', archivePath, '-d', destDir], { stdio: 'inherit' });
+      execFileSync(cmd, args, { stdio: 'inherit', cwd });
+      flattenSingleDir(destDir);
       return;
     } catch (e) {
-      // Fall through to python3's zipfile module — no extra install needed
-      // on most Linux dev/CI environments that already have Python.
-    }
-    try {
-      execFileSync('python3', ['-m', 'zipfile', '-e', archivePath, destDir], { stdio: 'inherit' });
-      return;
-    } catch (e) {
-      throw new Error(`Couldn't extract ${path.basename(archivePath)}: GNU tar can't read .zip files, and neither 'unzip' nor 'python3' worked (try: sudo apt-get install unzip).`, { cause: e });
+      failures.push(`${path.basename(cmd)}: ${e.message.split('\n')[0]}`);
     }
   }
-  execFileSync('tar', ['-xf', archivePath, '-C', destDir], { stdio: 'inherit' });
+  throw new Error(
+    `Couldn't extract ${base} (${isZip ? 'zip' : 'tar'}). Tried:\n  ` +
+    failures.join('\n  ') +
+    (isZip ? "\nOn Linux, install one of them: sudo apt-get install unzip" : '')
+  );
 }
 
 function loadLockfile() {
