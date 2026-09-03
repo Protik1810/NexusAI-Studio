@@ -1,4 +1,4 @@
-# ✨ Solframe Studio v1.1.2
+# ✨ Solframe Studio v1.1.3
 
 **The Sovereign Desktop Generative AI Workstation** — by **Protik**
 
@@ -9,6 +9,30 @@
 ---
 
 Solframe Studio is a standalone, self-contained desktop app for 100% private, offline generative AI — image synthesis and LLM chat running as native C++ inference directly on your own GPU, with zero cloud calls, zero subscriptions, and zero telemetry.
+
+## 🆕 What's new in v1.1.3
+
+**Linux is now a real platform.** Previously the Linux build shipped no inference engine at all — it launched, scanned models, and could not generate a single image. It now ships working engines and stands alongside Windows and macOS.
+
+### 🐧 Linux
+- **Real image generation and chat.** Vulkan and CPU builds of `stable-diffusion.cpp`, plus `llama.cpp` — checksum-verified from upstream like every other platform.
+- **CUDA engine for NVIDIA cards**, compiled from source and bundled with its own CUDA runtime, so you install no toolkit. Neither upstream project publishes a prebuilt Linux CUDA binary, which is why this one had to be built rather than downloaded. Non-NVIDIA machines fall through to Vulkan automatically.
+- **Picks the right GPU on hybrid-graphics laptops.** The engine defaults to GPU 0 — usually the integrated chip — and runs out of memory immediately while the discrete card sits idle. The discrete GPU is now detected and selected explicitly.
+- **The app icon shows up.** The window could not be linked to its desktop entry, so the desktop environment had no icon to display.
+- The library health panel used to report missing Windows `.exe`/`.dll` files on Linux — paths that could never exist there.
+
+### 📦 One download per platform
+The Windows installer, the Linux `.deb`, and the macOS Apple Silicon `.zip`. The Windows Lightweight installer, the macOS `.dmg`, and the Intel Mac build are gone — none of them was the build anyone should pick.
+
+**No more AppImage.** Every AppImage needs the legacy `libfuse2`, which current Ubuntu no longer ships, so it simply failed to launch. The `.deb` needs no workaround.
+
+macOS is Apple Silicon only: Metal inference requires an M-series GPU, so an Intel bundle shipped a UI that could not generate anything.
+
+### 🐛 Also fixed
+- Engine binaries could ship without their executable bit (Python's `zip` extraction drops Unix permissions), so `sd-cli` could not be spawned at all.
+- On Linux the app reported "CUDA" while actually running Vulkan; the backend it names is now the one it uses.
+
+---
 
 ## 🆕 What's new in v1.1.2
 
@@ -123,9 +147,11 @@ Dark Void, Neon Cyber, Cinema Gold (default), Synthwave Sunset, Anime Fantasy, a
 
 | Platform | File | Size | Direct Link |
 |---|---|---|---|
-| 🪟 Windows | Complete Setup | ~927 MB | [Solframe-Studio-Setup-1.1.2.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe-Studio-Setup-1.1.2.exe) |
-| 🍎 macOS | Apple Silicon `.zip` | ~225 MB | [Solframe.Studio-1.1.2-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2-arm64-mac.zip) |
-| 🐧 Linux | `.deb` | ~726 MB | [solframe-studio_1.1.2_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/solframe-studio_1.1.2_amd64.deb) |
+| 🪟 Windows | Complete Setup | ~927 MB | [Solframe-Studio-Setup-1.1.3.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.3/Solframe-Studio-Setup-1.1.3.exe) |
+| 🍎 macOS | Apple Silicon `.zip` | ~225 MB | [Solframe.Studio-1.1.3-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.3/Solframe.Studio-1.1.3-arm64-mac.zip) |
+| 🐧 Linux | `.deb` | ~726 MB | [solframe-studio_1.1.3_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.3/solframe-studio_1.1.3_amd64.deb) |
+
+**Verified on:** Windows 11 (real generation, RTX 4070 Ti), macOS on Apple Silicon (M2), and Linux **on the CUDA engine** (RTX 4060 laptop, 8 GB) — no CUDA toolkit installed on that machine; the runtime ships with the app. A 4 GB GTX 1650 Ti also loads and runs the engines but can't hold the FLUX stack — that's a VRAM ceiling, not a platform limit; ~8 GB is the practical floor for FLUX on any OS.
 
 **Platform note:** one download per platform. All three now ship real local inference — CUDA/Vulkan/CPU on Windows, Metal on macOS (Apple Silicon only, since Metal needs an M-series GPU), and CUDA/Vulkan/CPU on Linux. The Linux `.deb` is large because it carries a CUDA engine built from source (upstream ships none for Linux) plus NVIDIA's cuBLAS runtime; it falls back to Vulkan automatically on non-NVIDIA GPUs. The Linux AppImage has been dropped in favour of the `.deb`: every AppImage needs the legacy `libfuse2`, which current Ubuntu no longer ships, so it failed to launch out of the box.
 
@@ -140,7 +166,7 @@ Download the `.zip` matching your Mac above, unzip, move to Applications. Unsign
 
 #### 🐧 Linux
 ```bash
-sudo dpkg -i solframe-studio_1.1.2_amd64.deb
+sudo dpkg -i solframe-studio_1.1.3_amd64.deb
 ```
 Ships real inference engines: CUDA for NVIDIA (built from source — upstream publishes none for Linux), Vulkan for everything else, plus a CPU fallback and `llama.cpp` for chat. On a hybrid-graphics laptop the discrete GPU is selected automatically. No AppImage: every AppImage needs the legacy `libfuse2`, which current Ubuntu no longer ships.
 

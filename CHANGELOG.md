@@ -8,6 +8,54 @@ This file is the terse, technical record. [RELEASE_NOTES.md](RELEASE_NOTES.md)
 carries the fuller, user-facing writeup for the latest release (and doubles
 as the GitHub Release body) — the two overlap on content, not on purpose.
 
+## [1.1.3] — 2026-09-03
+
+### Added
+- **Linux is a real platform.** `backend/linux/**` now ships working
+  inference engines instead of nothing: Vulkan and CPU builds of
+  `stable-diffusion.cpp` plus `llama.cpp`, fetched and checksum-verified by
+  `fetch-engines.js` like every other platform's.
+- **CUDA engine for Linux**, built from source by `scripts/build-linux-cuda.sh`
+  and bundled with its `libcudart`/`libcublas`/`libcublasLt` runtime, so end
+  users install no toolkit. Neither upstream project publishes a prebuilt
+  Linux CUDA binary (both ship CUDA for Windows only), which is why this one
+  is compiled rather than downloaded. Optional: without it the app falls
+  through to Vulkan, which drives NVIDIA, AMD and Intel alike.
+- Automatic discrete-GPU selection for Vulkan. On a hybrid-graphics laptop
+  `sd-cli` defaults to device 0 — the integrated chip — and dies with
+  `ErrorOutOfDeviceMemory` while the real GPU idles; the discrete device is
+  now detected via `--list-devices` and pinned explicitly.
+
+### Changed
+- **One download per platform**: the Windows installer, the Linux `.deb`,
+  and the macOS Apple Silicon `.zip`. The Windows Lightweight installer,
+  the macOS `.dmg`, and the Intel Mac build are no longer published.
+- The Linux AppImage is dropped rather than fixed. Every AppImage requires
+  the legacy `libfuse2`, which current Ubuntu no longer ships, so it failed
+  to launch out of the box; the `.deb` has no such dependency.
+- macOS is Apple Silicon only — Metal inference needs an M-series GPU, so
+  an x86_64 bundle shipped a UI that could not generate.
+
+### Fixed
+- `LD_LIBRARY_PATH` is set when spawning engines on Linux. The CUDA engine
+  links its runtime dynamically, so without this the bundled libraries were
+  invisible on exactly the machines the bundling was meant to serve.
+- The Linux library health panel listed Windows `.exe`/`.dll` paths under
+  `backend/win/`, which can never exist there — Linux had been falling
+  through to the Windows definitions.
+- An NVIDIA GPU on Linux is no longer labelled "CUDA" when the app is
+  actually running Vulkan; the reported backend now matches the engine in
+  use.
+- The app icon is missing on Linux desktops: `desktopName` (read from the
+  package.json root, not the build config) plus `syncDesktopName` were
+  unset, so the window's `WM_CLASS` never matched the installed `.desktop`
+  entry.
+- Engine extraction picks an extractor by capability rather than platform,
+  sniffs the real archive format instead of trusting a temp filename,
+  flattens llama.cpp's versioned wrapper directory, and restores the
+  executable bit that Python's `zipfile` silently drops — the last of which
+  shipped `sd-cli` binaries that could not be spawned at all.
+
 ## [1.1.2] — 2026-09-02
 
 ### Added

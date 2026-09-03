@@ -23,7 +23,7 @@
 
 **Solframe Studio** is a standalone, self-contained desktop generative AI suite engineered for 100% private, offline inference. Combining **`stable-diffusion.cpp`** (supporting FLUX.2 Klein, SDXL Lightning, and standard SD checkpoints) with **`llama.cpp`** (running GGUF text models with full GPU offloading), Solframe Studio brings high-performance generative AI directly to consumer hardware with zero subscription fees, zero cloud telemetry, and complete offline autonomy.
 
-> **Platform status:** all three platforms ship real, working inference engines — image generation and local LLM chat run out of the box. Windows uses CUDA/Vulkan/CPU (`backend/win/**`), macOS uses Metal on Apple Silicon (`backend/mac/**`), and Linux uses Vulkan/CPU (`backend/linux/**`). Vulkan on Linux drives NVIDIA, AMD and Intel GPUs alike, because neither upstream engine publishes a prebuilt Linux CUDA binary.
+> **Platform status:** all three platforms ship real, working inference engines — verified on Windows 11, macOS Apple Silicon (M2), and Linux on CUDA (RTX 4060, 8 GB) — image generation and local LLM chat run out of the box. Windows uses CUDA/Vulkan/CPU (`backend/win/**`), macOS uses Metal on Apple Silicon (`backend/mac/**`), and Linux uses Vulkan/CPU (`backend/linux/**`). Vulkan on Linux drives NVIDIA, AMD and Intel GPUs alike, because neither upstream engine publishes a prebuilt Linux CUDA binary.
 
 <div align="center">
 <table>
@@ -107,8 +107,9 @@ Another edit, on a different reference image:
 - **Cross-Studio Pipeline**: Send generated prompts directly to the Image Studio with one click.
 
 ### 🎮 3. Dynamic Hardware Auto-Detection
-- **NVIDIA GPUs**: Auto-routes to **CUDA** (`backend/win/cuda/`) leveraging Tensor Cores — on Linux, to **Vulkan**, since no prebuilt Linux CUDA engine exists upstream. On a hybrid-graphics laptop the discrete GPU is selected automatically instead of the integrated one.
-- **AMD Radeon & Intel Arc GPUs**: Auto-routes to **Vulkan** (`backend/win/vulkan/`) using cross-platform compute shaders.
+- **NVIDIA GPUs**: Auto-routes to **CUDA** — `backend/win/cuda/` on Windows, `backend/linux/cuda/` on Linux. Upstream publishes no prebuilt Linux CUDA binary, so that one is compiled from source ([`scripts/build-linux-cuda.sh`](scripts/build-linux-cuda.sh)) and bundled with its CUDA runtime; where it isn't present the app falls back to **Vulkan**, which drives NVIDIA, AMD and Intel alike.
+- **Hybrid-graphics laptops**: the discrete GPU is detected and selected explicitly — the engine otherwise defaults to GPU 0, usually the integrated chip, and runs out of memory while the real card idles.
+- **AMD Radeon & Intel Arc GPUs**: Auto-routes to **Vulkan** (`backend/win/vulkan/`, `backend/linux/vulkan/`) using cross-platform compute shaders.
 - **CPU Fallback**: Automatic multi-threaded AVX2 CPU execution when no discrete GPU is found.
 
 ### 🗄️ 4. Universal Dynamic Model Scanner
@@ -248,7 +249,7 @@ npm run build
 # Windows: build Setup Installers (Complete + Lightweight)
 npm run build:installer
 
-# Linux: build AppImage + .deb (UI shell only, see Platform status above)
+# Linux: build the .deb (ships Vulkan/CPU engines; add CUDA via scripts/build-linux-cuda.sh)
 npm run electron:build:linux
 
 # macOS: build .zip (needs backend/mac/ locally to include real inference —
