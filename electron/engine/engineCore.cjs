@@ -11,7 +11,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { spawn } = require('child_process');
-const { runSdCli, buildSdCliArgs } = require('./sdEngine.cjs');
+const { runSdCli, buildSdCliArgs, detectVulkanDevice } = require('./sdEngine.cjs');
 
 // Decodes a "data:image/png;base64,...." URL (from a browser FileReader)
 // into a temp file on disk — sd-cli needs a real file path for -r/--ref-image,
@@ -223,6 +223,20 @@ function createEngineCore(ctx) {
     }
 
     const args = buildSdCliArgs(resolvedParams, outFullPath);
+
+    // Pin every module to the discrete GPU when the Vulkan engine is in
+    // play. Left alone, sd-cli takes Vulkan device 0, which on a
+    // hybrid-graphics laptop is the integrated chip — it OOMs on a ~1GB
+    // allocation while the real GPU sits idle at device 1. Only applied
+    // when a discrete device is actually found, so single-GPU machines
+    // keep sd-cli's own default.
+    if (execPath.includes('vulkan')) {
+      const device = detectVulkanDevice(execPath);
+      if (device !== null && !args.includes('--backend')) {
+        args.push('--backend', `diffusion=vulkan${device},clip=vulkan${device},vae=vulkan${device}`);
+      }
+    }
+
     console.log(`[Solframe engineCore] Spawning: ${execPath}\n  Args: ${args.join(' ')}`);
 
     // Windows needs its DLL search dirs (CUDA/Vulkan/llama) on PATH; macOS

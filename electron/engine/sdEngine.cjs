@@ -5,7 +5,7 @@
 'use strict';
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 
 /**
  * Spawn sd-cli.exe with the given arguments and wait for it to finish,
@@ -98,6 +98,62 @@ function getOutputDir(publicDir) {
   }
 }
 
+let _vulkanDeviceCache;
+
+/**
+ * Pick which Vulkan device sd-cli should run on.
+ *
+ * sd-cli defaults to Vulkan device 0, which on a hybrid-graphics laptop is
+ * the integrated GPU — it shares system RAM through a small carve-out and
+ * dies with ErrorOutOfDeviceMemory on a ~1GB allocation, even though a
+ * perfectly good discrete card sits at device 1. Verified on a Ryzen 4600H
+ * + GTX 1650 Ti laptop: device 0 (AMD RENOIR, uma:1) OOMs immediately,
+ * device 1 (the 1650 Ti, uma:0) loads and samples.
+ *
+ * Device order is a driver-enumeration detail, not something we can assume,
+ * so ask the binary itself. `uma: 1` marks a unified-memory (integrated)
+ * device, so the first `uma: 0` entry is the discrete one.
+ *
+ * Returns an index, or null to leave sd-cli on its own default.
+ */
+function detectVulkanDevice(execPath) {
+  if (_vulkanDeviceCache !== undefined) return _vulkanDeviceCache;
+  _vulkanDeviceCache = null;
+  try {
+    // spawnSync, not execFileSync: the per-device "uma" flags this needs are
+    // printed to stderr, while stdout carries only a bare "Vulkan0<TAB>name"
+    // list with no way to tell integrated from discrete. spawnSync hands
+    // back both streams, and doesn't throw on a non-zero exit.
+    const res = spawnSync(execPath, ['--list-devices'], {
+      encoding: 'utf8', timeout: 30000, cwd: path.dirname(execPath), windowsHide: true
+    });
+    const combined = `${res.stdout || ''}\n${res.stderr || ''}`;
+    _vulkanDeviceCache = parseVulkanDevices(combined);
+    if (_vulkanDeviceCache === null && res.error) {
+      console.warn(`[Solframe] Couldn't enumerate Vulkan devices (${res.error.message}) — letting sd-cli choose.`);
+    }
+  } catch (e) {
+    console.warn(`[Solframe] Couldn't enumerate Vulkan devices (${e.message.split('\n')[0]}) — letting sd-cli choose.`);
+  }
+  return _vulkanDeviceCache;
+}
+
+function parseVulkanDevices(text) {
+  const devices = [];
+  for (const line of String(text).split('\n')) {
+    // "ggml_vulkan: 1 = NVIDIA GeForce GTX 1650 Ti (NVIDIA) | uma: 0 | ..."
+    const m = /ggml_vulkan:\s*(\d+)\s*=\s*(.+?)\s*\|\s*uma:\s*(\d)/.exec(line);
+    if (m) devices.push({ index: Number(m[1]), name: m[2], uma: m[3] === '1' });
+  }
+  if (devices.length < 2) return null;      // nothing to choose between
+  const discrete = devices.find(d => !d.uma);
+  if (!discrete) return null;
+  if (discrete.index !== 0) {
+    console.log(`[Solframe] Using discrete GPU for diffusion: Vulkan${discrete.index} (${discrete.name}) — device 0 is integrated.`);
+  }
+  return discrete.index;
+}
+
 /**
  * Build sd-cli argument array from generation parameters.
  * @param {object} params - Generation parameters
@@ -178,4 +234,4 @@ function buildSdCliArgs(params, outFullPath) {
   return args;
 }
 
-module.exports = { runSdCli, getOutputDir, buildSdCliArgs };
+module.exports = { runSdCli, getOutputDir, buildSdCliArgs, detectVulkanDevice };
