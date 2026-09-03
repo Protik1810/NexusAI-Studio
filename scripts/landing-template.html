@@ -2327,63 +2327,6 @@
           </div>
         </div>
 
-        <!-- Windows Lightweight -->
-        <div class="download-card" id="card-windows-light" data-platform="windows">
-          <div>
-            <div class="card-top">
-              <div class="download-icon-box">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
-              </div>
-              <div>
-                <h4 class="download-card-title">Lightweight Installer</h4>
-                <span class="download-platform">Windows · UI shell</span>
-              </div>
-            </div>
-            <p class="download-desc">Faster download, but no image generation or local LLM chat — UI shell only, with no in-app way to fetch the missing engines afterward. Use the Complete installer for real inference.</p>
-          </div>
-          <a href="{{DOWNLOAD_WIN_LIGHT}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-            Download Shell
-          </a>
-        
-          <div class="card-sha">
-            <div class="card-sha-label">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              SHA-256
-            </div>
-            <code class="card-sha-value" role="button" tabindex="0" title="Click to copy">{{SHA_WIN_LIGHT}}</code>
-          </div>
-        </div>
-
-        <!-- Linux AppImage -->
-        <div class="download-card" id="card-linux-appimage" data-platform="linux">
-          <span class="os-badge-chip">Recommended for your OS</span>
-          <div>
-            <div class="card-top">
-              <div class="download-icon-box">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
-              </div>
-              <div>
-                <h4 class="download-card-title">AppImage</h4>
-                <span class="download-platform">Linux · Portable</span>
-              </div>
-            </div>
-            <p class="download-desc">Single-file app. chmod +x then run. Works across modern distributions. UI shell only — no bundled inference engine yet.</p>
-          </div>
-          <a href="{{DOWNLOAD_LINUX_APPIMAGE}}" target="_blank" rel="noopener noreferrer" class="btn-download-card btn-download-outline" id="btn-linux-appimage">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-            Download .AppImage
-          </a>
-        
-          <div class="card-sha">
-            <div class="card-sha-label">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              SHA-256
-            </div>
-            <code class="card-sha-value" role="button" tabindex="0" title="Click to copy">{{SHA_LINUX_APPIMAGE}}</code>
-          </div>
-        </div>
-
         <!-- Linux .deb -->
         <div class="download-card" id="card-linux-deb" data-platform="linux">
           <div>
@@ -2723,8 +2666,8 @@
           archText: 'x86_64',
           ctaText: 'Download for Linux',
           ctaSub: 'Detected: Linux • AppImage & .deb Available',
-          cardId: 'card-linux-appimage',
-          btnId: 'btn-linux-appimage',
+          cardId: 'card-linux-deb',
+          btnId: 'btn-linux-deb',
           shellLabel: 'bash',
           buildCmd: 'npm run electron:build:linux',
           captionText: 'Produces an AppImage + .deb on Linux — UI shell only for now, no bundled inference engine (Windows and macOS ship the real thing).'

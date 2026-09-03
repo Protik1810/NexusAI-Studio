@@ -4,7 +4,7 @@
 
 **Autonomous, Sovereign & Zero-Cloud Local Generative AI Workstation**
 
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%26%20macOS%20(full)%20%7C%20Linux%20(UI%20preview)-blue?style=for-the-badge&logo=windows)](https://github.com/Protik1810/Solframe-Studio)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?style=for-the-badge&logo=windows)](https://github.com/Protik1810/Solframe-Studio)
 [![Hardware](https://img.shields.io/badge/Hardware-NVIDIA%20CUDA%20%7C%20AMD%2FIntel%20Vulkan-success?style=for-the-badge&logo=nvidia)](https://github.com/Protik1810/Solframe-Studio)
 [![Engine](https://img.shields.io/badge/Diffusion%20Engine-stable--diffusion.cpp-orange?style=for-the-badge)](https://github.com/leejet/stable-diffusion.cpp)
 [![LLM](https://img.shields.io/badge/Dialogue%20Engine-llama.cpp%20GGUF-purple?style=for-the-badge)](https://github.com/ggerganov/llama.cpp)
@@ -23,7 +23,7 @@
 
 **Solframe Studio** is a standalone, self-contained desktop generative AI suite engineered for 100% private, offline inference. Combining **`stable-diffusion.cpp`** (supporting FLUX.2 Klein, SDXL Lightning, and standard SD checkpoints) with **`llama.cpp`** (running GGUF text models with full GPU offloading), Solframe Studio brings high-performance generative AI directly to consumer hardware with zero subscription fees, zero cloud telemetry, and complete offline autonomy.
 
-> **Platform status:** Windows (`backend/win/**`, CUDA/Vulkan/CPU) and macOS (`backend/mac/**`, Metal-accelerated, Apple Silicon) both ship real, working inference engines — image generation and local LLM chat run out of the box on either. On Linux, only the UI shell currently runs (see [Getting Started](#-getting-started)) — a native Linux engine build is planned, not shipped yet.
+> **Platform status:** all three platforms ship real, working inference engines — image generation and local LLM chat run out of the box. Windows uses CUDA/Vulkan/CPU (`backend/win/**`), macOS uses Metal on Apple Silicon (`backend/mac/**`), and Linux uses Vulkan/CPU (`backend/linux/**`). Vulkan on Linux drives NVIDIA, AMD and Intel GPUs alike, because neither upstream engine publishes a prebuilt Linux CUDA binary.
 
 <div align="center">
 <table>
@@ -107,7 +107,7 @@ Another edit, on a different reference image:
 - **Cross-Studio Pipeline**: Send generated prompts directly to the Image Studio with one click.
 
 ### 🎮 3. Dynamic Hardware Auto-Detection
-- **NVIDIA GPUs**: Auto-routes to **CUDA** (`backend/win/cuda/`) leveraging Tensor Cores.
+- **NVIDIA GPUs**: Auto-routes to **CUDA** (`backend/win/cuda/`) leveraging Tensor Cores — on Linux, to **Vulkan**, since no prebuilt Linux CUDA engine exists upstream. On a hybrid-graphics laptop the discrete GPU is selected automatically instead of the integrated one.
 - **AMD Radeon & Intel Arc GPUs**: Auto-routes to **Vulkan** (`backend/win/vulkan/`) using cross-platform compute shaders.
 - **CPU Fallback**: Automatic multi-threaded AVX2 CPU execution when no discrete GPU is found.
 
@@ -164,13 +164,14 @@ There is currently no winget package; the links above are the only official buil
 ### 🍎 macOS Setup (Installer)
 Download `Solframe-Studio-<version>-arm64-mac.zip` from [Releases](https://github.com/Protik1810/Solframe-Studio/releases/latest), unzip, and move `Solframe Studio.app` to Applications. Apple Silicon only — inference runs on Metal, which needs an M-series GPU. The build isn't code-signed/notarized, so the first launch needs **Control-click → Open** (not a double-click) to get past Gatekeeper — or run `xattr -cr "/path/to/Solframe Studio.app"` in Terminal if macOS reports it as "damaged."
 
-### 🐧 Linux (UI Preview — 1-Line Terminal Install)
+### 🐧 Linux Setup (.deb)
+Download `solframe-studio-<version>_amd64.deb` from [Releases](https://github.com/Protik1810/Solframe-Studio/releases/latest) and install it:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/install.sh | bash
+sudo dpkg -i solframe-studio-*_amd64.deb
 ```
-This clones the repo and runs `npm run dev`, which brings up the Solframe Studio interface. There's no `backend/linux/` engine yet, so **image generation and local LLM chat will not run** until a native Linux build ships — this path is useful today for UI development and preview, not for production inference.
+This ships real inference engines (`backend/linux/**`): **Vulkan** for GPU generation and a CPU fallback, plus `llama.cpp` for chat. Vulkan drives NVIDIA, AMD and Intel GPUs alike — neither `stable-diffusion.cpp` nor `llama.cpp` publishes a prebuilt Linux CUDA binary, so Vulkan is the shipped GPU path. On a hybrid-graphics laptop the discrete GPU is picked automatically; the integrated one would otherwise run out of memory immediately.
 
-Prefer an installable app over the terminal preview? `npm run electron:build:linux` (AppImage + .deb) packages the same UI-only build as a native app — run it on the target OS, or grab the artifact from the [Build Linux/macOS Installers](https://github.com/Protik1810/Solframe-Studio/actions/workflows/release-build.yml) GitHub Actions workflow. Note that workflow's macOS job produces a UI-only build too (it has no access to the `backend/mac/` binaries, which — like `backend/win/` — are large local build inputs, not committed to the repo); the real inference-capable macOS build linked above is built and packaged separately.
+> **No AppImage.** Every AppImage requires the legacy `libfuse2`, which current Ubuntu no longer ships, so it failed to launch out of the box. The `.deb` needs no such workaround.
 
 ## 🧠 Getting Models (First Run)
 

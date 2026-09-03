@@ -3,7 +3,7 @@
 **The Sovereign Desktop Generative AI Workstation** — by **Protik**
 
 [![License: GPL v3](https://img.shields.io/badge/License-GNU%20GPL%20v3.0-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%26%20macOS%20(full)%20%7C%20Linux%20(UI%20preview)-blue.svg)](https://github.com/Protik1810/Solframe-Studio)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue.svg)](https://github.com/Protik1810/Solframe-Studio)
 [![CI](https://github.com/Protik1810/Solframe-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Protik1810/Solframe-Studio/actions/workflows/ci.yml)
 
 ---
@@ -124,12 +124,10 @@ Dark Void, Neon Cyber, Cinema Gold (default), Synthwave Sunset, Anime Fantasy, a
 | Platform | File | Size | Direct Link |
 |---|---|---|---|
 | 🪟 Windows | Complete Setup | ~927 MB | [Solframe-Studio-Setup-1.1.2.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe-Studio-Setup-1.1.2.exe) |
-| 🪟 Windows | Lightweight Setup | ~108 MB | [Solframe-Studio-Setup-1.1.2-Lightweight.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe-Studio-Setup-1.1.2-Lightweight.exe) |
 | 🍎 macOS | Apple Silicon `.zip` | ~225 MB | [Solframe.Studio-1.1.2-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2-arm64-mac.zip) |
-| 🐧 Linux | AppImage | ~172 MB | [Solframe.Studio-1.1.2.AppImage](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2.AppImage) |
 | 🐧 Linux | `.deb` | ~139 MB | [solframe-studio_1.1.2_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/solframe-studio_1.1.2_amd64.deb) |
 
-**Platform note:** Windows and macOS ship full local inference (CUDA/Vulkan/CPU on Windows, Metal/CPU on macOS). macOS is Apple Silicon only — Metal inference needs an M-series GPU, so the Intel build has been dropped rather than shipping a bundle that can't generate. Linux currently runs the UI shell and Model Hub only — a native engine build is planned.
+**Platform note:** one download per platform. All three now ship real local inference — CUDA/Vulkan/CPU on Windows, Metal on macOS (Apple Silicon only, since Metal needs an M-series GPU), and Vulkan/CPU on Linux. The Linux AppImage has been dropped in favour of the `.deb`: every AppImage needs the legacy `libfuse2`, which current Ubuntu no longer ships, so it failed to launch out of the box.
 
 #### 🔐 Verify Your Download (SHA-256)
 Published as [CHECKSUMS.txt](https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/CHECKSUMS.txt) — download it, then verify with `sha256sum -c CHECKSUMS.txt` (Linux/macOS) or `Get-FileHash <file> -Algorithm SHA256` (Windows PowerShell).

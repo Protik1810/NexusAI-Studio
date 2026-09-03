@@ -98,8 +98,6 @@ function checksumTokens() {
 
   const wanted = {
     SHA_WIN_COMPLETE: `Solframe-Studio-Setup-${VERSION}.exe`,
-    SHA_WIN_LIGHT: `Solframe-Studio-Setup-${VERSION}-Lightweight.exe`,
-    SHA_LINUX_APPIMAGE: `Solframe.Studio-${VERSION}.AppImage`,
     SHA_LINUX_DEB: `solframe-studio_${VERSION}_amd64.deb`,
     SHA_MAC_ZIP_ARM64: `Solframe.Studio-${VERSION}-arm64-mac.zip`
   };
@@ -133,10 +131,7 @@ const replacements = {
   // this file — the actual generator for the live download buttons — so
   // the Linux AppImage and macOS zip buttons were 404ing on the real site.
   DOWNLOAD_WIN_COMPLETE: `${RELEASE_BASE}/Solframe-Studio-Setup-${VERSION}.exe`,
-  DOWNLOAD_WIN_LIGHT: `${RELEASE_BASE}/Solframe-Studio-Setup-${VERSION}-Lightweight.exe`,
-  DOWNLOAD_LINUX_APPIMAGE: `${RELEASE_BASE}/Solframe.Studio-${VERSION}.AppImage`,
   DOWNLOAD_LINUX_DEB: `${RELEASE_BASE}/solframe-studio_${VERSION}_amd64.deb`,
-  DOWNLOAD_MAC_ZIP: `${RELEASE_BASE}/Solframe.Studio-${VERSION}-mac.zip`,
   // The arm64 build has shipped as a real release asset since v1.1.0 but
   // was never linked anywhere on the page — every Mac visitor, including
   // Apple Silicon ones, was served the Intel x64 zip. The auto-detect logic

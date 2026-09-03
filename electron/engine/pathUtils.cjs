@@ -208,11 +208,20 @@ function getSdCliExecutable({ rootDir = '', resourcesPath = '' } = {}) {
   }
 
   if (process.platform === 'linux') {
-    // Vulkan first, then CPU. There is deliberately no CUDA tier: upstream
-    // stable-diffusion.cpp publishes no prebuilt Linux CUDA binary (only
-    // vulkan/rocm/cpu), and Vulkan covers NVIDIA, AMD and Intel alike.
+    // CUDA first when an NVIDIA card is present, then Vulkan, then CPU.
+    //
+    // Upstream publishes no prebuilt Linux CUDA binary (only vulkan/rocm/
+    // cpu), so backend/linux/cuda is built from source by us — see
+    // scripts/build-linux-cuda.sh. It is therefore optional: on a machine
+    // without it, or without an NVIDIA GPU, this falls straight through to
+    // Vulkan, which drives NVIDIA, AMD and Intel alike.
+    // Keyed off the GPU vendor, not hw.preferredBackend: that reports
+    // "vulkan" for NVIDIA on Linux (the always-available default), so using
+    // it here would skip the CUDA tier even when it is installed.
+    const hasNvidia = (hw.gpus || []).some(g => g.isNvidia);
+    const backends = hasNvidia ? ['cuda', 'vulkan', 'cpu'] : ['vulkan', 'cpu'];
     const linuxCandidates = [];
-    for (const backend of ['vulkan', 'cpu']) {
+    for (const backend of backends) {
       linuxCandidates.push(
         path.join(rootDir, `backend/linux/${backend}/sd-cli`),
         path.join(resourcesPath, `backend/linux/${backend}/sd-cli`),
@@ -287,14 +296,20 @@ function getLlamaExecutable({ rootDir = '', resourcesPath = '' } = {}) {
   }
 
   if (process.platform === 'linux') {
-    const linuxCandidates = [
-      path.join(rootDir, 'backend/linux/llama/llama-server'),
-      path.join(resourcesPath, 'backend/linux/llama/llama-server'),
-      path.join(resourcesPath, 'app/backend/linux/llama/llama-server'),
-      path.join(exeDir, 'resources/backend/linux/llama/llama-server'),
-      path.join(exeDir, 'backend/linux/llama/llama-server'),
-      path.join(__dirname, '../../backend/linux/llama/llama-server')
-    ];
+    // llama-cuda is built from source alongside the diffusion engine (see
+    // scripts/build-linux-cuda.sh) and is optional — falls back to the
+    // shipped Vulkan build when absent.
+    const linuxCandidates = [];
+    for (const backend of ['llama-cuda', 'llama']) {
+      linuxCandidates.push(
+        path.join(rootDir, `backend/linux/${backend}/llama-server`),
+        path.join(resourcesPath, `backend/linux/${backend}/llama-server`),
+        path.join(resourcesPath, `app/backend/linux/${backend}/llama-server`),
+        path.join(exeDir, `resources/backend/linux/${backend}/llama-server`),
+        path.join(exeDir, `backend/linux/${backend}/llama-server`),
+        path.join(__dirname, `../../backend/linux/${backend}/llama-server`)
+      );
+    }
     for (const c of linuxCandidates) {
       if (fs.existsSync(c)) return c;
     }
