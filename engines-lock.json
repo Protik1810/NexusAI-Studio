@@ -46,5 +46,11 @@
     "tag": "master-841-6b3edaa",
     "asset": "sd-master-6b3edaa-bin-Linux-Ubuntu-24.04-x86_64.zip",
     "sha256": "66998807a8b21b6d00358310a23791c67d2e68f7e1820d99d5c9ac12738d882e"
+  },
+  "linux.llama": {
+    "repo": "llama.cpp",
+    "tag": "b10781",
+    "asset": "llama-b10781-bin-ubuntu-vulkan-x64.tar.gz",
+    "sha256": "305b2c13966cf4e8c90aded38679cd1c8fb1ccc52d521e48ea3aabe7309fd72f"
   }
 }

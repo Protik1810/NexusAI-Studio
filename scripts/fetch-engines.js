@@ -141,6 +141,39 @@ function sha256(buffer) {
 // macOS llama.cpp build) extract fine with tar everywhere; .zip assets
 // need `unzip` specifically on a GNU-tar system.
 /**
+ * Restore the executable bit on extracted binaries.
+ *
+ * Python's zipfile module drops Unix permission bits entirely, so engines
+ * unpacked through the python fallback (every stable-diffusion.cpp asset is
+ * a .zip) land as mode 0644 and fail to spawn with EACCES — while the
+ * .tar.gz llama build, extracted by tar, keeps its bits and works. Rather
+ * than hardcode binary names, mark anything with an ELF/Mach-O magic
+ * number, which is exactly the set that needs it.
+ */
+function restoreExecutableBits(destDir) {
+  if (process.platform === 'win32') return;
+  let fixed = 0;
+  const walk = dir => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walk(full); continue; }
+      if (!entry.isFile()) continue;
+      const magic = Buffer.alloc(4);
+      const fd = fs.openSync(full, 'r');
+      try { fs.readSync(fd, magic, 0, 4, 0); } finally { fs.closeSync(fd); }
+      const isElf = magic[0] === 0x7f && magic.subarray(1, 4).toString() === 'ELF';
+      const m = magic.readUInt32BE(0);
+      const isMachO = m === 0xfeedface || m === 0xfeedfacf || m === 0xcafebabe || m === 0xcffaedfe;
+      if (!isElf && !isMachO) continue;
+      const mode = fs.statSync(full).mode;
+      if ((mode & 0o111) !== 0o111) { fs.chmodSync(full, (mode | 0o755) & 0o7777); fixed++; }
+    }
+  };
+  walk(destDir);
+  if (fixed) console.log(`  restored the executable bit on ${fixed} binaries`);
+}
+
+/**
  * Some upstream archives wrap everything in a single versioned folder
  * (llama.cpp's Ubuntu tarballs unpack to "llama-b10780/…", while its macOS
  * ones and every stable-diffusion.cpp zip unpack flat). The rest of the app
@@ -197,6 +230,7 @@ function extractArchive(archivePath, destDir) {
     try {
       execFileSync(cmd, args, { stdio: 'inherit', cwd });
       flattenSingleDir(destDir);
+      restoreExecutableBits(destDir);
       return;
     } catch (e) {
       failures.push(`${path.basename(cmd)}: ${e.message.split('\n')[0]}`);

@@ -15,6 +15,12 @@ function detectHardware() {
   let preferredBackend;
   let primaryGpu = 'Auto-Detect GPU';
 
+  // An NVIDIA card means CUDA everywhere except Linux, where neither
+  // stable-diffusion.cpp nor llama.cpp ships a prebuilt CUDA binary — the
+  // Linux engine is the Vulkan one, which drives NVIDIA fine. Naming CUDA
+  // there would advertise a backend this app has no binary for.
+  const nvidiaBackend = process.platform === 'linux' ? 'vulkan' : 'cuda';
+
   try {
     const smiOut = execSync(
       'nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader,nounits',
@@ -27,11 +33,11 @@ function detectHardware() {
       gpus.push({
         name: parts[0], vendor: 'NVIDIA',
         vram: `${(vramMB / 1024).toFixed(1)} GB`, vramMB,
-        driver: parts[2] || '', isNvidia: true, backend: 'cuda'
+        driver: parts[2] || '', isNvidia: true, backend: nvidiaBackend
       });
     }
     if (gpus.length > 0) {
-      primaryGpu = `${gpus[0].name} (${gpus[0].vram} - CUDA)`;
+      primaryGpu = `${gpus[0].name} (${gpus[0].vram} - ${nvidiaBackend.toUpperCase()})`;
     }
   } catch (e) {}
 
@@ -91,11 +97,6 @@ function detectHardware() {
   const hasAmdOrIntel = gpus.some(g => g.vendor === 'AMD' || g.vendor === 'Intel');
   const hasApple = gpus.some(g => g.isApple);
   if (hasNvidia) {
-    // CUDA everywhere except Linux, where neither stable-diffusion.cpp nor
-    // llama.cpp publishes a prebuilt CUDA binary — the shipped Linux engine
-    // is the Vulkan one, which drives NVIDIA cards fine. Reporting "CUDA"
-    // there would name a backend the app has no binary for.
-    const nvidiaBackend = process.platform === 'linux' ? 'vulkan' : 'cuda';
     preferredBackend = nvidiaBackend;
     if (!primaryGpu || primaryGpu === 'Auto-Detect GPU') {
       const g = gpus.find(g => g.isNvidia);
