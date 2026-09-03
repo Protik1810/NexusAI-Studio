@@ -28,11 +28,26 @@ name: Build Linux/macOS/Windows Installers
 # (see RELEASING.md) before the release is complete — publishing
 # automatically here would ship a release missing its main downloads.
 
+# NOT triggered by tag pushes any more — manual dispatch only.
+#
+# Releases are now built locally for all three platforms with the
+# stable-diffusion.cpp/llama.cpp engines bundled, and published directly
+# with `gh release create`. This workflow only ever produced UI-only
+# artifacts (the engine binaries aren't in the repo for it to bundle), so
+# on a `v*` tag it raced that real release and its draft-release job would
+# attach engine-less builds over the working ones. Every release since has
+# had to have this run cancelled by hand within seconds of tagging.
+#
+# Keeping workflow_dispatch means the UI-only builds and their provenance
+# attestations are still available on demand, without CI taking part in
+# releases it can't actually complete.
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
+    inputs:
+      draft_release:
+        description: 'Also open a draft GitHub Release with these UI-only artifacts'
+        type: boolean
+        default: false
 
 jobs:
   build-linux:
@@ -130,9 +145,11 @@ jobs:
           path: installer-output/*-Lightweight.exe
 
   draft-release:
-    # Only on a real version tag push — workflow_dispatch runs (used for
-    # testing the builds themselves) never open a release.
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Opt-in only. These artifacts are UI-only — no engines — so attaching
+    # them to a release is almost never what you want; the real release is
+    # built locally and published with `gh release create`. This exists for
+    # the rare case of wanting a draft of the engine-less builds.
+    if: inputs.draft_release
     needs: [build-linux, build-mac, build-windows-lightweight]
     runs-on: ubuntu-latest
     permissions:
