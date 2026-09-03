@@ -125,9 +125,9 @@ Dark Void, Neon Cyber, Cinema Gold (default), Synthwave Sunset, Anime Fantasy, a
 |---|---|---|---|
 | 🪟 Windows | Complete Setup | ~927 MB | [Solframe-Studio-Setup-1.1.2.exe](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe-Studio-Setup-1.1.2.exe) |
 | 🍎 macOS | Apple Silicon `.zip` | ~225 MB | [Solframe.Studio-1.1.2-arm64-mac.zip](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/Solframe.Studio-1.1.2-arm64-mac.zip) |
-| 🐧 Linux | `.deb` | ~139 MB | [solframe-studio_1.1.2_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/solframe-studio_1.1.2_amd64.deb) |
+| 🐧 Linux | `.deb` | ~726 MB | [solframe-studio_1.1.2_amd64.deb](https://github.com/Protik1810/Solframe-Studio/releases/download/v1.1.2/solframe-studio_1.1.2_amd64.deb) |
 
-**Platform note:** one download per platform. All three now ship real local inference — CUDA/Vulkan/CPU on Windows, Metal on macOS (Apple Silicon only, since Metal needs an M-series GPU), and Vulkan/CPU on Linux. The Linux AppImage has been dropped in favour of the `.deb`: every AppImage needs the legacy `libfuse2`, which current Ubuntu no longer ships, so it failed to launch out of the box.
+**Platform note:** one download per platform. All three now ship real local inference — CUDA/Vulkan/CPU on Windows, Metal on macOS (Apple Silicon only, since Metal needs an M-series GPU), and CUDA/Vulkan/CPU on Linux. The Linux `.deb` is large because it carries a CUDA engine built from source (upstream ships none for Linux) plus NVIDIA's cuBLAS runtime; it falls back to Vulkan automatically on non-NVIDIA GPUs. The Linux AppImage has been dropped in favour of the `.deb`: every AppImage needs the legacy `libfuse2`, which current Ubuntu no longer ships, so it failed to launch out of the box.
 
 #### 🔐 Verify Your Download (SHA-256)
 Published as [CHECKSUMS.txt](https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/CHECKSUMS.txt) — download it, then verify with `sha256sum -c CHECKSUMS.txt` (Linux/macOS) or `Get-FileHash <file> -Algorithm SHA256` (Windows PowerShell).
@@ -138,10 +138,11 @@ Download an installer above. There is currently no winget package.
 #### 🍎 macOS
 Download the `.zip` matching your Mac above, unzip, move to Applications. Unsigned build — **Control-click → Open** on first launch (or `xattr -cr` the `.app` in Terminal if macOS calls it "damaged").
 
-#### 🐧 Linux — UI Preview
+#### 🐧 Linux
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Protik1810/Solframe-Studio/main/install.sh | bash
+sudo dpkg -i solframe-studio_1.1.2_amd64.deb
 ```
+Ships real inference engines: CUDA for NVIDIA (built from source — upstream publishes none for Linux), Vulkan for everything else, plus a CPU fallback and `llama.cpp` for chat. On a hybrid-graphics laptop the discrete GPU is selected automatically. No AppImage: every AppImage needs the legacy `libfuse2`, which current Ubuntu no longer ships.
 
 #### 🐧 Linux & 🍎 macOS — Build From Source
 ```bash

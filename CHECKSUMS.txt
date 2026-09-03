@@ -2,7 +2,5 @@ Solframe Studio v1.1.2 — SHA-256 checksums
 Verify with: sha256sum -c CHECKSUMS.txt (Linux/macOS) or Get-FileHash (Windows PowerShell)
 
 40216e03d438aba61b91895c349eaeff70cd6faf30671808e55dac35f1a02599  Solframe-Studio-Setup-1.1.2.exe
-2dc17f042e7a528d62ae45ea78196f621cd558ef91c04adda95446cf6aaf8c7f  Solframe-Studio-Setup-1.1.2-Lightweight.exe
-ee95946d17c69d8f413c10941017fe2953517f5ec53199b69700c29bbf2567ea  Solframe.Studio-1.1.2.AppImage
-a5a78d044a9018f80b4dcf05138e10de40a358049f1e2c8db246b3f80bc64c29  solframe-studio_1.1.2_amd64.deb
+8c09dd0b708c61968d1f547bd9b3dd087000d01754b2de251be61da7c33fbb6b  solframe-studio_1.1.2_amd64.deb
 80db2d90c38c42cf1e6fdd3bcaf010190553e410cd1d679dfceb72a8f73b3bf6  Solframe.Studio-1.1.2-arm64-mac.zip
