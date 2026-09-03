@@ -4,8 +4,28 @@
  */
 'use strict';
 const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 let _cached = null;
+
+/**
+ * Is the (optionally bundled) Linux CUDA engine actually present?
+ *
+ * Kept as a local path probe instead of calling pathUtils.getSdCliExecutable:
+ * pathUtils requires this module for detectHardware(), so reaching back into
+ * it here would create a require cycle. Only the packaged and in-repo
+ * locations are checked — enough to decide whether "CUDA" is an honest label.
+ */
+function hasLinuxCudaEngine() {
+  const candidates = [
+    process.resourcesPath && path.join(process.resourcesPath, 'backend/linux/cuda/sd-cli'),
+    path.join(__dirname, '../../backend/linux/cuda/sd-cli')
+  ].filter(Boolean);
+  return candidates.some(p => {
+    try { return fs.existsSync(p); } catch (e) { return false; }
+  });
+}
 
 function detectHardware() {
   if (_cached) return _cached;
@@ -15,11 +35,17 @@ function detectHardware() {
   let preferredBackend;
   let primaryGpu = 'Auto-Detect GPU';
 
-  // An NVIDIA card means CUDA everywhere except Linux, where neither
-  // stable-diffusion.cpp nor llama.cpp ships a prebuilt CUDA binary — the
-  // Linux engine is the Vulkan one, which drives NVIDIA fine. Naming CUDA
-  // there would advertise a backend this app has no binary for.
-  const nvidiaBackend = process.platform === 'linux' ? 'vulkan' : 'cuda';
+  // An NVIDIA card means CUDA — except on Linux, where it depends on what
+  // actually shipped. Upstream publishes no prebuilt Linux CUDA binary, so
+  // backend/linux/cuda is compiled by us (scripts/build-linux-cuda.sh) and
+  // is optional; when it isn't bundled, the Linux engine is the Vulkan one,
+  // which drives NVIDIA fine. Reporting CUDA without the binary would
+  // advertise a backend the app can't actually run, so this checks.
+  //
+  // Deliberately a self-contained path probe rather than a call into
+  // pathUtils: pathUtils requires this module, so importing it back here
+  // would be a cycle.
+  const nvidiaBackend = process.platform !== 'linux' || hasLinuxCudaEngine() ? 'cuda' : 'vulkan';
 
   try {
     const smiOut = execSync(

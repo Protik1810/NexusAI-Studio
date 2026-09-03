@@ -252,6 +252,13 @@ function createEngineCore(ctx) {
       procEnv.PATH = [...winDirs, process.env.PATH || ''].join(path.delimiter);
     } else if (process.platform === 'darwin') {
       procEnv.DYLD_LIBRARY_PATH = [workingDir, process.env.DYLD_LIBRARY_PATH || ''].filter(Boolean).join(path.delimiter);
+    } else if (process.platform === 'linux') {
+      // The CUDA engine links libcudart/libcublas/libcublasLt dynamically,
+      // and they're bundled beside sd-cli so end users need no CUDA toolkit
+      // — but the loader only looks in system paths, so without this it
+      // fails at startup on exactly the machines the bundling was for.
+      // Harmless for the Vulkan/CPU engines, which have nothing extra here.
+      procEnv.LD_LIBRARY_PATH = [workingDir, process.env.LD_LIBRARY_PATH || ''].filter(Boolean).join(path.delimiter);
     }
 
     return runSdCli({

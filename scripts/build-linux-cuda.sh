@@ -86,10 +86,25 @@ find build -maxdepth 3 -type f \( -name 'sd' -o -name 'sd-cli' -o -name '*.so*' 
 # Bundle the CUDA runtime libs the binary links against, the same way the
 # Windows build ships cudart64_12.dll/cublas64_12.dll — otherwise this only
 # runs on machines that already have a matching CUDA toolkit installed.
-CUDA_LIB="$(dirname "$NVCC")/../lib64"
+#
+# Copied by resolving the binary's own NEEDED entries rather than globbing a
+# guessed lib directory: CUDA 13 resolves these through
+# targets/<arch>/lib rather than the lib64 symlink, so a glob can silently
+# match nothing and produce a bundle that only runs where CUDA is already
+# installed. libcuda.so.1 is deliberately excluded — that one ships with the
+# NVIDIA driver, and bundling a copy would override the user's own driver.
+missing=0
 for lib in libcudart libcublas libcublasLt; do
-  find "$CUDA_LIB" -maxdepth 1 -name "${lib}.so*" -exec cp -a {} "$DEST/" \; 2>/dev/null || true
+  src="$(ldd "$DEST/libstable-diffusion.so" 2>/dev/null | awk -v l="$lib" '$1 ~ "^"l"\\.so" {print $3; exit}')"
+  if [ -n "$src" ] && [ -e "$src" ]; then
+    cp -aL "$src" "$DEST/"                       # -L: flatten the symlink to a real file
+    echo "    bundled $(basename "$src")"
+  else
+    echo "    WARNING: could not locate $lib — the bundle will need a system CUDA install"
+    missing=1
+  fi
 done
+[ "$missing" -eq 0 ] || echo "  (some CUDA runtime libs were not bundled)"
 
 chmod +x "$DEST/sd-cli" 2>/dev/null || true
 echo "==> done:"
