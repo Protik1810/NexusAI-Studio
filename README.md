@@ -5,7 +5,7 @@
 **Autonomous, Sovereign & Zero-Cloud Local Generative AI Workstation**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?style=for-the-badge&logo=windows)](https://github.com/Protik1810/Solframe-Studio)
-[![Hardware](https://img.shields.io/badge/Hardware-NVIDIA%20CUDA%20%7C%20AMD%2FIntel%20Vulkan-success?style=for-the-badge&logo=nvidia)](https://github.com/Protik1810/Solframe-Studio)
+[![Hardware](https://img.shields.io/badge/Hardware-NVIDIA%20CUDA%20%7C%20Apple%20Metal%20%7C%20Vulkan-success?style=for-the-badge&logo=nvidia)](https://github.com/Protik1810/Solframe-Studio)
 [![Engine](https://img.shields.io/badge/Diffusion%20Engine-stable--diffusion.cpp-orange?style=for-the-badge)](https://github.com/leejet/stable-diffusion.cpp)
 [![LLM](https://img.shields.io/badge/Dialogue%20Engine-llama.cpp%20GGUF-purple?style=for-the-badge)](https://github.com/ggerganov/llama.cpp)
 [![License](https://img.shields.io/badge/License-GNU%20GPL%20v3.0-blue?style=for-the-badge)](LICENSE)
@@ -23,7 +23,16 @@
 
 **Solframe Studio** is a standalone, self-contained desktop generative AI suite engineered for 100% private, offline inference. Combining **`stable-diffusion.cpp`** (supporting FLUX.2 Klein, SDXL Lightning, and standard SD checkpoints) with **`llama.cpp`** (running GGUF text models with full GPU offloading), Solframe Studio brings high-performance generative AI directly to consumer hardware with zero subscription fees, zero cloud telemetry, and complete offline autonomy.
 
-> **Platform status:** all three platforms ship real, working inference engines — verified on Windows 11, macOS Apple Silicon (M2), and Linux on CUDA (RTX 4060, 8 GB) — image generation and local LLM chat run out of the box. Windows uses CUDA/Vulkan/CPU (`backend/win/**`), macOS uses Metal on Apple Silicon (`backend/mac/**`), and Linux uses Vulkan/CPU (`backend/linux/**`). Vulkan on Linux drives NVIDIA, AMD and Intel GPUs alike, because neither upstream engine publishes a prebuilt Linux CUDA binary.
+> **Platform status:** all three platforms ship real, working inference engines — image generation and local LLM chat run out of the box on each. Windows uses **CUDA/Vulkan/CPU** (`backend/win/**`), macOS uses **Metal** on Apple Silicon (`backend/mac/**`), and Linux uses **CUDA/Vulkan/CPU** (`backend/linux/**`). Neither upstream engine publishes a prebuilt Linux CUDA binary, so that one is compiled from source and bundled with its runtime; where it's absent, Vulkan drives NVIDIA, AMD and Intel GPUs alike.
+
+### ✅ Verified hardware
+
+Image generation has been confirmed on real hardware:
+
+- **macOS** — MacBook Air (Apple M2, 16 GB unified memory), running on **Metal**
+- **Linux** — AMD CPU, 16 GB LPDDR5, NVIDIA RTX 4060 (8 GB), running on **CUDA**
+
+Around **8 GB of VRAM** is the practical floor for the FLUX pipeline; the standard SDXL pipeline is considerably lighter. Apple Silicon is the exception — unified memory draws on the whole system pool rather than a fixed VRAM partition.
 
 <div align="center">
 <table>
@@ -108,6 +117,7 @@ Another edit, on a different reference image:
 
 ### 🎮 3. Dynamic Hardware Auto-Detection
 - **NVIDIA GPUs**: Auto-routes to **CUDA** — `backend/win/cuda/` on Windows, `backend/linux/cuda/` on Linux. Upstream publishes no prebuilt Linux CUDA binary, so that one is compiled from source ([`scripts/build-linux-cuda.sh`](scripts/build-linux-cuda.sh)) and bundled with its CUDA runtime; where it isn't present the app falls back to **Vulkan**, which drives NVIDIA, AMD and Intel alike.
+- **Apple Silicon (M-series)**: Auto-routes to **Metal** (`backend/mac/metal/`), running inference on the GPU through Apple's own graphics API. Because Apple Silicon uses unified memory, the whole system RAM pool is available to the model rather than a fixed VRAM partition — a 16 GB Mac comfortably runs workloads that need a 12 GB+ discrete card.
 - **Hybrid-graphics laptops**: the discrete GPU is detected and selected explicitly — the engine otherwise defaults to GPU 0, usually the integrated chip, and runs out of memory while the real card idles.
 - **AMD Radeon & Intel Arc GPUs**: Auto-routes to **Vulkan** (`backend/win/vulkan/`, `backend/linux/vulkan/`) using cross-platform compute shaders.
 - **CPU Fallback**: Automatic multi-threaded AVX2 CPU execution when no discrete GPU is found.
